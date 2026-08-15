@@ -350,10 +350,12 @@ strong { font-weight: 700; color: var(--green-700); }
 /* ---------- 08 Status ---------- */
 .status-caption { text-align: center; font-size: 1.05rem; color: var(--gold-400); font-weight: 600; margin-bottom: 44px; letter-spacing: .02em; }
 .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px; margin-bottom: 48px; }
+.stats-grid--4 { grid-template-columns: repeat(4, 1fr); max-width: 880px; margin-left: auto; margin-right: auto; }
 .stat { text-align: center; padding: 30px 16px; border-radius: var(--radius); background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); }
 .stat-num { display: block; font-size: clamp(1.8rem, 4.5vw, 2.8rem); font-weight: 800; color: var(--gold-400); font-variant-numeric: tabular-nums; letter-spacing: -.03em; line-height: 1; }
 .stat-label { display: block; margin-top: 10px; font-size: .88rem; color: rgba(255,255,255,.8); }
 .gov-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.gov-grid--3 { grid-template-columns: repeat(3, 1fr); }
 .gov-card { padding: 30px; border-radius: var(--radius); background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); }
 .gov-card h3 { color: var(--gold-400); font-size: 1.1rem; margin-bottom: 16px; letter-spacing: .02em; }
 .gov-card p { color: rgba(255,255,255,.9); margin-bottom: 8px; font-size: .98rem; }
