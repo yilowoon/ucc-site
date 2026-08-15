@@ -14,121 +14,110 @@
     <div class="section-head"><div><h2 class="section-title c-green">조직 구성도</h2><span class="section-en">STRUCTURE</span></div></div>
 
     <div class="orgchart">
-      <div class="oc-row oc-row--head">
-        <span class="oc-box oc-box--head">도시공동체본부<em>이사장</em></span>
+      <!-- 상단 위계 -->
+      <div class="oc-top">
+        <span class="oc-node oc-node--head">도시공동체본부<small>(이사장) 이가희</small></span>
       </div>
-      <div class="oc-spine"></div>
-      <div class="oc-row oc-row--gov">
-        <span class="oc-box oc-box--board">이사회</span>
-        <span class="oc-box oc-box--exec">상임대표</span>
+      <div class="oc-drop"></div>
+      <div class="oc-gov">
+        <span class="oc-node oc-node--board">이사회</span>
+        <span class="oc-node oc-node--exec">상임대표<small>이형구</small></span>
       </div>
-      <div class="oc-spine"></div>
+      <div class="oc-drop"></div>
       <div class="oc-bus"></div>
-      <div class="oc-row oc-row--units">
-        <span class="oc-box oc-unit oc-c-green">사무국<em>사무총장 · 사무국장</em></span>
-        <span class="oc-box oc-unit oc-c-blue">도시혁신연구소</span>
-        <span class="oc-box oc-unit oc-c-green">미디어&amp;콘텐츠센터</span>
-        <span class="oc-box oc-unit oc-c-orange">지역공동체활성화센터</span>
-        <span class="oc-box oc-unit oc-c-blue">컨설팅센터</span>
-        <span class="oc-box oc-unit oc-c-green">교육혁신센터</span>
-        <span class="oc-box oc-unit oc-c-green">메이커스페이스</span>
+
+      <!-- 부서 + 상세 -->
+      <div class="oc-depts">
+        <!-- 사무국 -->
+        <div class="oc-dept">
+          <span class="oc-head oc-c-green">사무국</span>
+          <div class="oc-subs">
+            <span class="oc-sub">사무총장</span>
+            <span class="oc-sub">사무국장</span>
+          </div>
+        </div>
+
+        <!-- 도시혁신연구소 -->
+        <div class="oc-dept">
+          <span class="oc-head oc-c-blue">도시혁신연구소</span>
+          <div class="oc-detail">
+            <span class="oc-badge">지적 정체성</span>
+            <ul>
+              <li>도시문제 연구 및 리빙랩 실험</li>
+              <li>GINI 글로벌 혁신 인증</li>
+              <li>ESG 컨설팅 및 도시 표준 개발</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 미디어&콘텐츠센터 -->
+        <div class="oc-dept">
+          <span class="oc-head oc-c-green">미디어&amp;콘텐츠센터</span>
+          <div class="oc-detail">
+            <span class="oc-badge">외적 표현</span>
+            <ul>
+              <li>시카고 한국일보 전략적 협력</li>
+              <li>자체 미디어 및 SNS 채널 운영</li>
+              <li>글로벌 브랜드 구축 및 홍보</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 지역공동체활성화센터 -->
+        <div class="oc-dept">
+          <span class="oc-head oc-c-orange">지역공동체활성화센터</span>
+          <div class="oc-detail">
+            <span class="oc-badge">나눔 / 공유</span>
+            <ul>
+              <li>도시공동체 포럼 및 치유 프로그램</li>
+              <li>지역 축제 및 문화예술 행사</li>
+              <li>한복모델선발대회 개최</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 컨설팅센터 -->
+        <div class="oc-dept">
+          <span class="oc-head oc-c-blue">컨설팅센터</span>
+          <div class="oc-detail">
+            <span class="oc-badge">가치 순환</span>
+            <ul>
+              <li>개인·기업·공공 맞춤형 컨설팅</li>
+              <li>국내외 파트너십 네트워크 구축</li>
+              <li>전문가 풀 운영 및 수익 창출</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 교육혁신센터 -->
+        <div class="oc-dept">
+          <span class="oc-head oc-c-green">교육혁신센터</span>
+          <div class="oc-detail">
+            <span class="oc-badge">인적 성장</span>
+            <ul>
+              <li>4단계 인재양성 로드맵 운영</li>
+              <li>경력단절여성 재진입 지원</li>
+              <li>대학 연계 산학협력 프로그램</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 메이커센터 -->
+        <div class="oc-dept">
+          <span class="oc-head oc-c-green">메이커센터</span>
+          <div class="oc-detail">
+            <span class="oc-badge">공간 기반</span>
+            <ul>
+              <li>디지털 제조 인프라 구축</li>
+              <li>스타트업 인큐베이팅 공간</li>
+              <li>시제품 제작 및 기술 지원</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
 
     <p class="oc-caption"><strong>이사장</strong> 이가희 문학박사 &nbsp;·&nbsp; <strong>상임대표</strong> 이형구 박사 &nbsp;·&nbsp; 이사회·자문위원회(학계·산업·공공·법률) 운영</p>
-  </div>
-</section>
-
-<!-- 6대 센터 -->
-<section class="section section--alt" id="centers">
-  <div class="container">
-    <div class="section-head"><div><h2 class="section-title c-blue">6대 센터</h2><span class="section-en">SIX CENTERS</span></div></div>
-
-    <div class="centers">
-      <article class="center-card center-card--green">
-        <div class="center-head">
-          <div><span class="center-num">CENTER 1</span><h3 class="center-title">도시혁신연구소</h3></div>
-          <span class="center-badge cb-green">지식 생산</span>
-        </div>
-        <p class="center-axis">조직의 지적 정체성 — 내적 표현</p>
-        <p class="center-desc">도시와 공동체의 문제를 정의하고 해결책을 연구하여, 조직의 핵심 지식 자산을 축적하고 혁신의 방향성을 제시합니다.</p>
-        <ul class="center-list">
-          <li><strong>리빙랩(Living Lab)</strong>5대 센터 현장 실험, 주민 참여 문제해결</li>
-          <li><strong>GINI 코리아 인증</strong>글로벌 혁신 표준 연결 및 역량 진단</li>
-          <li><strong>ESG · 도시표준</strong>지속가능경영 컨설팅 및 도시 지표 연구</li>
-        </ul>
-      </article>
-
-      <article class="center-card center-card--green">
-        <div class="center-head">
-          <div><span class="center-num">CENTER 2</span><h3 class="center-title">미디어&amp;콘텐츠센터</h3></div>
-          <span class="center-badge cb-green">가치 확산</span>
-        </div>
-        <p class="center-axis">조직의 외적 표현 — 세상과 접속하는 얼굴</p>
-        <p class="center-desc">축적된 혁신 가치와 성과를 다양한 콘텐츠로 가공하여 대중과 소통하고, 글로벌 브랜드로서의 위상을 확립합니다.</p>
-        <ul class="center-list">
-          <li><strong>시카고한국일보 협력</strong>글로벌 미디어 채널 및 칼럼 기고</li>
-          <li><strong>자체 미디어 플랫폼</strong>뉴스레터, SNS 통합 운영, 아카이빙</li>
-          <li><strong>글로벌 브랜드 · PR</strong>해외 파트너십 홍보 및 언론 보도 총괄</li>
-        </ul>
-      </article>
-
-      <article class="center-card center-card--orange">
-        <div class="center-head">
-          <div><span class="center-num">CENTER 3</span><h3 class="center-title">지역공동체활성화센터</h3></div>
-          <span class="center-badge cb-orange">나눔 확산</span>
-        </div>
-        <p class="center-axis">공동체 내부의 나눔과 공유 — 함께 먹는 축</p>
-        <p class="center-desc">주민 참여형 문화 프로그램과 치유 활동을 통해 공동체 내부의 결속력을 강화하고 삶의 질을 높입니다.</p>
-        <ul class="center-list">
-          <li><strong>온 · 오프라인 플랫폼</strong>도시공동체 포털, 치유 콘텐츠 허브, 커뮤니티 살롱</li>
-          <li><strong>포럼 &amp; 치유</strong>도시공동체 포럼, 치유산업 국제심포지엄, 문화예술 치유</li>
-          <li><strong>한복모델선발대회</strong>전통문화 공동체 축제, 지역 예선 및 페스티벌 확장</li>
-        </ul>
-      </article>
-
-      <article class="center-card center-card--orange">
-        <div class="center-head">
-          <div><span class="center-num">CENTER 4</span><h3 class="center-title">컨설팅&amp;네트워크센터</h3></div>
-          <span class="center-badge cb-orange">가치 순환</span>
-        </div>
-        <p class="center-axis">외부로의 가치 교환과 순환 — 에너지 순환 축</p>
-        <p class="center-desc">축적된 전문성을 바탕으로 외부 기관에 솔루션을 제공하고, 지속가능한 파트너십 생태계를 구축합니다.</p>
-        <ul class="center-list">
-          <li><strong>컨설팅 서비스</strong>개인 · 기업(ESG) · 공공(도시재생) 맞춤형 컨설팅</li>
-          <li><strong>전문가 풀 운영</strong>분야별 전문가 매칭 및 투명한 수익 배분 시스템</li>
-          <li><strong>파트너십 네트워크</strong>국내외 협력망 구축 및 공동 프로젝트 발굴</li>
-        </ul>
-      </article>
-
-      <article class="center-card center-card--blue">
-        <div class="center-head">
-          <div><span class="center-num">CENTER 5</span><h3 class="center-title">교육혁신센터</h3></div>
-          <span class="center-badge cb-blue">인적 성장</span>
-        </div>
-        <p class="center-axis">인적 성장 기반 — 키우는 축</p>
-        <p class="center-desc">단계별 인재양성 프로그램과 경력 전환 지원을 통해 지속가능한 성장을 이끄는 미래 인재를 육성합니다.</p>
-        <ul class="center-list">
-          <li><strong>4단계 인재양성</strong>시민 → 활동가 → 전문가 → 리더 육성</li>
-          <li><strong>재진입 프로그램</strong>경력단절여성 및 신중년 재취업 지원</li>
-          <li><strong>대학 연계 · 시민대학</strong>산학협력 프로그램 및 ESG 아카데미</li>
-        </ul>
-      </article>
-
-      <article class="center-card center-card--blue">
-        <div class="center-head">
-          <div><span class="center-num">CENTER 6</span><h3 class="center-title">메이커스페이스센터</h3></div>
-          <span class="center-badge cb-blue">공간 기반</span>
-        </div>
-        <p class="center-axis">물리적 공간 기반 — 짓는 축</p>
-        <p class="center-desc">아이디어를 실현하는 디지털 제조 인프라와 창업 보육 공간을 제공하여 혁신 창업 생태계를 조성합니다.</p>
-        <ul class="center-list">
-          <li><strong>디지털 제조 인프라</strong>150평 규모 3D프린터 · 레이저 커터 장비</li>
-          <li><strong>스타트업 인큐베이터</strong>예비 창업팀 입주 및 사업화 지원</li>
-          <li><strong>시민 창작 생태계</strong>리빙랩 연계 시제품 제작 및 멤버십</li>
-        </ul>
-      </article>
-    </div>
   </div>
 </section>
 
