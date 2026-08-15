@@ -19,6 +19,22 @@
 .page-content .page-h:nth-of-type(3n+1) { color: var(--ci-green-d); }
 .page-content .page-h:nth-of-type(3n+2) { color: var(--ci-blue-d); }
 .page-content .page-h:nth-of-type(3n+3) { color: var(--ci-orange-d); }
+
+/* 인사말 — 이사장 프로필 (배경과 경계 없이 페이드) */
+.greet { display: grid; grid-template-columns: minmax(230px, 330px) 1fr; gap: clamp(14px, 3.5vw, 46px); align-items: center; }
+.greet-photo { margin: 0; position: relative; }
+.greet-photo img {
+  width: 100%; height: auto; display: block;
+  -webkit-mask-image: radial-gradient(ellipse 76% 84% at 50% 42%, #000 42%, rgba(0,0,0,0) 92%);
+          mask-image: radial-gradient(ellipse 76% 84% at 50% 42%, #000 42%, rgba(0,0,0,0) 92%);
+}
+.greet-name { display: block; text-align: center; margin-top: -8px; color: var(--green-800); font-size: 1rem; }
+.greet-name strong { font-size: 1.2rem; font-weight: 800; }
+.greet-body .lead { margin-top: 0; }
+@media (max-width: 720px) {
+  .greet { grid-template-columns: 1fr; gap: 8px; }
+  .greet-photo { max-width: 320px; margin: 0 auto; }
+}
 .section-more { font-weight: 700; color: var(--green-600); white-space: nowrap; }
 .section-more:hover { color: var(--gold-600); }
 
