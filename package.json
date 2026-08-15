@@ -1,0 +1,21 @@
+{
+  "name": "ucc-site",
+  "version": "1.0.0",
+  "description": "사단법인 도시공동체본부 홈페이지 + 게시판 (공지사항·보도자료·사업안내)",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "multer": "^2.2.0"
+  }
+}

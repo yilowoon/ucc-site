@@ -1,0 +1,40 @@
+<%- include('partials/header') %>
+
+<section class="page-banner page-banner--sm">
+  <div class="container">
+    <span class="page-banner-en">APPLY</span>
+    <h1 class="page-banner-title">교육신청하기</h1>
+  </div>
+</section>
+
+<div class="container admin-auth-wrap">
+  <div class="admin-auth-card">
+    <% if (done) { %>
+      <p class="form-alert ok">교육 신청이 접수되었습니다. 담당자가 확인 후 안내드리겠습니다.</p>
+      <a class="btn btn-primary btn-block" href="/learn/calendar">교육일정 보기</a>
+    <% } else { %>
+      <h1>교육 신청</h1>
+      <p class="admin-auth-sub">아래 정보를 입력해 신청해 주세요.</p>
+      <% if (error) { %><p class="form-alert err"><%= error %></p><% } %>
+      <form method="post" action="/learn/apply" class="admin-form-fields">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <div class="field"><label for="name">이름</label><input type="text" id="name" name="name" value="<%= esc(form.name || '') %>" required /></div>
+        <div class="field"><label for="email">이메일</label><input type="email" id="email" name="email" value="<%= esc(form.email || '') %>" required /></div>
+        <div class="field"><label for="phone">연락처</label><input type="tel" id="phone" name="phone" value="<%= esc(form.phone || '') %>" /></div>
+        <div class="field">
+          <label for="course">신청 과정</label>
+          <select id="course" name="course">
+            <% var courses = ['ESG 전문가 과정','지역발전혁신가(RDC) 양성 과정','시민 도시대학','공동체리더 과정','기타'];
+               courses.forEach(function(c){ %>
+              <option value="<%= c %>" <%= (form.course===c)?'selected':'' %>><%= c %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="field"><label for="message">문의/요청 사항</label><textarea id="message" name="message" rows="4"><%= esc(form.message || '') %></textarea></div>
+        <button type="submit" class="btn btn-primary btn-block">신청하기</button>
+      </form>
+    <% } %>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

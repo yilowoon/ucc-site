@@ -1,0 +1,79 @@
+<%- include('partials/header') %>
+
+<section class="page-banner">
+  <div class="container">
+    <span class="page-banner-en"><%= meta.en %></span>
+    <h1 class="page-banner-title"><%= meta.name %></h1>
+    <p class="page-banner-desc"><%= meta.desc %></p>
+  </div>
+</section>
+
+<nav class="board-tabs" aria-label="게시판 선택">
+  <div class="container board-tabs-inner">
+    <% boardKeys.forEach(function(k){ %>
+      <a href="/board/<%= k %>" class="<%= currentBoard === k ? 'active' : '' %>"><%= boards[k].name %></a>
+    <% }); %>
+  </div>
+</nav>
+
+<div class="container board-wrap">
+  <div class="board-toolbar">
+    <span class="board-count">전체 <strong><%= total %></strong>건<% if (q) { %> · '<%= esc(q) %>' 검색 결과<% } %></span>
+    <div class="board-toolbar-right">
+      <form class="board-search" action="/board/<%= currentBoard %>" method="get" role="search">
+        <input type="search" name="q" value="<%= esc(q) %>" placeholder="제목·내용 검색" aria-label="검색어" />
+        <button type="submit" aria-label="검색">검색</button>
+      </form>
+      <% if (isAdmin) { %>
+        <a class="btn btn-primary btn-sm" href="/admin/write?board=<%= currentBoard %>">＋ 글쓰기</a>
+      <% } %>
+    </div>
+  </div>
+
+  <ul class="post-list">
+    <li class="post-list-head" aria-hidden="true">
+      <span class="col-no">번호</span>
+      <span class="col-title">제목</span>
+      <span class="col-author">작성자</span>
+      <span class="col-date">등록일</span>
+      <span class="col-views">조회</span>
+    </li>
+    <% if (posts.length === 0) { %>
+      <li class="post-empty">등록된 게시물이 없습니다.</li>
+    <% } %>
+    <% posts.forEach(function(p, i){ %>
+      <li class="post-row<%= p.pinned ? ' is-pinned' : '' %>">
+        <span class="col-no">
+          <% if (p.pinned) { %><span class="badge-pin">공지</span><% } else { %><%= total - ((page - 1) * perPage) - i %><% } %>
+        </span>
+        <span class="col-title">
+          <a href="/board/<%= currentBoard %>/<%= p.id %>?page=<%= page %>">
+            <% if (p.thumb) { %><span class="thumb-dot" title="이미지 포함" aria-hidden="true"></span><% } %>
+            <span class="post-title-text"><%= esc(p.title) %></span>
+            <% if (p.attach_count > 0) { %><span class="attach-flag" title="첨부 <%= p.attach_count %>">📎<%= p.attach_count %></span><% } %>
+          </a>
+        </span>
+        <span class="col-author"><%= esc(p.author) %></span>
+        <span class="col-date"><%= fmtDate(p.created_at) %></span>
+        <span class="col-views"><%= p.views %></span>
+      </li>
+    <% }); %>
+  </ul>
+
+  <% if (totalPages > 1) { %>
+    <nav class="pagination" aria-label="페이지">
+      <% var qs = q ? ('&q=' + encodeURIComponent(q)) : ''; %>
+      <% if (page > 1) { %><a href="?page=<%= page - 1 %><%= qs %>" class="page-prev">이전</a><% } %>
+      <% for (var n = 1; n <= totalPages; n++) { %>
+        <% if (n === page) { %>
+          <span class="page-num active" aria-current="page"><%= n %></span>
+        <% } else { %>
+          <a href="?page=<%= n %><%= qs %>" class="page-num"><%= n %></a>
+        <% } %>
+      <% } %>
+      <% if (page < totalPages) { %><a href="?page=<%= page + 1 %><%= qs %>" class="page-next">다음</a><% } %>
+    </nav>
+  <% } %>
+</div>
+
+<%- include('partials/footer') %>

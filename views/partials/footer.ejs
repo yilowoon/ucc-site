@@ -1,0 +1,60 @@
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-legal">
+      <a href="/policy/terms">이용약관</a>
+      <a href="/policy/privacy"><strong>개인정보보호정책</strong></a>
+      <a href="/policy/no-email">이메일무단수집거부</a>
+    </div>
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <span class="brand-mark" aria-hidden="true">
+          <img src="/img/ucc-symbol.png?v=2" alt="" width="32" height="31" />
+        </span>
+        <div>
+          <strong>사단법인 도시공동체본부</strong>
+          <span class="footer-brand-en">Urban Community Center</span>
+          <span>행정안전부 소관 비영리법인 · 세종특별자치시 연청로 1161, 2F</span>
+          <span>전화 1670-9678 · <a href="mailto:contact@ucc.or.kr">contact@ucc.or.kr</a></span>
+        </div>
+      </div>
+      <nav class="footer-nav" aria-label="하단 메뉴">
+        <a href="/board/notice">공지사항</a>
+        <a href="/board/press">보도자료</a>
+        <a href="/board/business">사업안내</a>
+        <% if (isAdmin) { %>
+          <a href="/admin">관리자</a>
+          <form action="/admin/logout" method="post" style="display:inline">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button type="submit" class="linkbtn">로그아웃</button>
+          </form>
+        <% } else { %>
+          <a href="/admin/login">관리자</a>
+        <% } %>
+      </nav>
+    </div>
+    <div class="container footer-base">
+      <span>© 2026 Urban Community Center. All rights reserved.</span>
+      <a href="https://ucc.or.kr" target="_blank" rel="noopener">ucc.or.kr</a>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var t = document.getElementById("navToggle");
+      var m = document.getElementById("mobileNav");
+      if (t && m) {
+        t.addEventListener("click", function () {
+          var open = t.getAttribute("aria-expanded") === "true";
+          t.setAttribute("aria-expanded", open ? "false" : "true");
+          t.setAttribute("aria-label", open ? "메뉴 열기" : "메뉴 닫기");
+          m.hidden = open;
+        });
+        m.addEventListener("click", function (e) {
+          if (e.target.tagName === "A") { t.setAttribute("aria-expanded", "false"); m.hidden = true; }
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

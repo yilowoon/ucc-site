@@ -1,0 +1,69 @@
+<%- include('partials/header') %>
+<div class="container admin-wrap">
+  <div class="admin-head">
+    <div>
+      <h1>관리자 대시보드</h1>
+      <p class="admin-sub"><%= adminName %> 님으로 로그인됨</p>
+    </div>
+    <div class="admin-head-actions">
+      <a class="btn btn-neutral btn-sm" href="/admin/calendar">교육일정 관리</a>
+      <a class="btn btn-neutral btn-sm" href="/admin/applications">교육신청 내역</a>
+      <a class="btn btn-neutral btn-sm" href="/admin/password">비밀번호 변경</a>
+      <form action="/admin/logout" method="post">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit" class="btn btn-ghost-dark btn-sm">로그아웃</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="admin-cards">
+    <% boardKeys.forEach(function(k){ %>
+      <a class="admin-card" href="/admin?board=<%= k %>">
+        <span class="admin-card-name"><%= boards[k].name %></span>
+        <span class="admin-card-num"><%= counts[k] %></span>
+        <span class="admin-card-write" onclick="event.preventDefault();location.href='/admin/write?board=<%= k %>'">＋ 글쓰기</span>
+      </a>
+    <% }); %>
+  </div>
+
+  <div class="admin-toolbar">
+    <div class="admin-filter">
+      <a href="/admin" class="<%= filterBoard === 'all' ? 'active' : '' %>">전체</a>
+      <% boardKeys.forEach(function(k){ %>
+        <a href="/admin?board=<%= k %>" class="<%= filterBoard === k ? 'active' : '' %>"><%= boards[k].name %></a>
+      <% }); %>
+    </div>
+    <a class="btn btn-primary btn-sm" href="/admin/write?board=<%= filterBoard === 'all' ? 'notice' : filterBoard %>">＋ 새 글 작성</a>
+  </div>
+
+  <ul class="admin-list">
+    <li class="admin-list-head" aria-hidden="true">
+      <span class="col-board">게시판</span>
+      <span class="col-title">제목</span>
+      <span class="col-date">등록일</span>
+      <span class="col-views">조회</span>
+      <span class="col-act">관리</span>
+    </li>
+    <% if (posts.length === 0) { %><li class="post-empty">게시물이 없습니다.</li><% } %>
+    <% posts.forEach(function(p){ %>
+      <li class="admin-row">
+        <span class="col-board"><span class="board-tag"><%= boards[p.board] ? boards[p.board].name : p.board %></span></span>
+        <span class="col-title">
+          <% if (p.pinned) { %><span class="badge-pin">공지</span><% } %>
+          <a href="/board/<%= p.board %>/<%= p.id %>"><%= esc(p.title) %></a>
+          <% if (p.attach_count > 0) { %><span class="attach-flag">📎<%= p.attach_count %></span><% } %>
+        </span>
+        <span class="col-date"><%= fmtDate(p.created_at) %></span>
+        <span class="col-views"><%= p.views %></span>
+        <span class="col-act">
+          <a href="/admin/edit/<%= p.id %>" class="linkbtn">수정</a>
+          <form action="/admin/delete/<%= p.id %>" method="post" onsubmit="return confirm('삭제하시겠습니까?');">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button type="submit" class="linkbtn linkbtn-danger">삭제</button>
+          </form>
+        </span>
+      </li>
+    <% }); %>
+  </ul>
+</div>
+<%- include('partials/footer') %>

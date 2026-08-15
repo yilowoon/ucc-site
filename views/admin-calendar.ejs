@@ -1,0 +1,55 @@
+<%- include('partials/header') %>
+<div class="container admin-wrap">
+  <div class="admin-head">
+    <div>
+      <h1>교육일정 관리</h1>
+      <p class="admin-sub">월간 캘린더에 표시될 교육일정을 등록합니다.</p>
+    </div>
+    <div class="admin-head-actions">
+      <a class="btn btn-neutral btn-sm" href="/admin">대시보드</a>
+      <a class="btn btn-neutral btn-sm" href="/learn/calendar" target="_blank" rel="noopener">캘린더 보기</a>
+    </div>
+  </div>
+
+  <% if (error) { %><p class="form-alert err"><%= error %></p><% } %>
+  <form class="admin-write" method="post" action="/admin/calendar" style="margin-bottom:26px">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <div class="write-grid">
+      <div class="field"><label for="event_date">날짜</label><input type="date" id="event_date" name="event_date" required /></div>
+      <div class="field"><label for="title">제목</label><input type="text" id="title" name="title" maxlength="120" required /></div>
+      <div class="field">
+        <label for="category">분류</label>
+        <select id="category" name="category">
+          <option value="ESG">ESG</option>
+          <option value="RDC">지역발전혁신가</option>
+          <option value="기타" selected>기타</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label for="memo">메모 <span class="field-hint">선택</span></label><input type="text" id="memo" name="memo" maxlength="200" /></div>
+    <div class="write-actions"><button type="submit" class="btn btn-primary">일정 추가</button></div>
+  </form>
+
+  <ul class="admin-list">
+    <li class="admin-list-head" aria-hidden="true">
+      <span class="col-board">날짜</span><span class="col-title">제목</span>
+      <span class="col-date">분류</span><span class="col-views"></span><span class="col-act">관리</span>
+    </li>
+    <% if (!events.length) { %><li class="post-empty">등록된 일정이 없습니다.</li><% } %>
+    <% events.forEach(function(ev){ %>
+      <li class="admin-row">
+        <span class="col-board"><span class="board-tag"><%= fmtDate(ev.event_date) %></span></span>
+        <span class="col-title"><%= esc(ev.title) %><% if (ev.memo) { %> <span class="field-hint"><%= esc(ev.memo) %></span><% } %></span>
+        <span class="col-date"><%= esc(ev.category) %></span>
+        <span class="col-views"></span>
+        <span class="col-act">
+          <form action="/admin/calendar/delete/<%= ev.id %>" method="post" onsubmit="return confirm('삭제하시겠습니까?');">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button type="submit" class="linkbtn linkbtn-danger">삭제</button>
+          </form>
+        </span>
+      </li>
+    <% }); %>
+  </ul>
+</div>
+<%- include('partials/footer') %>

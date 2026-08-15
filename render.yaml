@@ -1,0 +1,16 @@
+# Render Blueprint — 저장소 연결 후 자동 구성
+services:
+  - type: web
+    name: ucc-site
+    runtime: node
+    plan: free
+    buildCommand: npm install --omit=dev
+    startCommand: node server.js
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true      # Render가 임의 값 자동 생성
+      - key: ADMIN_PASSWORD
+        sync: false              # 대시보드에서 최초 관리자 비밀번호 입력

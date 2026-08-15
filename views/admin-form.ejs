@@ -1,0 +1,71 @@
+<%- include('partials/header') %>
+<div class="container admin-wrap">
+  <div class="admin-head">
+    <h1><%= mode === 'create' ? '새 글 작성' : '글 수정' %></h1>
+    <a class="btn btn-neutral btn-sm" href="/admin">대시보드</a>
+  </div>
+
+  <form class="admin-write" method="post"
+        action="<%= mode === 'create' ? '/admin/write' : '/admin/edit/' + post.id %>"
+        enctype="multipart/form-data">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+    <div class="write-grid">
+      <div class="field">
+        <label for="board">게시판</label>
+        <select id="board" name="board">
+          <% boardKeys.forEach(function(k){ %>
+            <option value="<%= k %>" <%= board === k ? 'selected' : '' %>><%= boards[k].name %></option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="field">
+        <label for="author">작성자</label>
+        <input type="text" id="author" name="author" value="<%= esc(post.author || '관리자') %>" />
+      </div>
+      <div class="field field-check">
+        <label><input type="checkbox" name="pinned" value="1" <%= post.pinned ? 'checked' : '' %> /> 상단 고정(공지)</label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="title">제목</label>
+      <input type="text" id="title" name="title" value="<%= esc(post.title) %>" required maxlength="200" />
+    </div>
+
+    <div class="field">
+      <label for="content">내용</label>
+      <textarea id="content" name="content" rows="14" placeholder="내용을 입력하세요."><%= esc(post.content) %></textarea>
+    </div>
+
+    <% if (mode === 'edit' && attachments && attachments.length) { %>
+      <div class="field">
+        <label>기존 첨부</label>
+        <ul class="existing-attach">
+          <% attachments.forEach(function(a){ %>
+            <li>
+              <% if (/^image\//.test(a.mimetype)) { %>
+                <img src="/uploads/<%= a.filename %>" alt="" class="attach-thumb" />
+              <% } else { %>
+                <span class="file-ico">📄</span>
+              <% } %>
+              <span class="attach-name"><%= esc(a.original) %></span>
+              <label class="attach-remove"><input type="checkbox" name="remove_attachment" value="<%= a.id %>" /> 삭제</label>
+            </li>
+          <% }); %>
+        </ul>
+      </div>
+    <% } %>
+
+    <div class="field">
+      <label for="files">파일 첨부 <span class="field-hint">이미지(jpg·png·gif·webp) 또는 문서(pdf·hwp·docx·xlsx·zip 등) · 최대 12MB, 12개</span></label>
+      <input type="file" id="files" name="files" multiple accept="image/*,.pdf,.hwp,.hwpx,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.txt" />
+    </div>
+
+    <div class="write-actions">
+      <button type="submit" class="btn btn-primary"><%= mode === 'create' ? '등록' : '수정 완료' %></button>
+      <a class="btn btn-neutral" href="<%= mode === 'create' ? '/board/' + board : '/board/' + post.board + '/' + post.id %>">취소</a>
+    </div>
+  </form>
+</div>
+<%- include('partials/footer') %>

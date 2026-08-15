@@ -1,0 +1,33 @@
+<%- include('partials/header') %>
+<div class="container admin-auth-wrap">
+  <div class="admin-auth-card">
+    <% if (mode === 'signup') { %>
+      <h1>회원가입</h1>
+      <p class="admin-auth-sub">도시공동체본부 회원으로 함께하세요.</p>
+      <% if (error) { %><p class="form-alert err"><%= error %></p><% } %>
+      <form method="post" action="/signup" class="admin-form-fields">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <div class="field"><label for="name">이름</label><input type="text" id="name" name="name" value="<%= esc(form.name || '') %>" autocomplete="name" required /></div>
+        <div class="field"><label for="email">이메일</label><input type="email" id="email" name="email" value="<%= esc(form.email || '') %>" autocomplete="email" required /></div>
+        <div class="field"><label for="phone">연락처 <span class="field-hint">선택</span></label><input type="tel" id="phone" name="phone" value="<%= esc(form.phone || '') %>" autocomplete="tel" /></div>
+        <div class="field"><label for="password">비밀번호 <span class="field-hint">8자 이상</span></label><input type="password" id="password" name="password" autocomplete="new-password" required minlength="8" /></div>
+        <div class="field"><label for="confirm">비밀번호 확인</label><input type="password" id="confirm" name="confirm" autocomplete="new-password" required minlength="8" /></div>
+        <button type="submit" class="btn btn-primary btn-block">가입하기</button>
+      </form>
+      <p class="admin-auth-hint">이미 회원이신가요? <a href="/login">로그인</a></p>
+    <% } else { %>
+      <h1>로그인</h1>
+      <p class="admin-auth-sub">회원 로그인</p>
+      <% if (typeof joined !== 'undefined' && joined) { %><p class="form-alert ok">회원가입이 완료되었습니다. 로그인해 주세요.</p><% } %>
+      <% if (error) { %><p class="form-alert err"><%= error %></p><% } %>
+      <form method="post" action="/login" class="admin-form-fields">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <div class="field"><label for="email">이메일</label><input type="email" id="email" name="email" value="<%= esc(form.email || '') %>" autocomplete="email" required autofocus /></div>
+        <div class="field"><label for="password">비밀번호</label><input type="password" id="password" name="password" autocomplete="current-password" required /></div>
+        <button type="submit" class="btn btn-primary btn-block">로그인</button>
+      </form>
+      <p class="admin-auth-hint">아직 회원이 아니신가요? <a href="/signup">회원가입</a></p>
+    <% } %>
+  </div>
+</div>
+<%- include('partials/footer') %>

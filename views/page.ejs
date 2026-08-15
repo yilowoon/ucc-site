@@ -1,0 +1,16 @@
+<%- include('partials/header') %>
+
+<section class="page-banner page-banner--sm">
+  <div class="container">
+    <span class="page-banner-en"><%= page.en %></span>
+    <h1 class="page-banner-title"><%= page.title %></h1>
+  </div>
+</section>
+
+<div class="container page-wrap">
+  <article class="page-content">
+    <%- page.html %>
+  </article>
+</div>
+
+<%- include('partials/footer') %>

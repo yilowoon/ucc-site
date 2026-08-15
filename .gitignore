@@ -1,0 +1,30 @@
+# deps / runtime
+node_modules/
+npm-debug.log*
+
+# 데이터 (배포 시 새로 생성, 절대 커밋 금지)
+data/*.db
+data/*.db-*
+data/uploads/*
+!data/uploads/.gitkeep
+data/INITIAL_ADMIN_PASSWORD.txt
+
+# 비밀/환경
+.env
+.env.local
+
+# 개발 도구 · 스크립트(임시 비번 포함)
+.claude/
+scripts/
+
+# 대용량 원본(미사용)
+public/img/hero/Gemini_*.png
+
+# 루트 원본 문서(내부 자료)
+/*.pptx
+/*.hwp
+/*.hwpx
+/*.pdf
+/design_danggen.md
+
+.DS_Store

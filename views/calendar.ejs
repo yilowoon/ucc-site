@@ -1,0 +1,53 @@
+<%- include('partials/header') %>
+
+<section class="page-banner page-banner--sm">
+  <div class="container">
+    <span class="page-banner-en">EDUCATION CALENDAR</span>
+    <h1 class="page-banner-title">연간교육일정</h1>
+  </div>
+</section>
+
+<div class="container page-wrap cal-wrap">
+  <div class="cal-head">
+    <a class="cal-nav" href="/learn/calendar?ym=<%= prevYm %>" aria-label="이전 달">‹</a>
+    <h2 class="cal-title"><%= year %>년 <%= month %>월</h2>
+    <a class="cal-nav" href="/learn/calendar?ym=<%= nextYm %>" aria-label="다음 달">›</a>
+  </div>
+
+  <div class="cal-grid" role="grid">
+    <div class="cal-dow cal-dow--sun">일</div>
+    <div class="cal-dow">월</div><div class="cal-dow">화</div><div class="cal-dow">수</div>
+    <div class="cal-dow">목</div><div class="cal-dow">금</div>
+    <div class="cal-dow cal-dow--sat">토</div>
+
+    <% weeks.forEach(function(week){ %>
+      <% week.forEach(function(cell, i){ %>
+        <% if (!cell) { %>
+          <div class="cal-cell cal-cell--empty"></div>
+        <% } else {
+             var dateStr = ym + '-' + String(cell.day).padStart(2,'0');
+             var isToday = dateStr === today;
+             var wk = i === 0 ? ' cal-cell--sun' : (i === 6 ? ' cal-cell--sat' : '');
+        %>
+          <div class="cal-cell<%= wk %><%= isToday ? ' cal-cell--today' : '' %>">
+            <span class="cal-day"><%= cell.day %></span>
+            <% cell.events.forEach(function(ev){ %>
+              <span class="cal-event cal-event--<%= (ev.category==='ESG'?'esg':(ev.category==='RDC'?'rdc':'etc')) %>" title="<%= esc(ev.title) %><%= ev.memo ? ' — ' + esc(ev.memo) : '' %>">
+                <%= esc(ev.title) %>
+              </span>
+            <% }); %>
+          </div>
+        <% } %>
+      <% }); %>
+    <% }); %>
+  </div>
+
+  <div class="cal-legend">
+    <span><i class="lg lg--esg"></i>ESG</span>
+    <span><i class="lg lg--rdc"></i>지역발전혁신가</span>
+    <span><i class="lg lg--etc"></i>기타</span>
+    <a class="cal-apply" href="/learn/apply">교육 신청하기 →</a>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

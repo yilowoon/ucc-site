@@ -1,0 +1,24 @@
+<%- include('partials/header') %>
+<div class="container admin-wrap">
+  <div class="admin-head">
+    <div><h1>교육신청 내역</h1><p class="admin-sub">접수된 교육 신청 목록입니다.</p></div>
+    <a class="btn btn-neutral btn-sm" href="/admin">대시보드</a>
+  </div>
+  <ul class="admin-list">
+    <li class="admin-list-head" aria-hidden="true">
+      <span class="col-board">신청일</span><span class="col-title">이름 · 연락처</span>
+      <span class="col-date">과정</span><span class="col-views"></span><span class="col-act">이메일</span>
+    </li>
+    <% if (!apps.length) { %><li class="post-empty">접수된 신청이 없습니다.</li><% } %>
+    <% apps.forEach(function(a){ %>
+      <li class="admin-row">
+        <span class="col-board"><span class="board-tag"><%= fmtDate(a.created_at) %></span></span>
+        <span class="col-title"><strong><%= esc(a.name) %></strong> <span class="field-hint"><%= esc(a.phone) %></span><% if (a.message) { %><br><span class="field-hint"><%= esc(a.message) %></span><% } %></span>
+        <span class="col-date"><%= esc(a.course) %></span>
+        <span class="col-views"></span>
+        <span class="col-act"><a href="mailto:<%= esc(a.email) %>" class="linkbtn"><%= esc(a.email) %></a></span>
+      </li>
+    <% }); %>
+  </ul>
+</div>
+<%- include('partials/footer') %>
