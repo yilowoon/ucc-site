@@ -9,8 +9,8 @@ const PAGES = {
     html: `
       <div class="greet">
         <figure class="greet-photo">
-          <img src="/img/greeting-chair.jpg" alt="사단법인 도시공동체본부 이사장 이가희 박사" />
-          <figcaption class="greet-name">이사장 <strong>이가희</strong> 박사</figcaption>
+          <img src="/img/greeting-chair.jpg" alt="사단법인 도시공동체본부 이사장 이가희 문학박사" />
+          <figcaption class="greet-name">이사장 <strong>이가희</strong> 문학박사</figcaption>
         </figure>
         <div class="greet-body">
           <p class="lead">지역이 스스로 회복하는 힘을 설계하고, 그 체계를 지역에 남기겠습니다.</p>
@@ -70,7 +70,7 @@ const PAGES = {
     html: `
       <h3 class="page-h">임원 · 거버넌스</h3>
       <ul class="page-list">
-        <li><strong>이사장</strong> 이가희 박사</li>
+        <li><strong>이사장</strong> 이가희 문학박사</li>
         <li><strong>상임대표</strong> 이형구 박사</li>
         <li>임원 13명, 이사회·자문위원회(학계·산업·공공·법률) 운영</li>
       </ul>
