@@ -20,6 +20,7 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   }
   // 비전과 목표 · 프로젝트(사업) 전용 뷰
   router.get("/about/vision", (req, res) => res.render("vision", { ...res.locals, title: "비전과 목표" }));
+  router.get("/about/org", (req, res) => res.render("org", { ...res.locals, title: "조직도" }));
   router.get("/business", (req, res) => res.render("biz", { ...res.locals, title: "프로젝트" }));
   router.get("/projects/forum", (req, res) => res.render("forum", { ...res.locals, title: "두잉새롬마당" }));
   router.get("/projects/community", (req, res) => res.render("community", { ...res.locals, title: "커뮤니티모임" }));
