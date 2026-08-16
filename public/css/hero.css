@@ -32,11 +32,11 @@
   background-size: cover; background-position: center 38%;
   transform-origin: center; will-change: opacity, transform;
   backface-visibility: hidden;
-  animation: heroSlide 28s linear infinite, heroKB1 28s ease-in-out infinite;
+  animation: heroSlide 32s linear infinite, heroKB1 32s ease-in-out infinite;
 }
 /* 짝수 슬라이드는 줌 아웃(포커스 아웃)으로 교차 → 이미지마다 다이나믹하게 */
 .hero-slide:nth-child(even) { animation-name: heroSlide, heroKB2; }
-/* 총 주기 28초 = 장면당 4초(크로스페이드 포함), 슬라이드마다 위상 지연 */
+/* 총 주기 32초 = 장면당 4초(크로스페이드 포함), 슬라이드마다 위상 지연 */
 .hero-slide--1 { background-image: url('/img/hero/hero-1.jpg'); animation-delay: 0s; }
 .hero-slide--2 { background-image: url('/img/hero/hero-2.jpg'); animation-delay: -4s; }
 .hero-slide--3 { background-image: url('/img/hero/hero-3.jpg'); animation-delay: -8s; }
@@ -44,6 +44,7 @@
 .hero-slide--5 { background-image: url('/img/hero/hero-5.jpg'); animation-delay: -16s; }
 .hero-slide--6 { background-image: url('/img/hero/hero-6.jpg'); animation-delay: -20s; }
 .hero-slide--7 { background-image: url('/img/hero/hero-7.jpg'); animation-delay: -24s; }
+.hero-slide--8 { background-image: url('/img/hero/hero-8.jpg'); animation-delay: -28s; }
 
 /* 텍스트 가독성용 스크림 */
 .hero-scrim {
@@ -53,26 +54,26 @@
     linear-gradient(180deg, rgba(8,26,19,.55) 0%, rgba(8,26,19,0) 22%, rgba(8,26,19,0) 60%, rgba(8,26,19,.45) 100%);
 }
 
-/* 크로스페이드(단일 키프레임 + 위상지연): ON 구간(≈1/7)이 0/100 경계를 걸쳐 이음새 없이 반복 */
+/* 크로스페이드(단일 키프레임 + 위상지연): ON 구간(≈1/8)이 0/100 경계를 걸쳐 이음새 없이 반복 */
 @keyframes heroSlide {
   0%    { opacity: 1; }
-  10.8% { opacity: 1; }
-  14.3% { opacity: 0; }
-  96.5% { opacity: 0; }
+  9.5%  { opacity: 1; }
+  12.5% { opacity: 0; }
+  97%   { opacity: 0; }
   100%  { opacity: 1; }
 }
 /* 켄번스 A: 노출 구간 동안 줌 인 + 대각 패닝 (비노출 구간에서 리셋) */
 @keyframes heroKB1 {
   0%    { transform: scale(1.09) translate(-0.6%, -0.4%); }
-  14.3% { transform: scale(1.15) translate(-1.6%, -1.1%); }
-  96.5% { transform: scale(1.04) translate( 1.6%,  1.0%); }
+  12.5% { transform: scale(1.15) translate(-1.6%, -1.1%); }
+  97%   { transform: scale(1.04) translate( 1.6%,  1.0%); }
   100%  { transform: scale(1.09) translate(-0.6%, -0.4%); }
 }
 /* 켄번스 B: 줌 아웃(포커스 아웃) + 반대 방향 패닝 */
 @keyframes heroKB2 {
   0%    { transform: scale(1.09) translate( 0.6%,  0.4%); }
-  14.3% { transform: scale(1.04) translate( 1.6%,  1.0%); }
-  96.5% { transform: scale(1.15) translate(-1.6%, -1.1%); }
+  12.5% { transform: scale(1.04) translate( 1.6%,  1.0%); }
+  97%   { transform: scale(1.15) translate(-1.6%, -1.1%); }
   100%  { transform: scale(1.09) translate( 0.6%,  0.4%); }
 }
 
@@ -92,9 +93,9 @@
   color: #6ecf74; line-height: 1; white-space: nowrap; will-change: opacity, transform;
   text-shadow: 0 2px 16px rgba(0,0,0,.55), 0 0 2px rgba(0,0,0,.55);
 }
-.hero-copy--1, .hero-keyword--1 { animation: heroText1 28s linear infinite; }
-.hero-copy--2, .hero-keyword--2 { animation: heroText2 28s linear infinite; }
-.hero-copy--3, .hero-keyword--3 { animation: heroText3 28s linear infinite; }
+.hero-copy--1, .hero-keyword--1 { animation: heroText1 32s linear infinite; }
+.hero-copy--2, .hero-keyword--2 { animation: heroText2 32s linear infinite; }
+.hero-copy--3, .hero-keyword--3 { animation: heroText3 32s linear infinite; }
 
 /* 텍스트 페이드(이미지 크로스페이드와 동일 타이밍) + 살짝 떠오름 */
 @keyframes heroText1 {
@@ -215,6 +216,7 @@
   .hero-slide--5 { background-image: url('/img/hero/hero-5-sm.jpg'); }
   .hero-slide--6 { background-image: url('/img/hero/hero-6-sm.jpg'); }
   .hero-slide--7 { background-image: url('/img/hero/hero-7-sm.jpg'); }
+  .hero-slide--8 { background-image: url('/img/hero/hero-8-sm.jpg'); }
   .hero-stage { flex-direction: column; align-items: flex-start; gap: 20px; }
   .hero-keywords { justify-items: start; text-align: left; }
   .hero-keyword { white-space: normal; }
