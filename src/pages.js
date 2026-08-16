@@ -57,12 +57,12 @@ const PAGES = {
     group: "about", title: "연혁", en: "HISTORY",
     html: `
       <ul class="page-timeline">
-        <li><span>2026</span><div><strong>설립기</strong> 법인 설립·등기, 핵심 인력 채용, 사무실·웹사이트 구축, 초기 사업 착수 (임원 13명·정회원 130명·회원기업 20개사)</div></li>
-        <li><span>2026–2027</span><div><strong>안착기</strong> 사업 다각화, 유형별 리빙랩 파일럿, 회복 플랫폼 MVP, 회원·네트워크 확장</div></li>
-        <li><span>2027–2029</span><div><strong>성장기</strong> 브랜드 확립, 진단·인증체계 완성, 연계포럼·국제심포지엄, 글로벌 파트너 확보</div></li>
-        <li><span>2029–2031</span><div><strong>도약기</strong> 국가표준 제안·정책자문, RRC 자격 제도화, 아시아 도시혁신 네트워크 허브</div></li>
+        <li><span>2026.03.25</span><div><strong>제1회 도시공동체포럼</strong> 개최</div></li>
+        <li><span>2026.01.01</span><div><strong>이형구 상임대표</strong> 선임</div></li>
+        <li><span>2025.03.25</span><div><strong>이가희 이사장</strong> 취임</div></li>
+        <li><span>2020.10.01</span><div><strong>사단법인 인가</strong> (행정안전부)</div></li>
+        <li><span>2019.06.04</span><div><strong>도시공동체본부</strong> 설립</div></li>
       </ul>
-      <p class="page-note">※ 연혁은 설립 로드맵 기준이며, 실제 실적에 맞추어 갱신됩니다.</p>
     `,
   },
   org: {
