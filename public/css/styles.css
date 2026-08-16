@@ -88,8 +88,8 @@ strong { font-weight: 700; color: var(--green-700); }
 }
 .btn-primary { background: var(--gold-500); color: #23180a; box-shadow: 0 8px 20px rgba(184, 134, 59, .28); }
 .btn-primary:hover { background: var(--gold-400); transform: translateY(-2px); box-shadow: 0 12px 28px rgba(184, 134, 59, .38); }
-.btn-ghost { background: transparent; color: #fff; border-color: rgba(255,255,255,.5); }
-.btn-ghost:hover { background: rgba(255,255,255,.12); border-color: #fff; transform: translateY(-2px); }
+.btn-ghost { background: transparent; color: var(--green-800); border-color: var(--green-600); }
+.btn-ghost:hover { background: var(--paper-alt); border-color: var(--green-800); transform: translateY(-2px); }
 .btn-block { width: 100%; }
 
 /* ---------- Header / Nav ---------- */
