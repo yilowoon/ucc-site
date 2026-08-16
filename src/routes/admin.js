@@ -322,6 +322,26 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     res.render("admin-applications", { ...res.locals, title: "교육신청 내역", apps });
   });
 
+  // ---------- 햇빛소득마을 지역 현황 관리 ----------
+  const SOLAR_STATUSES = ["준비중", "추진중", "운영중"];
+  router.get("/solar", requireAdmin, (req, res) => {
+    const regions = db.prepare("SELECT * FROM solar_regions ORDER BY sort, code").all();
+    res.render("admin-solar", { ...res.locals, title: "햇빛소득마을 관리", regions, statuses: SOLAR_STATUSES, saved: req.query.saved || "" });
+  });
+  router.post("/solar/:code", requireAdmin, verifyCsrf, (req, res, next) => {
+    const row = db.prepare("SELECT code FROM solar_regions WHERE code = ?").get(req.params.code);
+    if (!row) return next();
+    const status = SOLAR_STATUSES.includes(req.body.status) ? req.body.status : "준비중";
+    const villages = Math.max(0, parseInt(req.body.villages, 10) || 0);
+    const households = Math.max(0, parseInt(req.body.households, 10) || 0);
+    const capacity = Math.max(0, parseFloat(req.body.capacity) || 0);
+    const summary = (req.body.summary || "").trim();
+    const body = (req.body.body || "").trim();
+    db.prepare("UPDATE solar_regions SET status=?, villages=?, households=?, capacity=?, summary=?, body=?, updated_at=? WHERE code=?")
+      .run(status, villages, households, capacity, summary, body, new Date().toISOString(), req.params.code);
+    res.redirect("/admin/solar?saved=" + encodeURIComponent(req.params.code));
+  });
+
   // ---- 헬퍼 ----
   function insertAttachments(postId, files) {
     if (!files || !files.length) return;

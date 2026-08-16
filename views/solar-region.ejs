@@ -1,0 +1,48 @@
+<%- include('partials/header') %>
+
+<section class="page-banner">
+  <div class="container">
+    <span class="page-banner-en">SUNLIGHT INCOME VILLAGE</span>
+    <h1 class="page-banner-title"><%= r.name %></h1>
+    <p class="page-banner-desc">햇빛소득마을 지역별 추진 현황</p>
+  </div>
+</section>
+
+<section class="section" id="region">
+  <div class="container container--narrow">
+    <a class="back-link" href="/projects/solar#regions">← 전국 현황으로</a>
+
+    <div class="region-head">
+      <h2 class="region-title"><%= r.name %></h2>
+      <span class="region-badge is-<%= r.cls %>"><%= r.status %></span>
+    </div>
+
+    <div class="region-stats">
+      <div class="rstat"><span class="rstat-num"><%= r.villages %></span><span class="rstat-label">조성 마을</span></div>
+      <div class="rstat"><span class="rstat-num"><%= r.households %></span><span class="rstat-label">참여 가구</span></div>
+      <div class="rstat"><span class="rstat-num"><%= r.capacity %></span><span class="rstat-label">발전용량 (MW)</span></div>
+    </div>
+
+    <% if (r.summary) { %>
+      <p class="region-summary"><%= r.summary %></p>
+    <% } %>
+
+    <div class="region-body">
+      <% if (r.body && r.body.trim()) { %>
+        <%- nl2br(r.body) %>
+      <% } else { %>
+        <div class="region-empty">
+          <p>해당 지역의 상세 추진 현황은 <strong>준비 중</strong>입니다.</p>
+          <p class="region-empty-sub">함께할 지역·주민·파트너를 찾고 있습니다. 참여를 원하시면 아래로 문의해 주세요.</p>
+        </div>
+      <% } %>
+    </div>
+
+    <div class="region-cta">
+      <a class="btn btn-primary" href="/about/location">참여·협력 문의</a>
+      <a class="btn btn-ghost" href="/projects/solar#regions">다른 지역 보기</a>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,45 @@
+<%- include('partials/header') %>
+<div class="container admin-wrap">
+  <div class="admin-head">
+    <div>
+      <h1>햇빛소득마을 관리</h1>
+      <p class="admin-sub">시·도별 추진 현황(상태·마을수·가구·용량·설명)을 등록/수정합니다.</p>
+    </div>
+    <div class="admin-head-actions">
+      <a class="btn btn-neutral btn-sm" href="/admin">대시보드</a>
+      <a class="btn btn-neutral btn-sm" href="/projects/solar" target="_blank" rel="noopener">현황 페이지 보기</a>
+    </div>
+  </div>
+
+  <p class="admin-sub" style="margin-bottom:18px">각 지역을 펼쳐 내용을 수정한 뒤 <strong>저장</strong>하세요. 상태(운영중/추진중)로 바꾸면 지도에 색상으로 표시됩니다.</p>
+
+  <div class="solar-admin">
+    <% regions.forEach(function(r){ %>
+      <details class="solar-admin-item"<%= saved === r.code ? ' open' : '' %>>
+        <summary>
+          <span class="sa-name"><%= r.name %></span>
+          <span class="sa-status sa-<%= r.status === '운영중' ? 'live' : (r.status === '추진중' ? 'active' : 'prep') %>"><%= r.status %></span>
+          <% if (saved === r.code) { %><span class="sa-saved">저장됨 ✓</span><% } %>
+        </summary>
+        <form class="admin-write" method="post" action="/admin/solar/<%= r.code %>">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <div class="write-grid">
+            <div class="field">
+              <label>상태</label>
+              <select name="status">
+                <% statuses.forEach(function(s){ %><option value="<%= s %>"<%= r.status === s ? ' selected' : '' %>><%= s %></option><% }); %>
+              </select>
+            </div>
+            <div class="field"><label>조성 마을 수</label><input type="number" name="villages" min="0" value="<%= r.villages %>" /></div>
+            <div class="field"><label>참여 가구 수</label><input type="number" name="households" min="0" value="<%= r.households %>" /></div>
+            <div class="field"><label>발전용량 (MW)</label><input type="number" name="capacity" min="0" step="0.1" value="<%= r.capacity %>" /></div>
+          </div>
+          <div class="field"><label>한 줄 요약</label><input type="text" name="summary" maxlength="200" value="<%= r.summary %>" /></div>
+          <div class="field"><label>상세 내용 <span class="field-hint">줄바꿈 그대로 표시됩니다</span></label><textarea name="body" rows="6"><%= r.body %></textarea></div>
+          <div class="write-actions"><button type="submit" class="btn btn-primary">저장</button></div>
+        </form>
+      </details>
+    <% }); %>
+  </div>
+</div>
+<%- include('partials/footer') %>

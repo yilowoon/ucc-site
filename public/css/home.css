@@ -487,3 +487,106 @@
 .pillar:hover .pillar-cta i { transform: translateX(5px); }
 
 @media (max-width: 860px) { .pillars-grid { grid-template-columns: 1fr; max-width: 520px; margin-left: auto; margin-right: auto; } }
+
+/* ===== 햇빛소득마을 ===== */
+.mv-icon--orange { background: rgba(251,168,62,.16); color: var(--ci-orange-d); }
+.container--narrow { max-width: 820px; }
+
+/* 추진체계 */
+.solar-system { display: grid; gap: 18px; }
+.ss-node { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 22px 24px; box-shadow: var(--shadow-sm); }
+.ss-node h3 { font-size: 1.16rem; color: var(--green-800); margin: 6px 0 6px; }
+.ss-node p { color: var(--ink-soft); font-size: .95rem; line-height: 1.6; }
+.ss-tag { display: inline-block; font-size: .74rem; font-weight: 800; letter-spacing: .02em; padding: 4px 12px; border-radius: 999px; color: #fff; background: var(--muted); }
+.ss-node--lead { border-top: 4px solid var(--ci-green-d); text-align: center; }
+.ss-node--lead .ss-tag { background: var(--ci-green-d); }
+.ss-node--lead h3 { font-size: 1.4rem; }
+.ss-node--lead::after { content: ""; display: block; width: 2px; height: 18px; background: var(--line); margin: 16px auto -6px; }
+.ss-partners { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.ss-node--green { border-left: 5px solid var(--ci-green); }
+.ss-node--green .ss-tag { background: var(--ci-green-d); }
+.ss-node--orange { border-left: 5px solid var(--ci-orange); }
+.ss-node--orange .ss-tag { background: var(--ci-orange-d); color: #3a2610; }
+.ss-node--blue { border-left: 5px solid var(--ci-blue); }
+.ss-node--blue .ss-tag { background: var(--ci-blue-d); }
+
+/* 지역 현황 요약 수치 */
+.solar-totals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 30px; }
+.stot { text-align: center; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 22px 12px; box-shadow: var(--shadow-sm); }
+.stot-num { display: block; font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 800; color: var(--ci-green-d); font-variant-numeric: tabular-nums; line-height: 1; }
+.stot-label { display: block; margin-top: 8px; font-size: .86rem; color: var(--muted); }
+
+/* 카토그램 지도 */
+.kmap-wrap { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.kmap { display: grid; grid-template-columns: repeat(6, 1fr); grid-auto-rows: 1fr; gap: 9px; width: 100%; max-width: 460px; }
+.kmap-tile {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  aspect-ratio: 1 / 1; border-radius: 12px; text-decoration: none; text-align: center;
+  border: 1px solid var(--line); background: #eef1f3; color: #56636e; font-weight: 800;
+  transition: transform .2s var(--ease), box-shadow .2s var(--ease), filter .2s;
+}
+.kmap-tile:hover { transform: translateY(-3px) scale(1.04); box-shadow: var(--shadow); filter: brightness(1.03); z-index: 1; }
+.kt-name { font-size: .92rem; }
+.kt-count { font-size: .64rem; font-weight: 700; opacity: .9; }
+.kmap-tile.is-prep { background: #eef1f3; color: #59656f; border-color: #e0e5e9; }
+.kmap-tile.is-active { background: var(--ci-orange); color: #3a2610; border-color: var(--ci-orange-d); }
+.kmap-tile.is-live { background: var(--ci-green-d); color: #fff; border-color: var(--ci-green-d); }
+.kmap-legend { display: flex; gap: 20px; list-style: none; margin: 0; padding: 0; font-size: .88rem; color: var(--ink-soft); }
+.kmap-legend li { display: flex; align-items: center; gap: 7px; }
+.lg-dot { width: 13px; height: 13px; border-radius: 4px; display: inline-block; }
+.lg-dot.is-prep { background: #dfe4e8; } .lg-dot.is-active { background: var(--ci-orange); } .lg-dot.is-live { background: var(--ci-green-d); }
+
+/* 지역 목록(보조) */
+.region-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 34px; }
+.region-row { display: flex; align-items: center; gap: 10px; padding: 13px 16px; background: var(--paper); border: 1px solid var(--line); border-left: 4px solid var(--muted); border-radius: 10px; text-decoration: none; color: var(--ink); transition: transform .2s var(--ease), box-shadow .2s var(--ease); }
+.region-row:hover { transform: translateX(3px); box-shadow: var(--shadow-sm); }
+.region-row.is-active { border-left-color: var(--ci-orange); }
+.region-row.is-live { border-left-color: var(--ci-green-d); }
+.rr-name { font-weight: 700; }
+.rr-status { margin-left: auto; font-size: .8rem; color: var(--muted); }
+.region-row.is-active .rr-status { color: var(--ci-orange-d); font-weight: 700; }
+.region-row.is-live .rr-status { color: var(--ci-green-d); font-weight: 700; }
+.rr-arrow { color: var(--muted); font-weight: 700; }
+
+/* 지역 상세 */
+.back-link { display: inline-block; margin-bottom: 20px; color: var(--muted); text-decoration: none; font-weight: 600; }
+.back-link:hover { color: var(--ci-green-d); }
+.region-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.region-title { font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 800; color: var(--green-800); }
+.region-badge { font-size: .82rem; font-weight: 800; padding: 6px 14px; border-radius: 999px; color: #fff; background: var(--muted); }
+.region-badge.is-prep { background: #97a3ad; }
+.region-badge.is-active { background: var(--ci-orange-d); color: #3a2610; }
+.region-badge.is-live { background: var(--ci-green-d); }
+.region-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 24px 0; }
+.rstat { text-align: center; background: var(--paper-warm); border-radius: 14px; padding: 20px 12px; }
+.rstat-num { display: block; font-size: 2rem; font-weight: 800; color: var(--ci-green-d); line-height: 1; font-variant-numeric: tabular-nums; }
+.rstat-label { display: block; margin-top: 8px; font-size: .85rem; color: var(--muted); }
+.region-summary { font-size: 1.08rem; font-weight: 600; color: var(--ink); line-height: 1.6; margin: 8px 0 20px; }
+.region-body { color: var(--ink-soft); line-height: 1.75; }
+.region-empty { background: var(--paper-warm); border: 1px dashed var(--line); border-radius: 14px; padding: 30px 26px; text-align: center; }
+.region-empty p { margin: 0; }
+.region-empty-sub { margin-top: 8px !important; color: var(--muted); font-size: .95rem; }
+.region-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 30px; }
+
+@media (max-width: 720px) {
+  .ss-partners { grid-template-columns: 1fr; }
+  .solar-totals { grid-template-columns: repeat(2, 1fr); }
+  .region-list { grid-template-columns: 1fr 1fr; }
+  .kmap { max-width: 360px; }
+}
+@media (max-width: 460px) { .region-list { grid-template-columns: 1fr; } .region-stats { grid-template-columns: 1fr; } }
+
+/* 관리자: 햇빛소득마을 */
+.solar-admin { display: flex; flex-direction: column; gap: 10px; }
+.solar-admin-item { border: 1px solid var(--line); border-radius: 10px; background: var(--paper); overflow: hidden; }
+.solar-admin-item > summary { display: flex; align-items: center; gap: 12px; padding: 14px 18px; cursor: pointer; font-weight: 700; list-style: none; }
+.solar-admin-item > summary::-webkit-details-marker { display: none; }
+.solar-admin-item > summary::before { content: "▸"; color: var(--muted); transition: transform .2s; }
+.solar-admin-item[open] > summary::before { transform: rotate(90deg); }
+.sa-name { flex: 1; }
+.sa-status { font-size: .76rem; font-weight: 800; padding: 3px 11px; border-radius: 999px; color: #fff; background: #97a3ad; }
+.sa-status.sa-active { background: var(--ci-orange-d); color: #3a2610; }
+.sa-status.sa-live { background: var(--ci-green-d); }
+.sa-saved { font-size: .8rem; font-weight: 700; color: var(--ci-green-d); }
+.solar-admin-item .admin-write { padding: 4px 18px 20px; }
+.solar-admin-item textarea { width: 100%; }

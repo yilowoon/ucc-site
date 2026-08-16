@@ -25,6 +25,29 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   router.get("/projects/forum", (req, res) => res.render("forum", { ...res.locals, title: "두잉새롬마당" }));
   router.get("/projects/community", (req, res) => res.render("community", { ...res.locals, title: "커뮤니티모임" }));
 
+  // ---------- 햇빛소득마을 (프로젝트) ----------
+  const SOLAR_STATUS_CLASS = { "준비중": "prep", "추진중": "active", "운영중": "live" };
+  router.get("/projects/solar", (req, res) => {
+    const rows = db.prepare(
+      "SELECT code, name, status, villages, households, capacity, summary FROM solar_regions ORDER BY sort, code"
+    ).all();
+    const byCode = {};
+    rows.forEach((r) => { r.cls = SOLAR_STATUS_CLASS[r.status] || "prep"; byCode[r.code] = r; });
+    const totals = {
+      regions: rows.filter((r) => r.status !== "준비중").length,
+      villages: rows.reduce((s, r) => s + r.villages, 0),
+      households: rows.reduce((s, r) => s + r.households, 0),
+      capacity: Math.round(rows.reduce((s, r) => s + r.capacity, 0) * 10) / 10,
+    };
+    res.render("solar", { ...res.locals, title: "햇빛소득마을", regions: rows, byCode, totals });
+  });
+  router.get("/projects/solar/:code", (req, res, next) => {
+    const r = db.prepare("SELECT * FROM solar_regions WHERE code = ?").get(req.params.code);
+    if (!r) return next();
+    r.cls = SOLAR_STATUS_CLASS[r.status] || "prep";
+    res.render("solar-region", { ...res.locals, title: "햇빛소득마을 · " + r.name, r, nl2br: cfg.nl2br });
+  });
+
   router.get("/about/:slug", renderPage("about"));
   router.get("/policy/:slug", renderPage("policy"));
 

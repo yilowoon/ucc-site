@@ -80,11 +80,58 @@ db.exec(`
     message    TEXT    NOT NULL DEFAULT '',
     created_at TEXT    NOT NULL
   );
+
+  -- 햇빛소득마을: 시·도별 추진 현황
+  CREATE TABLE IF NOT EXISTS solar_regions (
+    code       TEXT    PRIMARY KEY,          -- 'seoul', 'sejong' ...
+    name       TEXT    NOT NULL,             -- '서울특별시'
+    sort       INTEGER NOT NULL DEFAULT 0,
+    status     TEXT    NOT NULL DEFAULT '준비중',  -- 준비중 / 추진중 / 운영중
+    villages   INTEGER NOT NULL DEFAULT 0,   -- 조성 마을 수
+    households INTEGER NOT NULL DEFAULT 0,   -- 참여 가구 수
+    capacity   REAL    NOT NULL DEFAULT 0,   -- 발전용량(MW)
+    summary    TEXT    NOT NULL DEFAULT '',  -- 한 줄 요약
+    body       TEXT    NOT NULL DEFAULT '',  -- 상세(줄바꿈 텍스트)
+    updated_at TEXT    NOT NULL DEFAULT ''
+  );
 `);
 
 // members 컬럼 마이그레이션 (이미 있으면 무시)
 try { db.exec("ALTER TABLE members ADD COLUMN member_type TEXT NOT NULL DEFAULT '개인회원'"); } catch (e) {}
 try { db.exec("ALTER TABLE members ADD COLUMN org_name TEXT NOT NULL DEFAULT ''"); } catch (e) {}
+
+/* ---- 햇빛소득마을: 시·도 시드 (없을 때만) ---- */
+function seedSolarRegions() {
+  const row = db.prepare("SELECT COUNT(*) AS n FROM solar_regions").get();
+  if (row.n > 0) return;
+  // [code, name, status, villages, households, capacity(MW), summary]
+  const REGIONS = [
+    ["seoul",     "서울특별시",       "준비중", 0, 0, 0,   "도심형 옥상·유휴부지 태양광 모델을 검토하고 있습니다."],
+    ["incheon",   "인천광역시",       "준비중", 0, 0, 0,   "도서·연안 지역 대상 사전 수요조사 단계입니다."],
+    ["gyeonggi",  "경기도",           "추진중", 1, 18, 0.5, "경기 남부 농촌마을을 중심으로 시범단지를 협의 중입니다."],
+    ["gangwon",   "강원특별자치도",   "준비중", 0, 0, 0,   "폐광·유휴지 활용형 모델 타당성을 검토하고 있습니다."],
+    ["chungbuk",  "충청북도",         "준비중", 0, 0, 0,   "지자체·주민 협의체 구성을 준비하고 있습니다."],
+    ["chungnam",  "충청남도",         "추진중", 1, 22, 0.6, "농촌 태양광 연계 주민참여형 발전소를 추진 중입니다."],
+    ["sejong",    "세종특별자치시",   "운영중", 2, 46, 1.2, "본부 소재지로서 1호 햇빛소득마을을 조성·운영하고 있습니다."],
+    ["daejeon",   "대전광역시",       "준비중", 0, 0, 0,   "도시형 협동조합 발전 모델을 설계하고 있습니다."],
+    ["gwangju",   "광주광역시",       "준비중", 0, 0, 0,   "시민햇빛발전 협력 방안을 협의하고 있습니다."],
+    ["jeonbuk",   "전북특별자치도",   "준비중", 0, 0, 0,   "새만금 연계 재생에너지 협력을 모색하고 있습니다."],
+    ["jeonnam",   "전라남도",         "추진중", 1, 15, 0.4, "농·어촌 마을단위 발전 모델을 시범 추진 중입니다."],
+    ["daegu",     "대구광역시",       "준비중", 0, 0, 0,   "도시 유휴부지 활용 방안을 검토하고 있습니다."],
+    ["gyeongbuk", "경상북도",         "준비중", 0, 0, 0,   "농촌 소멸대응 연계 모델을 준비하고 있습니다."],
+    ["ulsan",     "울산광역시",       "준비중", 0, 0, 0,   "산업단지 연계 재생에너지 협력을 검토하고 있습니다."],
+    ["gyeongnam", "경상남도",         "준비중", 0, 0, 0,   "지역 협동조합과 파트너십을 협의하고 있습니다."],
+    ["busan",     "부산광역시",       "준비중", 0, 0, 0,   "도시형 시민참여 발전 모델을 검토하고 있습니다."],
+    ["jeju",      "제주특별자치도",   "준비중", 0, 0, 0,   "에너지 자립섬 정책과 연계 방안을 모색하고 있습니다."],
+  ];
+  const now = new Date().toISOString();
+  const stmt = db.prepare(
+    `INSERT INTO solar_regions (code, name, sort, status, villages, households, capacity, summary, body, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, '', ?)`
+  );
+  REGIONS.forEach((r, i) => stmt.run(r[0], r[1], i, r[2], r[3], r[4], r[5], r[6], now));
+}
+seedSolarRegions();
 
 /* ---- 최초 관리자 시드 ----
    관리자가 없으면 무작위 비밀번호로 생성하고
