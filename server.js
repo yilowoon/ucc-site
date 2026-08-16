@@ -2,6 +2,7 @@
 "use strict";
 
 const path = require("path");
+const fs = require("fs");
 const crypto = require("crypto");
 const express = require("express");
 const session = require("express-session");
@@ -84,6 +85,7 @@ function baseLocals(req) {
     fmtDateTime: cfg.formatDateTime,
     csrfToken: req.session ? req.session.csrf : "",
     path: req.path,
+    baseUrl: req.protocol + "://" + req.get("host"), // OG 절대 URL용
   };
 }
 app.use((req, res, next) => {
@@ -91,8 +93,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// ---- Static ----
-app.use(express.static(path.join(__dirname, "public")));
+// ---- Static (홈은 아래 핸들러에서 OG 절대 URL 주입을 위해 index 자동서빙 비활성) ----
+app.use(express.static(path.join(__dirname, "public"), { index: false }));
 app.use(
   "/uploads",
   express.static(UPLOAD_DIR, {
@@ -106,8 +108,11 @@ app.use(
 );
 
 // ---- Routes ----
+// 홈: 정적 index.html에 OG 절대 URL(__BASE__)을 요청 호스트 기준으로 주입해 서빙
+const INDEX_HTML = fs.readFileSync(path.join(__dirname, "public", "index.html"), "utf8");
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+  const base = req.protocol + "://" + req.get("host");
+  res.type("html").send(INDEX_HTML.replace(/__BASE__/g, base));
 });
 
 app.use("/admin", adminRoutes({ baseLocals, verifyCsrf }));
