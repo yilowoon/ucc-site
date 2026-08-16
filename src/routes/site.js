@@ -102,6 +102,9 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     res.render("edu-apply", { ...res.locals, title: "교육신청하기", error: null, done: true, form: {} });
   });
 
+  // 함께하는 사람들: 임원진(Board Member) 전용 뷰
+  router.get("/members/board", (req, res) => res.render("people", { ...res.locals, title: "함께하는 사람들" }));
+
   // 배움터/회원 콘텐츠 페이지 (위 특정 라우트 뒤에 배치)
   router.get("/learn/:slug", renderPage("learn"));
   router.get("/members/:slug", renderPage("members"));

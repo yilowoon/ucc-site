@@ -1,0 +1,73 @@
+<%- include('partials/header') %>
+
+<section class="page-banner">
+  <div class="container">
+    <span class="page-banner-en">OUR PEOPLE</span>
+    <h1 class="page-banner-title">함께하는 사람들</h1>
+    <p class="page-banner-desc">지역의 회복과 자립을 함께 설계하는 도시공동체본부의 임원진을 소개합니다.</p>
+  </div>
+</section>
+
+<!-- 상임대표 -->
+<section class="section" id="exec">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-green">Board Member</h2><span class="section-en">임원진</span></div>
+    </div>
+
+    <article class="exec">
+      <div class="exec-photo">
+        <img src="/img/board/lee-hyunggu.jpg" alt="상임대표 이형구" width="800" height="1200" />
+      </div>
+      <div class="exec-info">
+        <span class="exec-role">상임대표</span>
+        <h3 class="exec-name">이형구</h3>
+        <p class="exec-tagline">소설가 · 2026년 신춘문예 당선</p>
+        <ul class="exec-careers">
+          <li><span class="ec-when ec-now">현</span><span>유한회사 노아벤처스 대표파트너</span></li>
+          <li><span class="ec-when">전</span><span>세종테크노파크 디지털융합센터장</span></li>
+          <li><span class="ec-when">전</span><span>세종창조경제혁신센터 본부장</span></li>
+          <li><span class="ec-when">전</span><span>한국수자원공사 팀장</span></li>
+          <li><span class="ec-when">전</span><span>한국전파진흥협회 과장</span></li>
+          <li><span class="ec-when">전</span><span>현대이미지퀘스트(Hynix 자회사) 연구원</span></li>
+        </ul>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- 이사회 -->
+<section class="section section--alt" id="directors">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-blue">이사회</h2><span class="section-en">BOARD OF DIRECTORS</span></div>
+    </div>
+
+    <%
+      const directors = [
+        { name: "윤중경", pos: "(주)제일엔지니어링종합건축사무소 사장" },
+        { name: "류승한", pos: "전) 국토연구원 선임연구위원" },
+        { name: "이재일", pos: "충주대학교 교수" },
+        { name: "손호철", pos: "가천대학교 교수" },
+        { name: "김은현", pos: "(주)이인벤션 대표이사" },
+        { name: "이동은", pos: "(주)DS두뇌로세계로 대표이사" },
+        { name: "방만기", pos: "전) 충남경제진흥원 센터장" },
+        { name: "심경환", pos: "(주)라온넥스텝 본부장" },
+        { name: "이종윤", pos: "충남연구원 센터장" }
+      ];
+      const palette = ["green", "orange", "blue"];
+    %>
+    <div class="directors">
+      <% directors.forEach(function(d, i){ var c = palette[i % 3]; %>
+        <article class="dir-card">
+          <div class="dir-avatar av-<%= c %>" aria-hidden="true"><%= d.name.charAt(0) %></div>
+          <h3 class="dir-name"><%= d.name %> <span class="dir-title">이사</span></h3>
+          <p class="dir-pos"><%= d.pos %></p>
+          <p class="dir-note">주요 경력 · 관심 연구분야 준비 중</p>
+        </article>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

@@ -634,3 +634,42 @@
 .sa-saved { font-size: .8rem; font-weight: 700; color: var(--ci-green-d); }
 .solar-admin-item .admin-write { padding: 4px 18px 20px; }
 .solar-admin-item textarea { width: 100%; }
+
+/* ===== 함께하는 사람들 (임원진) ===== */
+.exec { display: grid; grid-template-columns: 300px 1fr; gap: 40px; align-items: center;
+  background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 32px; box-shadow: var(--shadow-sm); }
+.exec-photo img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; object-position: center 18%;
+  border-radius: 14px; display: block; box-shadow: var(--shadow); }
+.exec-role { display: inline-block; font-size: .8rem; font-weight: 800; letter-spacing: .04em;
+  padding: 5px 14px; border-radius: 999px; background: var(--ci-green-d); color: #fff; }
+.exec-name { font-size: clamp(1.8rem, 4vw, 2.4rem); font-weight: 800; color: var(--green-800); margin: 12px 0 6px; }
+.exec-tagline { font-size: 1.05rem; font-weight: 700; color: var(--gold-600); margin-bottom: 20px; }
+.exec-careers { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.exec-careers li { display: flex; align-items: baseline; gap: 12px; color: var(--ink-soft); font-size: 1rem; line-height: 1.5; }
+.ec-when { flex: 0 0 auto; width: 30px; height: 24px; display: grid; place-items: center; border-radius: 6px;
+  background: var(--paper-warm); color: var(--muted); font-size: .78rem; font-weight: 800; }
+.ec-when.ec-now { background: var(--ci-green-d); color: #fff; }
+
+.directors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.dir-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  padding: 28px 22px; text-align: center; box-shadow: var(--shadow-sm);
+  transition: transform .26s var(--ease), box-shadow .26s var(--ease); }
+.dir-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+.dir-avatar { width: 84px; height: 84px; margin: 0 auto 16px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 2rem; font-weight: 800; color: #fff; }
+.av-green { background: linear-gradient(135deg, var(--ci-green), var(--ci-green-d)); }
+.av-orange { background: linear-gradient(135deg, var(--ci-orange), var(--ci-orange-d)); }
+.av-blue { background: linear-gradient(135deg, var(--ci-blue), var(--ci-blue-d)); }
+.dir-name { font-size: 1.28rem; font-weight: 800; color: var(--green-800); }
+.dir-title { font-size: .82rem; font-weight: 700; color: var(--muted); margin-left: 2px; }
+.dir-pos { margin-top: 8px; color: var(--ink-soft); font-size: .95rem; line-height: 1.5; }
+.dir-note { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line);
+  color: var(--muted); font-size: .82rem; }
+
+@media (max-width: 860px) { .directors { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) {
+  .exec { grid-template-columns: 1fr; gap: 24px; text-align: center; }
+  .exec-photo img { max-width: 260px; margin: 0 auto; }
+  .exec-careers li { justify-content: center; text-align: left; }
+}
+@media (max-width: 460px) { .directors { grid-template-columns: 1fr; } }
