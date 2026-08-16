@@ -636,9 +636,9 @@
 .solar-admin-item textarea { width: 100%; }
 
 /* ===== 함께하는 사람들 (임원진) ===== */
-.exec { display: grid; grid-template-columns: 300px 1fr; gap: 40px; align-items: center;
+.exec { display: grid; grid-template-columns: 100px 1fr; gap: 30px; align-items: center;
   background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 32px; box-shadow: var(--shadow-sm); }
-.exec-photo img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; object-position: center 18%;
+.exec-photo img { width: 100%; height: auto; aspect-ratio: 3 / 4; object-fit: cover; object-position: center 18%;
   border-radius: 14px; display: block; box-shadow: var(--shadow); }
 .exec-role { display: inline-block; font-size: .8rem; font-weight: 800; letter-spacing: .04em;
   padding: 5px 14px; border-radius: 999px; background: var(--ci-green-d); color: #fff; }
@@ -668,8 +668,8 @@
 
 @media (max-width: 860px) { .directors { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 640px) {
-  .exec { grid-template-columns: 1fr; gap: 24px; text-align: center; }
-  .exec-photo img { max-width: 260px; margin: 0 auto; }
+  .exec { grid-template-columns: 1fr; gap: 20px; text-align: center; }
+  .exec-photo img { max-width: 90px; margin: 0 auto; }
   .exec-careers li { justify-content: center; text-align: left; }
 }
 @media (max-width: 460px) { .directors { grid-template-columns: 1fr; } }
