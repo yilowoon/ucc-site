@@ -430,3 +430,60 @@
   .page-ci { flex-direction: column; text-align: center; }
   .page-timeline li { grid-template-columns: 1fr; gap: 4px; }
 }
+
+/* ===== 핵심 활동 방향 (3R: Renovation·Resilience·Region) ===== */
+.pillars-intro { margin-top: 10px; color: var(--muted); font-size: 1rem; line-height: 1.6; max-width: 40em; }
+.pillars-intro strong { color: var(--green-800); }
+.pillars-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; margin-top: 8px; }
+
+/* 컬러 토큰(핀별 accent) */
+.pillar--green  { --acc: var(--ci-green);  --acc-d: var(--ci-green-d);  --acc-tint: rgba(91,185,110,.14); }
+.pillar--blue   { --acc: var(--ci-blue);   --acc-d: var(--ci-blue-d);   --acc-tint: rgba(34,169,224,.14); }
+.pillar--orange { --acc: var(--ci-orange); --acc-d: var(--ci-orange-d); --acc-tint: rgba(251,168,62,.17); }
+
+.pillar { display: flex; flex-direction: column; text-decoration: none; color: inherit; }
+
+/* 상단: 아이콘 + 배지 + R 워드 + 태그라인 */
+.pillar-head { text-align: center; padding: 4px 10px 22px; }
+.pillar-emblem { position: relative; display: inline-block; line-height: 0; }
+.pillar-ico { width: 60px; height: 60px; color: var(--acc); }
+.pillar-badge {
+  position: absolute; top: -10px; right: -18px;
+  background: var(--acc-d); color: #fff; font-size: .72rem; font-weight: 800;
+  letter-spacing: .02em; padding: 5px 11px; border-radius: 999px; line-height: 1;
+  box-shadow: var(--shadow-sm);
+}
+.pillar-word { margin-top: 14px; font-size: clamp(1.4rem, 2.2vw, 1.9rem); font-weight: 800; letter-spacing: .04em; color: var(--ink); }
+.pillar-word b { color: var(--acc); font-weight: 800; }
+.pillar-tagline { margin-top: 10px; font-size: 1.12rem; font-weight: 700; color: var(--ink); }
+.pillar-lede { margin-top: 8px; color: var(--muted); font-size: .92rem; line-height: 1.55; }
+
+/* 하단: 衣食住 카드 */
+.pillar-body {
+  flex: 1; display: flex; flex-direction: column;
+  background: var(--paper); border: 1px solid var(--line); border-left: 5px solid var(--acc);
+  border-radius: var(--radius-lg); padding: 24px 24px 22px; box-shadow: var(--shadow-sm);
+  transition: transform .28s var(--ease), box-shadow .28s var(--ease), border-color .28s;
+}
+.pillar:hover .pillar-body { transform: translateY(-5px); box-shadow: var(--shadow); }
+.pillar-title-row { display: flex; align-items: center; gap: 13px; }
+.pillar-hanja {
+  flex: 0 0 auto; width: 46px; height: 46px; display: grid; place-items: center;
+  border-radius: 12px; background: var(--acc-tint); color: var(--acc-d);
+  font-size: 1.5rem; font-weight: 800;
+}
+.pillar-titles { display: flex; flex-direction: column; }
+.pillar-ko { font-size: 1.2rem; font-weight: 800; color: var(--green-800); line-height: 1.2; }
+.pillar-en { font-size: .8rem; font-weight: 700; color: var(--acc-d); letter-spacing: .01em; margin-top: 2px; }
+.pillar-axis { margin-top: 18px; font-size: .93rem; color: var(--ink-soft); }
+.pillar-axis b { color: var(--acc-d); font-weight: 800; margin-right: 8px; }
+.pillar-note { margin-top: 8px; color: var(--muted); font-size: .9rem; line-height: 1.62; }
+.pillar-goal {
+  margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line);
+  flex: 1; font-size: .96rem; font-weight: 600; color: var(--ink); line-height: 1.55;
+}
+.pillar-cta { margin-top: 16px; font-size: .95rem; font-weight: 800; color: var(--acc-d); display: inline-flex; align-items: center; gap: 7px; }
+.pillar-cta i { font-style: normal; transition: transform .28s var(--ease); }
+.pillar:hover .pillar-cta i { transform: translateX(5px); }
+
+@media (max-width: 860px) { .pillars-grid { grid-template-columns: 1fr; max-width: 520px; margin-left: auto; margin-right: auto; } }
