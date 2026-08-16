@@ -373,6 +373,9 @@
 .cta-band { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; background: linear-gradient(150deg, var(--green-800), var(--green-900)); color: #fff; border-radius: var(--radius-lg); padding: clamp(28px, 4vw, 48px); }
 .cta-band h2 { font-size: clamp(1.3rem, 3.2vw, 1.9rem); color: #fff; margin-bottom: 8px; }
 .cta-band p { color: rgba(255,255,255,.85); }
+/* 딥그린 밴드 위 아웃라인 버튼: 배경과 같은 딥그린 텍스트 → 흰색 대비로 교정 */
+.cta-band .btn-ghost-dark { color: #fff; border-color: rgba(255,255,255,.55); }
+.cta-band .btn-ghost-dark:hover { background: rgba(255,255,255,.15); border-color: #fff; color: #fff; }
 .cta-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 
 @media (max-width: 760px) {
