@@ -6,6 +6,7 @@ const bcrypt = require("bcryptjs");
 const { db } = require("../db");
 const cfg = require("../config");
 const { PAGES } = require("../pages");
+const KOREA_SIDO = require("../korea-sido.json"); // 전국 시·도 경계 지오메트리
 
 module.exports = function siteRoutes({ verifyCsrf }) {
   const router = express.Router();
@@ -39,7 +40,7 @@ module.exports = function siteRoutes({ verifyCsrf }) {
       households: rows.reduce((s, r) => s + r.households, 0),
       capacity: Math.round(rows.reduce((s, r) => s + r.capacity, 0) * 10) / 10,
     };
-    res.render("solar", { ...res.locals, title: "햇빛소득마을", regions: rows, byCode, totals });
+    res.render("solar", { ...res.locals, title: "햇빛소득마을", regions: rows, byCode, totals, sido: KOREA_SIDO });
   });
   router.get("/projects/solar/:code", (req, res, next) => {
     const r = db.prepare("SELECT * FROM solar_regions WHERE code = ?").get(req.params.code);

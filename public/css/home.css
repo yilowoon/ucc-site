@@ -516,21 +516,19 @@
 .stot-num { display: block; font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 800; color: var(--ci-green-d); font-variant-numeric: tabular-nums; line-height: 1; }
 .stot-label { display: block; margin-top: 8px; font-size: .86rem; color: var(--muted); }
 
-/* 카토그램 지도 */
+/* 전국 시·도 경계 지도 */
 .kmap-wrap { display: flex; flex-direction: column; align-items: center; gap: 18px; }
-.kmap { display: grid; grid-template-columns: repeat(6, 1fr); grid-auto-rows: 1fr; gap: 9px; width: 100%; max-width: 460px; }
-.kmap-tile {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  aspect-ratio: 1 / 1; border-radius: 12px; text-decoration: none; text-align: center;
-  border: 1px solid var(--line); background: #eef1f3; color: #56636e; font-weight: 800;
-  transition: transform .2s var(--ease), box-shadow .2s var(--ease), filter .2s;
-}
-.kmap-tile:hover { transform: translateY(-3px) scale(1.04); box-shadow: var(--shadow); filter: brightness(1.03); z-index: 1; }
-.kt-name { font-size: .92rem; }
-.kt-count { font-size: .64rem; font-weight: 700; opacity: .9; }
-.kmap-tile.is-prep { background: #eef1f3; color: #59656f; border-color: #e0e5e9; }
-.kmap-tile.is-active { background: var(--ci-orange); color: #3a2610; border-color: var(--ci-orange-d); }
-.kmap-tile.is-live { background: var(--ci-green-d); color: #fff; border-color: var(--ci-green-d); }
+.kmap-svg { width: 100%; max-width: 560px; height: auto; display: block; }
+.kregion { stroke: #fff; stroke-width: 1; cursor: pointer; transition: fill .2s var(--ease), filter .2s var(--ease); }
+.kregion.is-prep { fill: #dbe1e6; }
+.kregion.is-active { fill: var(--ci-orange); }
+.kregion.is-live { fill: var(--ci-green-d); }
+.kmap-svg a:hover .kregion { filter: brightness(1.08); stroke: var(--green-800); stroke-width: 1.6; }
+.kmap-svg a:focus-visible .kregion { outline: none; stroke: var(--green-800); stroke-width: 2; }
+.kregion-label { font-size: 13px; font-weight: 800; fill: #26333d; text-anchor: middle; pointer-events: none;
+  paint-order: stroke; stroke: #fff; stroke-width: 2.6px; stroke-linejoin: round; }
+.kregion-count { font-size: 10px; font-weight: 700; fill: #2b3a4a; text-anchor: middle; pointer-events: none;
+  paint-order: stroke; stroke: #fff; stroke-width: 2.4px; stroke-linejoin: round; }
 .kmap-legend { display: flex; gap: 20px; list-style: none; margin: 0; padding: 0; font-size: .88rem; color: var(--ink-soft); }
 .kmap-legend li { display: flex; align-items: center; gap: 7px; }
 .lg-dot { width: 13px; height: 13px; border-radius: 4px; display: inline-block; }
@@ -572,7 +570,7 @@
   .ss-partners { grid-template-columns: 1fr; }
   .solar-totals { grid-template-columns: repeat(2, 1fr); }
   .region-list { grid-template-columns: 1fr 1fr; }
-  .kmap { max-width: 360px; }
+  .kmap-svg { max-width: 440px; }
 }
 @media (max-width: 460px) { .region-list { grid-template-columns: 1fr; } .region-stats { grid-template-columns: 1fr; } }
 
