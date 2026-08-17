@@ -36,8 +36,52 @@
   </div>
 </section>
 
+<!-- 자문위원 -->
+<section class="section section--alt" id="advisors">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-orange">자문위원</h2><span class="section-en">ADVISORS</span></div>
+    </div>
+
+    <%
+      const palette = ["green", "orange", "blue"];
+      const advisors = [
+        { name: "고동록", careers: [
+          ["현", "퀀텀 브레인경영 네트워크 대표 컨설턴트"],
+          ["현", "플립온 코리아 경영고문"],
+          ["전", "현대모비스 인재개발실장"],
+          ["전", "현대오토넷 기획팀장"],
+          ["전", "현대캐피탈 경영전략팀장"],
+          ["전", "현대차서비스 과장"]
+        ] }
+      ];
+    %>
+    <div class="directors">
+      <% advisors.forEach(function(d, i){ var c = palette[i % 3]; %>
+        <article class="dir-card">
+          <% if (d.photo) { %>
+            <div class="dir-photo"><img src="<%= d.photo %>" alt="자문위원 <%= d.name %>" width="600" height="800" /></div>
+          <% } else { %>
+            <div class="dir-photo dir-photo--ph av-<%= c %>" aria-hidden="true"><%= d.name.charAt(0) %></div>
+          <% } %>
+          <div class="dir-body">
+            <h3 class="dir-name"><%= d.name %> <span class="dir-title">자문위원</span></h3>
+            <% if (d.careers) { %>
+              <ul class="dir-careers">
+                <% d.careers.forEach(function(c){ %>
+                  <li><span class="ec-when <%= c[0] === '현' ? 'ec-now' : '' %>"><%= c[0] %></span><span><%= c[1] %></span></li>
+                <% }); %>
+              </ul>
+            <% } %>
+          </div>
+        </article>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
 <!-- 이사회 -->
-<section class="section section--alt" id="directors">
+<section class="section" id="directors">
   <div class="container">
     <div class="section-head">
       <div><h2 class="section-title c-blue">이사회</h2><span class="section-en">BOARD OF DIRECTORS</span></div>
@@ -57,7 +101,6 @@
         { name: "심경환", pos: "(주)라온넥스텝 본부장" },
         { name: "이종윤", pos: "충남연구원 센터장" }
       ];
-      const palette = ["green", "orange", "blue"];
     %>
     <div class="directors">
       <% directors.forEach(function(d, i){ var c = palette[i % 3]; %>
@@ -88,51 +131,4 @@
     </div>
   </div>
 </section>
-
-<!-- 자문위원 -->
-<section class="section" id="advisors">
-  <div class="container">
-    <div class="section-head">
-      <div><h2 class="section-title c-orange">자문위원</h2><span class="section-en">ADVISORS</span></div>
-    </div>
-
-    <%
-      const advisors = [
-        { name: "고동록", careers: [
-          ["현", "퀀텀 브레인경영 네트워크 대표 컨설턴트"],
-          ["현", "플립온 코리아 경영고문"],
-          ["전", "현대모비스 인재개발실장"],
-          ["전", "현대오토넷 기획팀장"],
-          ["전", "현대캐피탈 경영전략팀장"],
-          ["전", "현대차서비스 과장"]
-        ] }
-      ];
-    %>
-    <div class="directors">
-      <% advisors.forEach(function(d, i){ var c = palette[i % 3]; %>
-        <article class="dir-card">
-          <% if (d.photo) { %>
-            <div class="dir-photo"><img src="<%= d.photo %>" alt="자문위원 <%= d.name %>" width="600" height="800" /></div>
-          <% } else { %>
-            <div class="dir-photo dir-photo--ph av-<%= c %>" aria-hidden="true"><%= d.name.charAt(0) %></div>
-          <% } %>
-          <div class="dir-body">
-            <h3 class="dir-name"><%= d.name %> <span class="dir-title">자문위원</span></h3>
-            <% if (d.specialty) { %>
-              <p class="dir-spec"><span class="dir-spec-label">전문분야</span><%= d.specialty %></p>
-            <% } %>
-            <% if (d.careers) { %>
-              <ul class="dir-careers">
-                <% d.careers.forEach(function(c){ %>
-                  <li><span class="ec-when <%= c[0] === '현' ? 'ec-now' : '' %>"><%= c[0] %></span><span><%= c[1] %></span></li>
-                <% }); %>
-              </ul>
-            <% } %>
-          </div>
-        </article>
-      <% }); %>
-    </div>
-  </div>
-</section>
-
 <%- include('partials/footer') %>
