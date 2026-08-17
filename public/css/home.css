@@ -655,17 +655,25 @@
 
 .directors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
 .dir-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-lg);
-  padding: 28px 22px; text-align: center; box-shadow: var(--shadow-sm);
+  overflow: hidden; box-shadow: var(--shadow-sm);
   transition: transform .26s var(--ease), box-shadow .26s var(--ease); }
 .dir-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
-.dir-avatar { width: 84px; height: 84px; margin: 0 auto 16px; border-radius: 50%; display: grid; place-items: center;
-  font-size: 2rem; font-weight: 800; color: #fff; }
+/* 사진(상임대표와 동일한 3:4 프레이밍) / 이니셜 플레이스홀더 */
+.dir-photo { width: 100%; aspect-ratio: 3 / 4; overflow: hidden; background: var(--paper-warm); }
+.dir-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dir-photo--ph { display: grid; place-items: center; font-size: 3.4rem; font-weight: 800; color: #fff; }
 .av-green { background: linear-gradient(135deg, var(--ci-green), var(--ci-green-d)); }
 .av-orange { background: linear-gradient(135deg, var(--ci-orange), var(--ci-orange-d)); }
 .av-blue { background: linear-gradient(135deg, var(--ci-blue), var(--ci-blue-d)); }
+.dir-body { padding: 20px 22px 24px; }
 .dir-name { font-size: 1.28rem; font-weight: 800; color: var(--green-800); }
 .dir-title { font-size: .82rem; font-weight: 700; color: var(--muted); margin-left: 2px; }
-.dir-pos { margin-top: 8px; color: var(--ink-soft); font-size: .95rem; line-height: 1.5; }
+.dir-spec { margin-top: 10px; color: var(--ink-soft); font-size: .93rem; line-height: 1.5; }
+.dir-spec-label { display: inline-block; margin-right: 8px; font-size: .72rem; font-weight: 800;
+  padding: 3px 9px; border-radius: 999px; background: var(--ci-blue-d); color: #fff; }
+.dir-careers { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+.dir-careers li { display: flex; align-items: baseline; gap: 10px; color: var(--ink-soft); font-size: .93rem; line-height: 1.45; }
+.dir-pos { margin-top: 10px; color: var(--ink-soft); font-size: .95rem; line-height: 1.5; }
 .dir-note { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line);
   color: var(--muted); font-size: .82rem; }
 

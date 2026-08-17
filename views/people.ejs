@@ -48,7 +48,9 @@
         { name: "윤중경", pos: "(주)제일엔지니어링종합건축사무소 사장" },
         { name: "류승한", pos: "전) 국토연구원 선임연구위원" },
         { name: "이재일", pos: "충주대학교 교수" },
-        { name: "손호철", pos: "가천대학교 교수" },
+        { name: "손호철", photo: "/img/board/son-hocheol.jpg",
+          specialty: "ESG 평가·인증, ESG 보고서 공시 전문가",
+          careers: [["현", "그린나래솔루션 대표"], ["현", "가톨릭대학교 국제경영학과 교수"], ["전", "(주)성문산업 이사"]] },
         { name: "김은현", pos: "(주)이인벤션 대표이사" },
         { name: "이동은", pos: "(주)DS두뇌로세계로 대표이사" },
         { name: "방만기", pos: "전) 충남경제진흥원 센터장" },
@@ -60,10 +62,27 @@
     <div class="directors">
       <% directors.forEach(function(d, i){ var c = palette[i % 3]; %>
         <article class="dir-card">
-          <div class="dir-avatar av-<%= c %>" aria-hidden="true"><%= d.name.charAt(0) %></div>
-          <h3 class="dir-name"><%= d.name %> <span class="dir-title">이사</span></h3>
-          <p class="dir-pos"><%= d.pos %></p>
-          <p class="dir-note">주요 경력 · 관심 연구분야 준비 중</p>
+          <% if (d.photo) { %>
+            <div class="dir-photo"><img src="<%= d.photo %>" alt="이사 <%= d.name %>" width="600" height="800" /></div>
+          <% } else { %>
+            <div class="dir-photo dir-photo--ph av-<%= c %>" aria-hidden="true"><%= d.name.charAt(0) %></div>
+          <% } %>
+          <div class="dir-body">
+            <h3 class="dir-name"><%= d.name %> <span class="dir-title">이사</span></h3>
+            <% if (d.specialty) { %>
+              <p class="dir-spec"><span class="dir-spec-label">전문분야</span><%= d.specialty %></p>
+            <% } %>
+            <% if (d.careers) { %>
+              <ul class="dir-careers">
+                <% d.careers.forEach(function(c){ %>
+                  <li><span class="ec-when <%= c[0] === '현' ? 'ec-now' : '' %>"><%= c[0] %></span><span><%= c[1] %></span></li>
+                <% }); %>
+              </ul>
+            <% } else { %>
+              <p class="dir-pos"><%= d.pos %></p>
+              <p class="dir-note">주요 경력 · 관심 연구분야 준비 중</p>
+            <% } %>
+          </div>
         </article>
       <% }); %>
     </div>
