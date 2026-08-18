@@ -116,7 +116,7 @@
         </div>
         <div class="field"><label for="name">이름 <span class="field-hint">기업/단체는 담당자명</span></label><input type="text" id="name" name="name" value="<%= esc(form.name || '') %>" autocomplete="name" required /></div>
         <div class="field"><label for="email">이메일</label><input type="email" id="email" name="email" value="<%= esc(form.email || '') %>" autocomplete="email" required /></div>
-        <div class="field"><label for="phone">연락처</label><input type="tel" id="phone" name="phone" value="<%= esc(form.phone || '') %>" autocomplete="tel" /></div>
+        <div class="field"><label for="phone">연락처 <span class="field-hint">숫자만 입력</span></label><input type="tel" id="phone" name="phone" value="<%= esc(form.phone || '') %>" autocomplete="tel" inputmode="numeric" pattern="[0-9]{9,11}" maxlength="11" placeholder="숫자만 입력 (예: 01012345678)" oninput="this.value=this.value.replace(/[^0-9]/g,'')" /></div>
         <div class="field"><label for="password">비밀번호 <span class="field-hint">8자 이상</span></label><input type="password" id="password" name="password" autocomplete="new-password" required minlength="8" /></div>
         <div class="field"><label for="confirm">비밀번호 확인</label><input type="password" id="confirm" name="confirm" autocomplete="new-password" required minlength="8" /></div>
         <p class="ms-form-note">가입 시 <strong>준회원</strong>으로 등록됩니다. 회비 납부 확인 후 관리자가 <strong>정회원</strong>으로 전환해 드립니다.</p>

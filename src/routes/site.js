@@ -173,7 +173,7 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   router.post("/signup", verifyCsrf, (req, res) => {
     const name = (req.body.name || "").trim();
     const email = (req.body.email || "").trim().toLowerCase();
-    const phone = (req.body.phone || "").trim();
+    const phone = (req.body.phone || "").replace(/[^0-9]/g, ""); // 숫자만 저장
     const memberType = MEMBER_TYPES.includes(req.body.member_type) ? req.body.member_type : "개인회원";
     const orgName = (req.body.org_name || "").trim();
     const pw = req.body.password || "";
@@ -258,7 +258,7 @@ module.exports = function siteRoutes({ verifyCsrf }) {
       return res.status(400).render("mypage-edit", { ...res.locals, title: "내 정보 수정", m, error: "현재 비밀번호가 올바르지 않습니다.", pwError: null, done: null });
     }
     const name = (req.body.name || "").trim() || m.name;
-    const phone = (req.body.phone || "").trim();
+    const phone = (req.body.phone || "").replace(/[^0-9]/g, ""); // 숫자만 저장
     const orgName = (req.body.org_name || "").trim();
     const address = (req.body.address || "").trim();
     const addressDetail = (req.body.address_detail || "").trim();
