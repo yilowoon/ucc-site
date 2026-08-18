@@ -18,13 +18,11 @@
       <% if (error) { %><p class="form-alert err"><%= error %></p><% } %>
       <form method="post" action="/mypage/edit" class="admin-form-fields" autocomplete="off">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <!-- 브라우저 자동완성이 첫 텍스트칸(전문분야 등)에 이메일을 채우는 것을 막는 디코이 -->
-        <input type="text" name="_nofill" style="display:none" tabindex="-1" autocomplete="off" aria-hidden="true" />
         <div class="field"><label>이메일</label><input type="email" value="<%= esc(m.email) %>" disabled /><span class="field-hint">이메일은 변경할 수 없습니다. 변경이 필요하면 사무처로 문의해 주세요.</span></div>
         <div class="field"><label>회원 등급</label><input type="text" value="<%= esc(m.grade || '준회원') %> · <%= esc(m.member_type) %>" disabled /></div>
         <div class="field"><label for="name">이름</label><input type="text" id="name" name="name" value="<%= esc(m.name) %>" autocomplete="name" required /></div>
         <div class="field"><label for="phone">연락처 <span class="field-hint">숫자만 입력</span></label><input type="tel" id="phone" name="phone" value="<%= esc(m.phone || '') %>" autocomplete="off" inputmode="numeric" pattern="[0-9]{9,11}" maxlength="11" placeholder="숫자만 입력 (예: 01012345678)" oninput="this.value=this.value.replace(/[^0-9]/g,'')" /></div>
-        <div class="field"><label for="org_name">기관·단체명</label><input type="text" id="org_name" name="org_name" value="<%= esc(m.org_name || '') %>" autocomplete="off" /></div>
+        <div class="field"><label for="org_name">기관·단체명</label><input type="text" id="org_name" name="org_name" value="<%= esc(m.org_name || '') %>" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" /></div>
         <div class="field">
           <label for="address">주소</label>
           <div class="addr-row">
@@ -32,9 +30,9 @@
             <button type="button" class="btn btn-neutral btn-sm" id="addrSearchBtn">주소 검색</button>
           </div>
         </div>
-        <div class="field"><label for="address_detail">상세주소 <span class="field-hint">선택</span></label><input type="text" id="address_detail" name="address_detail" value="<%= esc(m.address_detail || '') %>" autocomplete="off" placeholder="건물·동·호수 등" /></div>
+        <div class="field"><label for="address_detail">상세주소 <span class="field-hint">선택</span></label><input type="text" id="address_detail" name="address_detail" value="<%= esc(m.address_detail || '') %>" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="건물·동·호수 등" /></div>
         <div class="write-grid">
-          <div class="field"><label for="education">최종학력 · 학교 <span class="field-hint">선택</span></label><input type="text" id="education" name="education" value="<%= esc(m.education || '') %>" autocomplete="off" placeholder="예: OO대학교" /></div>
+          <div class="field"><label for="education">최종학력 · 학교 <span class="field-hint">선택</span></label><input type="text" id="education" name="education" value="<%= esc(m.education || '') %>" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="예: OO대학교" /></div>
           <div class="field">
             <label for="edu_level">학위 <span class="field-hint">선택</span></label>
             <select id="edu_level" name="edu_level">
@@ -45,9 +43,9 @@
             </select>
           </div>
         </div>
-        <div class="field"><label for="major">최종전공 <span class="field-hint">선택</span></label><input type="text" id="major" name="major" value="<%= esc(m.major || '') %>" autocomplete="off" placeholder="예: 도시공학" /></div>
-        <div class="field"><label for="specialty">전문분야 <span class="field-hint">선택</span></label><input type="text" id="specialty" name="specialty" value="<%= esc(m.specialty || '') %>" autocomplete="off" placeholder="예: ESG 경영·지역개발 컨설팅" /></div>
-        <div class="field field--gate"><label for="current">현재 비밀번호 <span class="field-hint">보안 확인</span></label><input type="password" id="current" name="current" autocomplete="current-password" required /></div>
+        <div class="field"><label for="major">최종전공 <span class="field-hint">선택</span></label><input type="text" id="major" name="major" value="<%= esc(m.major || '') %>" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="예: 도시공학" /></div>
+        <div class="field"><label for="specialty">전문분야 <span class="field-hint">선택</span></label><input type="text" id="specialty" name="specialty" value="<%= esc(m.specialty || '') %>" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="예: ESG 경영·지역개발 컨설팅" /></div>
+        <div class="field field--gate"><label for="current">현재 비밀번호 <span class="field-hint">보안 확인</span></label><input type="password" id="current" name="current" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" required /></div>
         <button type="submit" class="btn btn-primary btn-block">정보 저장</button>
       </form>
     </div>
