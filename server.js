@@ -40,7 +40,9 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: "lax",
-      secure: IS_PROD, // 프로덕션(HTTPS)에서 자동 활성화
+      // "auto": HTTPS 연결이면 secure 쿠키, HTTP면 일반 쿠키 (trust proxy + X-Forwarded-Proto 기준)
+      // → HTTPS 적용 전 IP/HTTP 테스트에서도 세션·CSRF 정상 동작
+      secure: "auto",
       maxAge: 1000 * 60 * 60 * 8, // 8시간
     },
   })
