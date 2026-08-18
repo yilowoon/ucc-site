@@ -111,7 +111,6 @@ module.exports = function adminRoutes({ verifyCsrf }) {
         });
       }
       req.session.admin = { id: admin.id, username: admin.username, loginAt: Date.now() };
-      req.session.cookie.maxAge = 1000 * 60 * 60; // 로그인 시점부터 1시간
       req.session.csrf = crypto.randomBytes(16).toString("hex");
       res.redirect(nextUrl);
     });

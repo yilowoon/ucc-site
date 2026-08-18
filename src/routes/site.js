@@ -223,7 +223,6 @@ module.exports = function siteRoutes({ verifyCsrf }) {
       });
     }
     req.session.member = { id: m.id, name: m.name, loginAt: Date.now() };
-    req.session.cookie.maxAge = 1000 * 60 * 60; // 로그인 시점부터 1시간
     res.redirect(next || "/");
   });
 

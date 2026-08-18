@@ -43,7 +43,8 @@ app.use(
       // "auto": HTTPS 연결이면 secure 쿠키, HTTP면 일반 쿠키 (trust proxy + X-Forwarded-Proto 기준)
       // → HTTPS 적용 전 IP/HTTP 테스트에서도 세션·CSRF 정상 동작
       secure: "auto",
-      maxAge: 1000 * 60 * 60, // 1시간 (보안: 로그인 후 1시간 뒤 자동 만료)
+      // maxAge 미설정 = "세션 쿠키": 브라우저 종료 시 쿠키가 삭제되어 로그인도 종료됨.
+      // 로그인 후 1시간 절대 만료는 아래 loginAt 검사(SESSION_MAX_MS)로 서버측에서 강제.
     },
   })
 );
