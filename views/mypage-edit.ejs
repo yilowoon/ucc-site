@@ -23,8 +23,26 @@
         <div class="field"><label for="name">이름</label><input type="text" id="name" name="name" value="<%= esc(m.name) %>" autocomplete="name" required /></div>
         <div class="field"><label for="phone">연락처</label><input type="tel" id="phone" name="phone" value="<%= esc(m.phone || '') %>" autocomplete="tel" /></div>
         <div class="field"><label for="org_name">기관·단체명</label><input type="text" id="org_name" name="org_name" value="<%= esc(m.org_name || '') %>" /></div>
-        <div class="field"><label for="address">주소</label><input type="text" id="address" name="address" value="<%= esc(m.address || '') %>" autocomplete="street-address" placeholder="예: 세종특별자치시 연청로 1161, 2F" /></div>
-        <div class="field"><label for="education">최종학력 <span class="field-hint">선택</span></label><input type="text" id="education" name="education" value="<%= esc(m.education || '') %>" placeholder="예: OO대학교 대학원 석사 졸업" /></div>
+        <div class="field">
+          <label for="address">주소</label>
+          <div class="addr-row">
+            <input type="text" id="address" name="address" value="<%= esc(m.address || '') %>" autocomplete="street-address" placeholder="주소 검색을 눌러 도로명 주소를 입력하세요" readonly />
+            <button type="button" class="btn btn-neutral btn-sm" id="addrSearchBtn">주소 검색</button>
+          </div>
+        </div>
+        <div class="field"><label for="address_detail">상세주소 <span class="field-hint">선택</span></label><input type="text" id="address_detail" name="address_detail" value="<%= esc(m.address_detail || '') %>" placeholder="건물·동·호수 등" /></div>
+        <div class="write-grid">
+          <div class="field"><label for="education">최종학력 · 학교 <span class="field-hint">선택</span></label><input type="text" id="education" name="education" value="<%= esc(m.education || '') %>" placeholder="예: OO대학교" /></div>
+          <div class="field">
+            <label for="edu_level">학위 <span class="field-hint">선택</span></label>
+            <select id="edu_level" name="edu_level">
+              <option value="">선택</option>
+              <% ['고등학교','전문학사','학사','석사','박사','기타'].forEach(function(l){ %>
+                <option value="<%= l %>" <%= (m.edu_level === l) ? 'selected' : '' %>><%= l %></option>
+              <% }); %>
+            </select>
+          </div>
+        </div>
         <div class="field"><label for="major">최종전공 <span class="field-hint">선택</span></label><input type="text" id="major" name="major" value="<%= esc(m.major || '') %>" placeholder="예: 도시공학" /></div>
         <div class="field"><label for="specialty">전문분야 <span class="field-hint">선택</span></label><input type="text" id="specialty" name="specialty" value="<%= esc(m.specialty || '') %>" placeholder="예: ESG 경영·지역개발 컨설팅" /></div>
         <div class="field field--gate"><label for="current">현재 비밀번호 <span class="field-hint">보안 확인</span></label><input type="password" id="current" name="current" autocomplete="current-password" required /></div>
@@ -48,5 +66,33 @@
 
   <p style="text-align:center;margin-top:18px"><a class="btn btn-ghost btn-sm" href="/mypage">← 마이페이지로</a></p>
 </div>
+
+<!-- 다음(카카오) 우편번호 서비스: 도로명 주소 검색 -->
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script>
+(function(){
+  var btn = document.getElementById('addrSearchBtn');
+  var addr = document.getElementById('address');
+  if (!btn) return;
+  function openSearch(){
+    if (typeof daum === 'undefined' || !daum.Postcode) {
+      // 스크립트 로드 실패 시 수동 입력 허용
+      addr.removeAttribute('readonly'); addr.focus();
+      alert('주소 검색 서비스를 불러오지 못했습니다. 주소를 직접 입력해 주세요.');
+      return;
+    }
+    new daum.Postcode({
+      oncomplete: function(data){
+        addr.value = data.roadAddress || data.jibunAddress || '';
+        var detail = document.getElementById('address_detail');
+        if (detail) detail.focus();
+      }
+    }).open();
+  }
+  btn.addEventListener('click', openSearch);
+  // readonly 필드를 클릭해도 검색창이 열리도록
+  addr.addEventListener('click', openSearch);
+})();
+</script>
 
 <%- include('partials/footer') %>

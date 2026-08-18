@@ -35,11 +35,14 @@
       <div><dt>연락처</dt><dd><%= esc(m.phone || '-') %></dd></div>
       <div><dt>기관·단체</dt><dd><%= esc(m.org_name || '-') %></dd></div>
       <div><dt>회원 유형</dt><dd><%= esc(m.member_type) %></dd></div>
-      <div><dt>회원 등급</dt><dd><%= esc(m.grade || '준회원') %><% if (m.grade === '정회원' && m.confirmed_at) { %> <span class="mypage-sub">(<%= fmtDate(m.confirmed_at) %> 승인)</span><% } %></dd></div>
+      <div><dt>회원 등급</dt><dd><%= esc(m.grade || '준회원') %></dd></div>
       <div><dt>회비 납부</dt><dd><%= m.fee_paid ? '납부 완료' : '미납' %></dd></div>
+      <div><dt>회원 가입 승인일</dt><dd><%= m.confirmed_at ? fmtDate(m.confirmed_at) : '미승인' %></dd></div>
       <div><dt>가입일</dt><dd><%= fmtDate(m.created_at) %></dd></div>
-      <div class="mypage-info-full"><dt>주소</dt><dd><%= m.address ? esc(m.address) : '미입력' %></dd></div>
-      <div><dt>최종학력</dt><dd><%= m.education ? esc(m.education) : '미입력' %></dd></div>
+      <% var eduText = [m.education, m.edu_level].filter(Boolean).join(' · '); %>
+      <% var addrText = [m.address, m.address_detail].filter(Boolean).join(' '); %>
+      <div class="mypage-info-full"><dt>주소</dt><dd><%= addrText ? esc(addrText) : '미입력' %></dd></div>
+      <div><dt>최종학력</dt><dd><%= eduText ? esc(eduText) : '미입력' %></dd></div>
       <div><dt>최종전공</dt><dd><%= m.major ? esc(m.major) : '미입력' %></dd></div>
       <div class="mypage-info-full"><dt>전문분야</dt><dd><%= m.specialty ? esc(m.specialty) : '미입력' %></dd></div>
     </dl>

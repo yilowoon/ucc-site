@@ -261,11 +261,14 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const phone = (req.body.phone || "").trim();
     const orgName = (req.body.org_name || "").trim();
     const address = (req.body.address || "").trim();
+    const addressDetail = (req.body.address_detail || "").trim();
     const education = (req.body.education || "").trim();
+    const eduLevels = ["고등학교", "전문학사", "학사", "석사", "박사", "기타"];
+    const eduLevel = eduLevels.includes(req.body.edu_level) ? req.body.edu_level : "";
     const major = (req.body.major || "").trim();
     const specialty = (req.body.specialty || "").trim();
-    db.prepare("UPDATE members SET name = ?, phone = ?, org_name = ?, address = ?, education = ?, major = ?, specialty = ? WHERE id = ?")
-      .run(name, phone, orgName, address, education, major, specialty, m.id);
+    db.prepare("UPDATE members SET name = ?, phone = ?, org_name = ?, address = ?, address_detail = ?, education = ?, edu_level = ?, major = ?, specialty = ? WHERE id = ?")
+      .run(name, phone, orgName, address, addressDetail, education, eduLevel, major, specialty, m.id);
     req.session.member.name = name;
     const m2 = db.prepare("SELECT * FROM members WHERE id = ?").get(m.id);
     res.render("mypage-edit", { ...res.locals, title: "내 정보 수정", m: m2, error: null, pwError: null, done: "정보가 수정되었습니다." });

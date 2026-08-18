@@ -129,9 +129,11 @@ try { db.exec("ALTER TABLE members ADD COLUMN org_name TEXT NOT NULL DEFAULT ''"
 try { db.exec("ALTER TABLE members ADD COLUMN grade TEXT NOT NULL DEFAULT '준회원'"); } catch (e) {}
 try { db.exec("ALTER TABLE members ADD COLUMN fee_paid INTEGER NOT NULL DEFAULT 0"); } catch (e) {}
 try { db.exec("ALTER TABLE members ADD COLUMN confirmed_at TEXT NOT NULL DEFAULT ''"); } catch (e) {}
-// 마이페이지 추가 프로필: 주소·최종학력·최종전공·전문분야
+// 마이페이지 추가 프로필: 주소(도로명)·상세주소·학교·학위·전공·전문분야
 try { db.exec("ALTER TABLE members ADD COLUMN address TEXT NOT NULL DEFAULT ''"); } catch (e) {}
-try { db.exec("ALTER TABLE members ADD COLUMN education TEXT NOT NULL DEFAULT ''"); } catch (e) {}
+try { db.exec("ALTER TABLE members ADD COLUMN address_detail TEXT NOT NULL DEFAULT ''"); } catch (e) {}
+try { db.exec("ALTER TABLE members ADD COLUMN education TEXT NOT NULL DEFAULT ''"); } catch (e) {} // 학교명
+try { db.exec("ALTER TABLE members ADD COLUMN edu_level TEXT NOT NULL DEFAULT ''"); } catch (e) {} // 학위(고교/전문학사/학사/석사/박사/기타)
 try { db.exec("ALTER TABLE members ADD COLUMN major TEXT NOT NULL DEFAULT ''"); } catch (e) {}
 try { db.exec("ALTER TABLE members ADD COLUMN specialty TEXT NOT NULL DEFAULT ''"); } catch (e) {}
 // visits: 순방문자용 visitor 컬럼 (기존 DB 대비) — 컬럼 보장 후 인덱스 생성

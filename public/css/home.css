@@ -905,6 +905,10 @@
 .mypage-edit-grid .mypage-card { max-width: none; }
 .field--gate { background: var(--paper-warm); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
 .field--gate label { color: var(--green-800); }
+.addr-row { display: flex; gap: 8px; }
+.addr-row input { flex: 1; min-width: 0; }
+.addr-row input[readonly] { background: var(--paper-warm); cursor: pointer; }
+.addr-row .btn { flex-shrink: 0; white-space: nowrap; }
 
 /* ===== 관리자: 회원 카드 ===== */
 .member-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
