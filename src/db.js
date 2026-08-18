@@ -114,6 +114,7 @@ db.exec(`
     path       TEXT    NOT NULL,
     source     TEXT    NOT NULL DEFAULT '직접',   -- 직접/검색/소셜/기타/내부
     device     TEXT    NOT NULL DEFAULT '데스크톱', -- 데스크톱/모바일
+    visitor    TEXT    NOT NULL DEFAULT '',        -- 익명 방문자 식별자(쿠키)
     day        TEXT    NOT NULL,                   -- YYYY-MM-DD (KST)
     created_at TEXT    NOT NULL
   );
@@ -124,6 +125,9 @@ db.exec(`
 // members 컬럼 마이그레이션 (이미 있으면 무시)
 try { db.exec("ALTER TABLE members ADD COLUMN member_type TEXT NOT NULL DEFAULT '개인회원'"); } catch (e) {}
 try { db.exec("ALTER TABLE members ADD COLUMN org_name TEXT NOT NULL DEFAULT ''"); } catch (e) {}
+// visits: 순방문자용 visitor 컬럼 (기존 DB 대비) — 컬럼 보장 후 인덱스 생성
+try { db.exec("ALTER TABLE visits ADD COLUMN visitor TEXT NOT NULL DEFAULT ''"); } catch (e) {}
+try { db.exec("CREATE INDEX IF NOT EXISTS idx_visits_visitor ON visits(visitor)"); } catch (e) {}
 
 /* ---- 햇빛소득마을: 시·도 시드 (없을 때만) ---- */
 function seedSolarRegions() {

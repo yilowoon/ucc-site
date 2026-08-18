@@ -109,10 +109,18 @@ app.use(
   })
 );
 
-// ---- 트래픽 집계 (페이지뷰만 기록; 정적파일/관리자/API/봇 제외) ----
+// ---- 트래픽 집계 (순방문자 기준; 정적파일/관리자/API/봇 제외, 개인정보 미저장) ----
 const insertVisit = db.prepare(
-  "INSERT INTO visits (path, source, device, day, created_at) VALUES (?, ?, ?, ?, ?)"
+  "INSERT INTO visits (path, source, device, visitor, day, created_at) VALUES (?, ?, ?, ?, ?, ?)"
 );
+function visitorId(req, res) {
+  // 익명 랜덤 식별자 쿠키(uccv) — 개인정보 아님, 순방문자 집계용
+  const m = (req.headers.cookie || "").match(/(?:^|;\s*)uccv=([a-f0-9]{24,})/);
+  if (m) return m[1];
+  const id = crypto.randomBytes(16).toString("hex");
+  res.cookie("uccv", id, { maxAge: 365 * 24 * 3600 * 1000, httpOnly: true, sameSite: "lax", secure: req.secure });
+  return id;
+}
 app.use((req, res, next) => {
   try {
     if (req.method === "GET") {
@@ -137,8 +145,9 @@ app.use((req, res, next) => {
           } catch (e) { source = "기타"; }
         }
         const device = /mobile|android|iphone|ipad|ipod/i.test(ua) ? "모바일" : "데스크톱";
+        const vid = visitorId(req, res);
         const kst = new Date(Date.now() + 9 * 3600 * 1000); // KST 기준 날짜
-        insertVisit.run(p.slice(0, 200), source, device, kst.toISOString().slice(0, 10), new Date().toISOString());
+        insertVisit.run(p.slice(0, 200), source, device, vid, kst.toISOString().slice(0, 10), new Date().toISOString());
       }
     }
   } catch (e) { /* 통계 실패는 서비스에 영향 주지 않음 */ }

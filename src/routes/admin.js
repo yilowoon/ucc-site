@@ -384,22 +384,35 @@ module.exports = function adminRoutes({ verifyCsrf }) {
   const kstDay = (offset = 0) =>
     new Date(Date.now() + 9 * 3600 * 1000 - offset * 86400 * 1000).toISOString().slice(0, 10);
   router.get("/stats", requireAdmin, (req, res) => {
-    const one = (sql, ...a) => db.prepare(sql).get(...a).n;
+    const n = (sql, ...a) => db.prepare(sql).get(...a).n;
     const today = kstDay(0);
+    // 순방문자(UV) = 고유 visitor 수 (빈 식별자 제외)
+    const uvOn = (day) => n("SELECT COUNT(DISTINCT visitor) AS n FROM visits WHERE day = ? AND visitor <> ''", day);
+    const uvSince = (day) => n("SELECT COUNT(DISTINCT visitor) AS n FROM visits WHERE day >= ? AND visitor <> ''", day);
+    const uvBetween = (a, b) => n("SELECT COUNT(DISTINCT visitor) AS n FROM visits WHERE day BETWEEN ? AND ? AND visitor <> ''", a, b);
+    const uvMonth = (ym) => n("SELECT COUNT(DISTINCT visitor) AS n FROM visits WHERE substr(day,1,7) = ? AND visitor <> ''", ym);
+
     const summary = {
-      today: one("SELECT COUNT(*) AS n FROM visits WHERE day = ?", today),
-      week: one("SELECT COUNT(*) AS n FROM visits WHERE day >= ?", kstDay(6)),
-      month: one("SELECT COUNT(*) AS n FROM visits WHERE day >= ?", kstDay(29)),
-      total: one("SELECT COUNT(*) AS n FROM visits"),
+      todayUV: uvOn(today),
+      weekUV: uvSince(kstDay(6)),
+      monthUV: uvSince(kstDay(29)),
+      totalUV: n("SELECT COUNT(DISTINCT visitor) AS n FROM visits WHERE visitor <> ''"),
+      totalPV: n("SELECT COUNT(*) AS n FROM visits"),
     };
-    const dailyRows = db.prepare("SELECT day, COUNT(*) AS c FROM visits WHERE day >= ? GROUP BY day").all(kstDay(364));
-    const dailyMap = {};
-    dailyRows.forEach((r) => { dailyMap[r.day] = r.c; });
-    const refRows = db.prepare("SELECT source, COUNT(*) AS c FROM visits WHERE source != '내부' GROUP BY source ORDER BY c DESC").all();
-    const pageRows = db.prepare("SELECT path, COUNT(*) AS c FROM visits GROUP BY path ORDER BY c DESC LIMIT 8").all();
-    const devRows = db.prepare("SELECT device, COUNT(*) AS c FROM visits GROUP BY device").all();
+
+    // 기간별 UV 시리즈 (주/월은 기간 내 고유 방문자 — 합산 아님)
+    const daily = [], weekly = [], monthly = [];
+    for (let i = 29; i >= 0; i--) { const d = kstDay(i); daily.push({ label: d.slice(5).replace("-", "/"), v: uvOn(d) }); }
+    for (let w = 11; w >= 0; w--) { const s = kstDay(w * 7 + 6), e = kstDay(w * 7); weekly.push({ label: s.slice(5).replace("-", "/"), v: uvBetween(s, e) }); }
+    { const t = new Date(Date.now() + 9 * 3600 * 1000);
+      for (let m = 11; m >= 0; m--) { const d = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() - m, 1));
+        monthly.push({ label: (d.getUTCMonth() + 1) + "월", v: uvMonth(d.toISOString().slice(0, 7)) }); } }
+
+    const refRows = db.prepare("SELECT source, COUNT(DISTINCT visitor) AS c FROM visits WHERE source != '내부' AND visitor <> '' GROUP BY source ORDER BY c DESC").all();
+    const pageRows = db.prepare("SELECT path, COUNT(DISTINCT visitor) AS c FROM visits WHERE visitor <> '' GROUP BY path ORDER BY c DESC LIMIT 8").all();
+    const devRows = db.prepare("SELECT device, COUNT(DISTINCT visitor) AS c FROM visits WHERE visitor <> '' GROUP BY device").all();
     const since = db.prepare("SELECT MIN(day) AS m FROM visits").get().m;
-    res.render("admin-stats", { ...res.locals, title: "트래픽 통계", summary, dailyMap, refRows, pageRows, devRows, since, today });
+    res.render("admin-stats", { ...res.locals, title: "트래픽 통계", summary, daily, weekly, monthly, refRows, pageRows, devRows, since, today });
   });
 
   // ---------- 햇빛소득마을 지역 현황 관리 ----------

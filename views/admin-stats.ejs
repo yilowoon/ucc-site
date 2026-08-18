@@ -3,25 +3,25 @@
   <div class="admin-head">
     <div>
       <h1>트래픽 통계</h1>
-      <p class="admin-sub">사이트 방문(페이지뷰) 집계 · 개인정보(IP 등)는 저장하지 않습니다<% if (since) { %> · 수집 시작 <%= since %><% } %></p>
+      <p class="admin-sub">순방문자(UV) 기준 · 익명 식별 쿠키 사용, 개인정보(IP 등)는 저장하지 않습니다<% if (since) { %> · 수집 시작 <%= since %><% } %></p>
     </div>
     <div class="admin-head-actions">
       <a class="btn btn-neutral btn-sm" href="/admin">대시보드</a>
     </div>
   </div>
 
-  <!-- 요약 카드 -->
+  <!-- 요약 카드 (순방문자) -->
   <div class="stat-cards">
-    <div class="statc"><span class="statc-k">오늘</span><span class="statc-v"><%= summary.today.toLocaleString() %></span><span class="statc-u">페이지뷰</span></div>
-    <div class="statc"><span class="statc-k">최근 7일</span><span class="statc-v"><%= summary.week.toLocaleString() %></span><span class="statc-u">주간</span></div>
-    <div class="statc"><span class="statc-k">최근 30일</span><span class="statc-v"><%= summary.month.toLocaleString() %></span><span class="statc-u">월간</span></div>
-    <div class="statc statc--accent"><span class="statc-k">전체 누적</span><span class="statc-v"><%= summary.total.toLocaleString() %></span><span class="statc-u">total</span></div>
+    <div class="statc"><span class="statc-k">오늘 순방문자</span><span class="statc-v"><%= summary.todayUV.toLocaleString() %></span><span class="statc-u">일일 UV</span></div>
+    <div class="statc"><span class="statc-k">최근 7일</span><span class="statc-v"><%= summary.weekUV.toLocaleString() %></span><span class="statc-u">주간 UV</span></div>
+    <div class="statc"><span class="statc-k">최근 30일</span><span class="statc-v"><%= summary.monthUV.toLocaleString() %></span><span class="statc-u">월간 UV</span></div>
+    <div class="statc statc--accent"><span class="statc-k">전체 순방문자</span><span class="statc-v"><%= summary.totalUV.toLocaleString() %></span><span class="statc-u">페이지뷰 <%= summary.totalPV.toLocaleString() %></span></div>
   </div>
 
-  <!-- 방문 추이 (일/주/월 토글) -->
+  <!-- 순방문자 추이 (일/주/월 토글) -->
   <section class="panel">
     <div class="panel-head">
-      <h2>방문 추이</h2>
+      <h2>순방문자 추이</h2>
       <div class="seg" role="tablist">
         <button class="seg-btn on" data-mode="daily" type="button">일별</button>
         <button class="seg-btn" data-mode="weekly" type="button">주별</button>
@@ -95,40 +95,14 @@
   </section>
 </div>
 
-<script id="dailyData" type="application/json"><%- JSON.stringify(dailyMap) %></script>
+<script id="seriesData" type="application/json"><%- JSON.stringify({ daily: daily, weekly: weekly, monthly: monthly }) %></script>
 <script>
 (function(){
-  var daily = {};
-  try { daily = JSON.parse(document.getElementById('dailyData').textContent || '{}'); } catch(e){}
-  var KST = 9*3600*1000;
-  function dstr(d){ return new Date(d).toISOString().slice(0,10); }
-  function today(){ return new Date(Date.now()+KST); }
-
-  function seriesDaily(){
-    var out=[], t=today();
-    for(var i=29;i>=0;i--){ var d=new Date(t); d.setUTCDate(d.getUTCDate()-i); var k=dstr(d); out.push({label:(d.getUTCMonth()+1)+'/'+d.getUTCDate(), v: daily[k]||0}); }
-    return out;
-  }
-  function seriesWeekly(){
-    var out=[], t=today();
-    for(var w=11; w>=0; w--){
-      var sum=0, start=null;
-      for(var j=0;j<7;j++){ var d=new Date(t); d.setUTCDate(d.getUTCDate()-(w*7+j)); if(j===0) start=d; sum+=daily[dstr(d)]||0; }
-      var s=new Date(t); s.setUTCDate(s.getUTCDate()-(w*7+6));
-      out.push({label:(s.getUTCMonth()+1)+'/'+s.getUTCDate(), v:sum});
-    }
-    return out;
-  }
-  function seriesMonthly(){
-    var out=[], t=today(), sums={}, order=[];
-    for(var m=11;m>=0;m--){ var d=new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth()-m, 1)); var key=d.toISOString().slice(0,7); sums[key]=0; order.push({key:key,label:(d.getUTCMonth()+1)+'월'}); }
-    Object.keys(daily).forEach(function(k){ var mk=k.slice(0,7); if(mk in sums) sums[mk]+=daily[k]; });
-    order.forEach(function(o){ out.push({label:o.label, v:sums[o.key]}); });
-    return out;
-  }
+  var S = { daily:[], weekly:[], monthly:[] };
+  try { S = JSON.parse(document.getElementById('seriesData').textContent || '{}'); } catch(e){}
 
   function render(mode){
-    var data = mode==='weekly'? seriesWeekly() : mode==='monthly'? seriesMonthly() : seriesDaily();
+    var data = S[mode] || S.daily || [];
     var W=760, H=240, padL=34, padB=26, padT=12, padR=8;
     var max=1; data.forEach(function(d){ if(d.v>max) max=d.v; });
     var niceMax = Math.max(5, Math.ceil(max/5)*5);
