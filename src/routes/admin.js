@@ -380,6 +380,28 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     res.redirect("/admin/members");
   });
 
+  // ---------- 트래픽 통계 ----------
+  const kstDay = (offset = 0) =>
+    new Date(Date.now() + 9 * 3600 * 1000 - offset * 86400 * 1000).toISOString().slice(0, 10);
+  router.get("/stats", requireAdmin, (req, res) => {
+    const one = (sql, ...a) => db.prepare(sql).get(...a).n;
+    const today = kstDay(0);
+    const summary = {
+      today: one("SELECT COUNT(*) AS n FROM visits WHERE day = ?", today),
+      week: one("SELECT COUNT(*) AS n FROM visits WHERE day >= ?", kstDay(6)),
+      month: one("SELECT COUNT(*) AS n FROM visits WHERE day >= ?", kstDay(29)),
+      total: one("SELECT COUNT(*) AS n FROM visits"),
+    };
+    const dailyRows = db.prepare("SELECT day, COUNT(*) AS c FROM visits WHERE day >= ? GROUP BY day").all(kstDay(364));
+    const dailyMap = {};
+    dailyRows.forEach((r) => { dailyMap[r.day] = r.c; });
+    const refRows = db.prepare("SELECT source, COUNT(*) AS c FROM visits WHERE source != '내부' GROUP BY source ORDER BY c DESC").all();
+    const pageRows = db.prepare("SELECT path, COUNT(*) AS c FROM visits GROUP BY path ORDER BY c DESC LIMIT 8").all();
+    const devRows = db.prepare("SELECT device, COUNT(*) AS c FROM visits GROUP BY device").all();
+    const since = db.prepare("SELECT MIN(day) AS m FROM visits").get().m;
+    res.render("admin-stats", { ...res.locals, title: "트래픽 통계", summary, dailyMap, refRows, pageRows, devRows, since, today });
+  });
+
   // ---------- 햇빛소득마을 지역 현황 관리 ----------
   const SOLAR_STATUSES = ["준비중", "추진중", "운영중"];
   router.get("/solar", requireAdmin, (req, res) => {

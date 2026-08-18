@@ -7,7 +7,7 @@ const crypto = require("crypto");
 const express = require("express");
 const session = require("express-session");
 
-const { DATA_DIR, UPLOAD_DIR } = require("./src/db");
+const { db, DATA_DIR, UPLOAD_DIR } = require("./src/db");
 const cfg = require("./src/config");
 const boardRoutes = require("./src/routes/board");
 const adminRoutes = require("./src/routes/admin");
@@ -108,6 +108,42 @@ app.use(
     },
   })
 );
+
+// ---- 트래픽 집계 (페이지뷰만 기록; 정적파일/관리자/API/봇 제외) ----
+const insertVisit = db.prepare(
+  "INSERT INTO visits (path, source, device, day, created_at) VALUES (?, ?, ?, ?, ?)"
+);
+app.use((req, res, next) => {
+  try {
+    if (req.method === "GET") {
+      const p = req.path;
+      const skip =
+        p.startsWith("/admin") || p.startsWith("/api") ||
+        p.startsWith("/css") || p.startsWith("/js") || p.startsWith("/img") ||
+        p.startsWith("/uploads") || p.includes(".");
+      const ua = req.get("user-agent") || "";
+      const isBot = /(bot|crawl|spider|slurp|preview|facebookexternalhit|monitor|curl|wget|python-requests|headless)/i.test(ua);
+      if (!skip && !isBot) {
+        const host = (req.get("host") || "").replace(/^www\./, "").split(":")[0];
+        const ref = req.get("referer") || "";
+        let source = "직접";
+        if (ref) {
+          try {
+            const rh = new URL(ref).hostname.replace(/^www\./, "");
+            if (rh === host) source = "내부";
+            else if (/(google|bing|yahoo|daum|naver|search|검색)/i.test(rh)) source = "검색";
+            else if (/(facebook|instagram|twitter|x\.com|t\.co|youtube|kakao|band\.us|threads|linkedin)/i.test(rh)) source = "소셜";
+            else source = "기타";
+          } catch (e) { source = "기타"; }
+        }
+        const device = /mobile|android|iphone|ipad|ipod/i.test(ua) ? "모바일" : "데스크톱";
+        const kst = new Date(Date.now() + 9 * 3600 * 1000); // KST 기준 날짜
+        insertVisit.run(p.slice(0, 200), source, device, kst.toISOString().slice(0, 10), new Date().toISOString());
+      }
+    }
+  } catch (e) { /* 통계 실패는 서비스에 영향 주지 않음 */ }
+  next();
+});
 
 // ---- Routes ----
 // 홈: 정적 index.html에 OG 절대 URL(__BASE__)을 요청 호스트 기준으로 주입해 서빙

@@ -1,0 +1,161 @@
+<%- include('partials/header') %>
+<div class="container admin-wrap">
+  <div class="admin-head">
+    <div>
+      <h1>트래픽 통계</h1>
+      <p class="admin-sub">사이트 방문(페이지뷰) 집계 · 개인정보(IP 등)는 저장하지 않습니다<% if (since) { %> · 수집 시작 <%= since %><% } %></p>
+    </div>
+    <div class="admin-head-actions">
+      <a class="btn btn-neutral btn-sm" href="/admin">대시보드</a>
+    </div>
+  </div>
+
+  <!-- 요약 카드 -->
+  <div class="stat-cards">
+    <div class="statc"><span class="statc-k">오늘</span><span class="statc-v"><%= summary.today.toLocaleString() %></span><span class="statc-u">페이지뷰</span></div>
+    <div class="statc"><span class="statc-k">최근 7일</span><span class="statc-v"><%= summary.week.toLocaleString() %></span><span class="statc-u">주간</span></div>
+    <div class="statc"><span class="statc-k">최근 30일</span><span class="statc-v"><%= summary.month.toLocaleString() %></span><span class="statc-u">월간</span></div>
+    <div class="statc statc--accent"><span class="statc-k">전체 누적</span><span class="statc-v"><%= summary.total.toLocaleString() %></span><span class="statc-u">total</span></div>
+  </div>
+
+  <!-- 방문 추이 (일/주/월 토글) -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2>방문 추이</h2>
+      <div class="seg" role="tablist">
+        <button class="seg-btn on" data-mode="daily" type="button">일별</button>
+        <button class="seg-btn" data-mode="weekly" type="button">주별</button>
+        <button class="seg-btn" data-mode="monthly" type="button">월별</button>
+      </div>
+    </div>
+    <div id="trend" class="chart"></div>
+  </section>
+
+  <div class="panel-grid">
+    <!-- 유입경로 도넛 -->
+    <section class="panel">
+      <div class="panel-head"><h2>유입경로</h2></div>
+      <%
+        const refColors = { "직접":"var(--ci-green-d)", "검색":"var(--ci-blue-d)", "소셜":"var(--ci-orange-d)", "기타":"#8b98a2" };
+        const refTotal = refRows.reduce((s,r)=>s+r.c,0);
+        let acc = 0; const stops = [];
+        refRows.forEach(function(r){ const from=(acc/ (refTotal||1))*360; acc+=r.c; const to=(acc/(refTotal||1))*360; stops.push((refColors[r.source]||"#8b98a2")+" "+from.toFixed(1)+"deg "+to.toFixed(1)+"deg"); });
+        const donut = refTotal ? "conic-gradient("+stops.join(",")+")" : "conic-gradient(var(--line) 0deg 360deg)";
+      %>
+      <div class="donut-wrap">
+        <div class="donut" style="background:<%= donut %>"><div class="donut-hole"><b><%= refTotal.toLocaleString() %></b><span>유입</span></div></div>
+        <ul class="donut-legend">
+          <% if (!refRows.length) { %><li class="muted">데이터가 아직 없습니다.</li><% } %>
+          <% refRows.forEach(function(r){ var pct = refTotal ? Math.round(r.c/refTotal*100) : 0; %>
+            <li><span class="lg-sw" style="background:<%= refColors[r.source] || '#8b98a2' %>"></span><span class="lg-name"><%= r.source %></span><span class="lg-val"><%= pct %>% <em>(<%= r.c.toLocaleString() %>)</em></span></li>
+          <% }); %>
+        </ul>
+      </div>
+      <p class="panel-note">‘직접’=주소 입력·즐겨찾기, ‘검색’=검색엔진, ‘소셜’=SNS 유입. 사이트 내 이동(내부)은 제외한 <strong>외부 유입</strong> 기준입니다.</p>
+    </section>
+
+    <!-- 인기 페이지 -->
+    <section class="panel">
+      <div class="panel-head"><h2>인기 페이지 Top <%= pageRows.length %></h2></div>
+      <%
+        const pageName = { "/":"홈", "/about/greeting":"인사말", "/about/vision":"비전과 목표", "/about/org":"조직도",
+          "/business":"프로젝트(지역회복 표준체계)", "/projects/forum":"두잉새롬마당", "/projects/community":"커뮤니티모임",
+          "/projects/solar":"햇빛소득마을", "/learn/courses":"주요과정소개", "/learn/esg":"ESG전문가과정", "/learn/rdc":"지역개발전문가과정",
+          "/learn/calendar":"연간교육일정", "/learn/apply":"교육신청", "/members/board":"함께하는사람들",
+          "/board/notice":"공지사항", "/board/press":"보도자료", "/board/business":"사업안내", "/board/news":"도시공동체본부 소식",
+          "/about/location":"오시는길", "/signup":"회원가입", "/login":"로그인" };
+        const pageMax = pageRows.length ? pageRows[0].c : 1;
+      %>
+      <ul class="toplist">
+        <% if (!pageRows.length) { %><li class="muted">데이터가 아직 없습니다.</li><% } %>
+        <% pageRows.forEach(function(r){ var w = Math.round(r.c/pageMax*100); %>
+          <li>
+            <div class="tl-row"><span class="tl-name"><%= pageName[r.path] || r.path %></span><span class="tl-val"><%= r.c.toLocaleString() %></span></div>
+            <div class="tl-bar"><span style="width:<%= w %>%"></span></div>
+          </li>
+        <% }); %>
+      </ul>
+    </section>
+  </div>
+
+  <!-- 기기 -->
+  <section class="panel">
+    <div class="panel-head"><h2>접속 기기</h2></div>
+    <%
+      const devTotal = devRows.reduce((s,r)=>s+r.c,0);
+      const dev = { 모바일:0, 데스크톱:0 }; devRows.forEach(function(r){ dev[r.device]=r.c; });
+      const mPct = devTotal ? Math.round(dev.모바일/devTotal*100) : 0;
+      const dPct = devTotal ? 100 - mPct : 0;
+    %>
+    <div class="devbar" aria-label="기기 비율">
+      <span class="dev-m" style="width:<%= mPct %>%"><% if (mPct>=12){ %>모바일 <%= mPct %>%<% } %></span>
+      <span class="dev-d" style="width:<%= dPct %>%"><% if (dPct>=12){ %>데스크톱 <%= dPct %>%<% } %></span>
+    </div>
+    <div class="dev-legend"><span><b><%= dev.모바일.toLocaleString() %></b> 모바일</span><span><b><%= dev.데스크톱.toLocaleString() %></b> 데스크톱</span></div>
+  </section>
+</div>
+
+<script id="dailyData" type="application/json"><%- JSON.stringify(dailyMap) %></script>
+<script>
+(function(){
+  var daily = {};
+  try { daily = JSON.parse(document.getElementById('dailyData').textContent || '{}'); } catch(e){}
+  var KST = 9*3600*1000;
+  function dstr(d){ return new Date(d).toISOString().slice(0,10); }
+  function today(){ return new Date(Date.now()+KST); }
+
+  function seriesDaily(){
+    var out=[], t=today();
+    for(var i=29;i>=0;i--){ var d=new Date(t); d.setUTCDate(d.getUTCDate()-i); var k=dstr(d); out.push({label:(d.getUTCMonth()+1)+'/'+d.getUTCDate(), v: daily[k]||0}); }
+    return out;
+  }
+  function seriesWeekly(){
+    var out=[], t=today();
+    for(var w=11; w>=0; w--){
+      var sum=0, start=null;
+      for(var j=0;j<7;j++){ var d=new Date(t); d.setUTCDate(d.getUTCDate()-(w*7+j)); if(j===0) start=d; sum+=daily[dstr(d)]||0; }
+      var s=new Date(t); s.setUTCDate(s.getUTCDate()-(w*7+6));
+      out.push({label:(s.getUTCMonth()+1)+'/'+s.getUTCDate(), v:sum});
+    }
+    return out;
+  }
+  function seriesMonthly(){
+    var out=[], t=today(), sums={}, order=[];
+    for(var m=11;m>=0;m--){ var d=new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth()-m, 1)); var key=d.toISOString().slice(0,7); sums[key]=0; order.push({key:key,label:(d.getUTCMonth()+1)+'월'}); }
+    Object.keys(daily).forEach(function(k){ var mk=k.slice(0,7); if(mk in sums) sums[mk]+=daily[k]; });
+    order.forEach(function(o){ out.push({label:o.label, v:sums[o.key]}); });
+    return out;
+  }
+
+  function render(mode){
+    var data = mode==='weekly'? seriesWeekly() : mode==='monthly'? seriesMonthly() : seriesDaily();
+    var W=760, H=240, padL=34, padB=26, padT=12, padR=8;
+    var max=1; data.forEach(function(d){ if(d.v>max) max=d.v; });
+    var niceMax = Math.max(5, Math.ceil(max/5)*5);
+    var n=data.length, iw=W-padL-padR, ih=H-padT-padB;
+    var bw = iw/n, bar = Math.min(30, bw*0.62);
+    var svg='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="방문 추이 차트">';
+    // gridlines + y labels
+    for(var g=0; g<=2; g++){ var yv=niceMax*g/2, y=padT+ih-(yv/niceMax)*ih;
+      svg+='<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" class="cg"/>';
+      svg+='<text x="'+(padL-6)+'" y="'+(y+3)+'" class="cyl">'+yv+'</text>'; }
+    // bars
+    data.forEach(function(d,i){
+      var x=padL + i*bw + (bw-bar)/2;
+      var h=(d.v/niceMax)*ih, y=padT+ih-h;
+      svg+='<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bar.toFixed(1)+'" height="'+Math.max(0,h).toFixed(1)+'" rx="2" class="cbar"><title>'+d.label+' · '+d.v+'</title></rect>';
+      var showLabel = (mode==='daily') ? (i%5===0 || i===n-1) : true;
+      if(showLabel) svg+='<text x="'+(x+bar/2).toFixed(1)+'" y="'+(H-8)+'" class="cxl">'+d.label+'</text>';
+    });
+    svg+='</svg>';
+    document.getElementById('trend').innerHTML=svg;
+  }
+
+  var btns=[].slice.call(document.querySelectorAll('.seg-btn'));
+  btns.forEach(function(b){ b.addEventListener('click', function(){
+    btns.forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); render(b.getAttribute('data-mode'));
+  }); });
+  render('daily');
+})();
+</script>
+<%- include('partials/footer') %>

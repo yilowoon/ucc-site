@@ -107,6 +107,18 @@ db.exec(`
     created_at TEXT    NOT NULL
   );
   CREATE INDEX IF NOT EXISTS idx_contacts_created ON contacts(id DESC);
+
+  -- 트래픽 통계: 페이지뷰 집계 (개인정보 미저장 — 경로·유입원·기기유형·시각만)
+  CREATE TABLE IF NOT EXISTS visits (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    path       TEXT    NOT NULL,
+    source     TEXT    NOT NULL DEFAULT '직접',   -- 직접/검색/소셜/기타/내부
+    device     TEXT    NOT NULL DEFAULT '데스크톱', -- 데스크톱/모바일
+    day        TEXT    NOT NULL,                   -- YYYY-MM-DD (KST)
+    created_at TEXT    NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_visits_day ON visits(day);
+  CREATE INDEX IF NOT EXISTS idx_visits_source ON visits(source);
 `);
 
 // members 컬럼 마이그레이션 (이미 있으면 무시)
