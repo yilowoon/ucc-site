@@ -173,6 +173,10 @@ app.get("/", (req, res) => {
       '<a href="/mypage">마이페이지 (' + nm + ' 님)</a>' +
       '<a href="#" onclick="document.getElementById(\'mLogout\').submit();return false;">로그아웃</a>';
   }
+  // 홈 응답은 로그인 여부(세션)에 따라 메뉴가 달라지므로 캐시 금지 —
+  // 브라우저/프록시가 로그인 전 게스트 화면을 캐시해 로그인 후에도 재사용하는 것을 방지
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
+  res.set("Vary", "Cookie");
   res.type("html").send(
     INDEX_HTML
       .replace(/__BASE__/g, base)
