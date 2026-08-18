@@ -790,3 +790,28 @@
   .member-list .admin-list-head { display: grid; }
   .member-list .admin-row { grid-template-areas: none; }
 }
+
+/* ===== 주요과정소개 (courses) ===== */
+.course-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.course-card { display: flex; flex-direction: column; background: var(--paper); border: 1px solid var(--line); border-top: 4px solid var(--ci-green); border-radius: 16px; padding: 30px 32px; box-shadow: var(--shadow-sm); transition: transform .26s var(--ease), box-shadow .26s var(--ease); }
+.course-card:hover { transform: translateY(-5px); box-shadow: var(--shadow); }
+.course-card--green { border-top-color: var(--ci-green-d); }
+.course-card--orange { border-top-color: var(--ci-orange-d); }
+.course-en { font-size: .74rem; font-weight: 800; letter-spacing: .1em; color: var(--muted); }
+.course-title { font-size: 1.5rem; font-weight: 800; color: var(--green-800); margin: 6px 0 12px; }
+.course-lede { color: var(--ink-soft); line-height: 1.62; margin-bottom: 18px; }
+.course-points { list-style: none; margin: 0 0 24px; padding: 0; display: grid; gap: 11px; }
+.course-points li { position: relative; padding-left: 74px; font-size: .96rem; color: var(--ink-soft); line-height: 1.5; }
+.course-points li strong { position: absolute; left: 0; top: 0; width: 60px; font-size: .74rem; font-weight: 800; color: #fff; text-align: center; padding: 3px 0; border-radius: 999px; background: var(--ci-green-d); }
+.course-card--orange .course-points li strong { background: var(--ci-orange-d); color: #3a2610; }
+.course-more { align-self: flex-start; margin-top: auto; }
+
+/* 공통 안내 */
+.course-info { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.ci-item { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 24px; box-shadow: var(--shadow-sm); }
+.ci-ico { font-size: 1.7rem; line-height: 1; }
+.ci-item h3 { font-size: 1.1rem; color: var(--green-800); }
+.ci-item p { color: var(--ink-soft); font-size: .93rem; line-height: 1.55; flex: 1; }
+.ci-item .btn { margin-top: 6px; }
+
+@media (max-width: 820px) { .course-cards { grid-template-columns: 1fr; } .course-info { grid-template-columns: 1fr; } }

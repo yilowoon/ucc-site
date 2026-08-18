@@ -192,32 +192,7 @@ const PAGES = {
     `,
   },
 
-  // ===== 배움터 =====
-  courses: {
-    group: "learn", title: "주요과정소개", en: "KEY COURSES",
-    html: `
-      <p class="lead">도시공동체본부는 전 생애 평생교육 관점에서 도시·공동체 혁신을 이끄는 전문 인재를 양성합니다.</p>
-      <div class="page-cards">
-        <div class="page-card">
-          <h3>ESG 교육</h3>
-          <p>ESG·지속가능경영의 이해부터 도시·공동체 적용까지. 지속가능도시 표준·인증체계, ESG 진단·컨설팅 실무를 다루는 전문가 과정입니다.</p>
-          <ul class="page-list">
-            <li>대상: 기업·기관 실무자, 활동가, 시민</li>
-            <li>내용: ESG 개념·지표, 도시 지속가능성 진단, 사례 실습</li>
-          </ul>
-        </div>
-        <div class="page-card">
-          <h3>지역발전혁신가 (Regional Development Catalyst)</h3>
-          <p>지역회복을 진단부터 자립까지 설계·실행하는 현장 전문가(RDC)를 양성합니다. 리빙랩 기반 실습과 단계별 학습 체계로 운영됩니다.</p>
-          <ul class="page-list">
-            <li>대상: 주민 리더, 정책 생산자, 지역 활동가</li>
-            <li>내용: 회복력 진단, 표준 프로그램, 현장 실증, 자립·이양</li>
-          </ul>
-        </div>
-      </div>
-      <p class="page-note">각 과정의 세부 일정은 <a href="/learn/calendar">연간교육일정</a>에서, 신청은 <a href="/learn/apply">교육신청하기</a>에서 확인하세요.</p>
-    `,
-  },
+  // ===== 배움터 ===== (courses = 주요과정소개는 전용 뷰 views/courses.ejs 사용)
   rdc: {
     group: "learn", title: "지역개발전문가과정", en: "RDC PROFESSIONAL",
     html: `

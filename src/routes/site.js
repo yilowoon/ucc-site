@@ -83,7 +83,8 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     res.render("calendar", { ...res.locals, title: "연간교육일정", year, month, weeks, prevYm, nextYm, ym: prefix, today });
   });
 
-  // ---------- 배움터: ESG전문가과정 (전용 뷰) ----------
+  // ---------- 배움터: 주요과정소개 · ESG전문가과정 (전용 뷰) ----------
+  router.get("/learn/courses", (req, res) => res.render("courses", { ...res.locals, title: "주요과정소개" }));
   router.get("/learn/esg", (req, res) => res.render("esg", { ...res.locals, title: "ESG전문가과정" }));
 
   // ---------- 배움터: 교육신청하기 ----------
