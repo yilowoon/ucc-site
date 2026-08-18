@@ -38,6 +38,10 @@
       <div><dt>회원 등급</dt><dd><%= esc(m.grade || '준회원') %><% if (m.grade === '정회원' && m.confirmed_at) { %> <span class="mypage-sub">(<%= fmtDate(m.confirmed_at) %> 승인)</span><% } %></dd></div>
       <div><dt>회비 납부</dt><dd><%= m.fee_paid ? '납부 완료' : '미납' %></dd></div>
       <div><dt>가입일</dt><dd><%= fmtDate(m.created_at) %></dd></div>
+      <div class="mypage-info-full"><dt>주소</dt><dd><%= m.address ? esc(m.address) : '미입력' %></dd></div>
+      <div><dt>최종학력</dt><dd><%= m.education ? esc(m.education) : '미입력' %></dd></div>
+      <div><dt>최종전공</dt><dd><%= m.major ? esc(m.major) : '미입력' %></dd></div>
+      <div class="mypage-info-full"><dt>전문분야</dt><dd><%= m.specialty ? esc(m.specialty) : '미입력' %></dd></div>
     </dl>
 
     <div class="mypage-actions">

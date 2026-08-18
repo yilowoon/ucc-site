@@ -260,7 +260,12 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const name = (req.body.name || "").trim() || m.name;
     const phone = (req.body.phone || "").trim();
     const orgName = (req.body.org_name || "").trim();
-    db.prepare("UPDATE members SET name = ?, phone = ?, org_name = ? WHERE id = ?").run(name, phone, orgName, m.id);
+    const address = (req.body.address || "").trim();
+    const education = (req.body.education || "").trim();
+    const major = (req.body.major || "").trim();
+    const specialty = (req.body.specialty || "").trim();
+    db.prepare("UPDATE members SET name = ?, phone = ?, org_name = ?, address = ?, education = ?, major = ?, specialty = ? WHERE id = ?")
+      .run(name, phone, orgName, address, education, major, specialty, m.id);
     req.session.member.name = name;
     const m2 = db.prepare("SELECT * FROM members WHERE id = ?").get(m.id);
     res.render("mypage-edit", { ...res.locals, title: "내 정보 수정", m: m2, error: null, pwError: null, done: "정보가 수정되었습니다." });

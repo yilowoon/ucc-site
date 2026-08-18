@@ -895,6 +895,7 @@
 .mypage-notice { background: var(--paper-warm); border: 1px solid var(--line); border-left: 4px solid var(--ci-orange); border-radius: 10px; padding: 14px 16px; font-size: .92rem; color: var(--ink-soft); margin-bottom: 22px; line-height: 1.6; }
 .mypage-info { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 28px; margin: 0; }
 .mypage-info > div { display: flex; flex-direction: column; gap: 3px; }
+.mypage-info .mypage-info-full { grid-column: 1 / -1; }
 .mypage-info dt { font-size: .8rem; color: var(--muted); font-weight: 600; }
 .mypage-info dd { margin: 0; font-size: .98rem; color: var(--ink); font-weight: 600; }
 .mypage-sub { font-size: .82rem; color: var(--muted); font-weight: 400; }

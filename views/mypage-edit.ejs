@@ -23,6 +23,10 @@
         <div class="field"><label for="name">이름</label><input type="text" id="name" name="name" value="<%= esc(m.name) %>" autocomplete="name" required /></div>
         <div class="field"><label for="phone">연락처</label><input type="tel" id="phone" name="phone" value="<%= esc(m.phone || '') %>" autocomplete="tel" /></div>
         <div class="field"><label for="org_name">기관·단체명</label><input type="text" id="org_name" name="org_name" value="<%= esc(m.org_name || '') %>" /></div>
+        <div class="field"><label for="address">주소</label><input type="text" id="address" name="address" value="<%= esc(m.address || '') %>" autocomplete="street-address" placeholder="예: 세종특별자치시 연청로 1161, 2F" /></div>
+        <div class="field"><label for="education">최종학력 <span class="field-hint">선택</span></label><input type="text" id="education" name="education" value="<%= esc(m.education || '') %>" placeholder="예: OO대학교 대학원 석사 졸업" /></div>
+        <div class="field"><label for="major">최종전공 <span class="field-hint">선택</span></label><input type="text" id="major" name="major" value="<%= esc(m.major || '') %>" placeholder="예: 도시공학" /></div>
+        <div class="field"><label for="specialty">전문분야 <span class="field-hint">선택</span></label><input type="text" id="specialty" name="specialty" value="<%= esc(m.specialty || '') %>" placeholder="예: ESG 경영·지역개발 컨설팅" /></div>
         <div class="field field--gate"><label for="current">현재 비밀번호 <span class="field-hint">보안 확인</span></label><input type="password" id="current" name="current" autocomplete="current-password" required /></div>
         <button type="submit" class="btn btn-primary btn-block">정보 저장</button>
       </form>

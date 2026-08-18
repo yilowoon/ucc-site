@@ -164,13 +164,11 @@ app.get("/", (req, res) => {
   const member = req.session && req.session.member;
   let nav = GUEST_NAV, navM = GUEST_NAV_M;
   if (member) {
-    const nm = cfg.escapeHtml(member.name || "회원");
     nav =
-      '<li><a href="/mypage">' + nm + ' 님</a></li>' +
-      '<li><a href="/mypage" class="nav-cta">마이페이지</a></li>' +
-      '<li><a href="#" onclick="document.getElementById(\'mLogout\').submit();return false;">로그아웃</a></li>';
+      '<li><a href="/mypage">마이페이지</a></li>' +
+      '<li><a href="#" class="nav-cta" onclick="document.getElementById(\'mLogout\').submit();return false;">로그아웃</a></li>';
     navM =
-      '<a href="/mypage">마이페이지 (' + nm + ' 님)</a>' +
+      '<a href="/mypage">마이페이지</a>' +
       '<a href="#" onclick="document.getElementById(\'mLogout\').submit();return false;">로그아웃</a>';
   }
   // 홈 응답은 로그인 여부(세션)에 따라 메뉴가 달라지므로 캐시 금지 —
