@@ -83,6 +83,9 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     res.render("calendar", { ...res.locals, title: "연간교육일정", year, month, weeks, prevYm, nextYm, ym: prefix, today });
   });
 
+  // ---------- 배움터: ESG전문가과정 (전용 뷰) ----------
+  router.get("/learn/esg", (req, res) => res.render("esg", { ...res.locals, title: "ESG전문가과정" }));
+
   // ---------- 배움터: 교육신청하기 ----------
   router.get("/learn/apply", (req, res) => {
     res.render("edu-apply", { ...res.locals, title: "교육신청하기", error: null, done: false, form: { course: req.query.course || "" } });

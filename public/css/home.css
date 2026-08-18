@@ -684,3 +684,40 @@
   .exec-careers li { justify-content: center; text-align: left; }
 }
 @media (max-width: 460px) { .directors { grid-template-columns: 1fr; } }
+
+/* ===== ESG전문가과정 ===== */
+/* 추진 흐름 (현황진단→개선→실행→성과관리) */
+.esg-flow { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.esg-flow li { position: relative; background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 20px 18px; box-shadow: var(--shadow-sm); }
+.esg-flow li::after { content: "→"; position: absolute; right: -12px; top: 50%; transform: translateY(-50%); color: var(--ci-green); font-weight: 800; font-size: 1.2rem; z-index: 1; }
+.esg-flow li:last-child::after { display: none; }
+.ef-no { font-size: .72rem; font-weight: 800; letter-spacing: .1em; color: var(--ci-green-d); }
+.esg-flow h3 { font-size: 1.06rem; color: var(--green-800); margin: 4px 0 5px; }
+.esg-flow p { font-size: .88rem; color: var(--ink-soft); line-height: 1.45; }
+
+/* 모듈 카드 그리드 */
+.esg-mods { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.esg-mod { background: var(--paper); border: 1px solid var(--line); border-top: 3px solid var(--ci-green); border-radius: 14px; padding: 22px 24px; box-shadow: var(--shadow-sm); transition: transform .24s var(--ease), box-shadow .24s var(--ease); }
+.esg-mod:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+.esg-mod--green { border-top-color: var(--ci-green); }
+.esg-mod--blue { border-top-color: var(--ci-blue); }
+.esg-mod-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.esg-mod-no { font-size: .82rem; font-weight: 800; letter-spacing: .06em; color: var(--muted); }
+.esg-mod--green .esg-mod-no { color: var(--ci-green-d); }
+.esg-mod--blue .esg-mod-no { color: var(--ci-blue-d); }
+.esg-mod-title { font-size: 1.14rem; font-weight: 800; color: var(--green-800); }
+.esg-mod-badge { margin-left: auto; font-size: .7rem; font-weight: 800; padding: 3px 10px; border-radius: 999px; background: var(--ci-blue-d); color: #fff; }
+.esg-mod-list { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+.esg-mod-list li { position: relative; padding-left: 17px; font-size: .93rem; color: var(--ink-soft); line-height: 1.5; }
+.esg-mod-list li::before { content: ""; position: absolute; left: 2px; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--ci-green); }
+.esg-mod--blue .esg-mod-list li::before { background: var(--ci-blue); }
+.esg-mod--feature { border-top-width: 3px; border: 1px solid var(--ci-blue); border-top: 3px solid var(--ci-blue-d); background: linear-gradient(180deg, rgba(34,169,224,.06), var(--paper) 60%); }
+
+/* 차별성 */
+.esg-diff { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+.esg-diff-card { background: var(--paper); border: 1px solid var(--line); border-left: 4px solid var(--ci-orange); border-radius: 14px; padding: 22px 24px; box-shadow: var(--shadow-sm); }
+.esg-diff-card h3 { font-size: 1.14rem; color: var(--green-800); margin-bottom: 8px; }
+.esg-diff-card p { color: var(--ink-soft); font-size: .95rem; line-height: 1.62; }
+
+@media (max-width: 860px) { .esg-flow { grid-template-columns: 1fr 1fr; } .esg-flow li:nth-child(2)::after { display: none; } .esg-diff { grid-template-columns: 1fr; } }
+@media (max-width: 480px) { .esg-flow { grid-template-columns: 1fr; } .esg-flow li::after { content: "↓"; right: 50%; top: auto; bottom: -12px; transform: translateX(50%); } .esg-flow li:nth-child(2)::after { display: block; } }

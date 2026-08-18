@@ -1,0 +1,113 @@
+<%- include('partials/header') %>
+
+<section class="page-banner">
+  <div class="container">
+    <span class="page-banner-en">ESG CONSULTING &amp; EDUCATION</span>
+    <h1 class="page-banner-title">ESG전문가과정</h1>
+    <p class="page-banner-desc">조직의 특성에 맞는 ESG, 진단에서 실행까지 — 맞춤형 ESG 컨설팅·교육으로 지속가능경영을 설계합니다.</p>
+  </div>
+</section>
+
+<!-- 개요 -->
+<section class="section" id="overview">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-green">과정 개요</h2><span class="section-en">OVERVIEW</span></div>
+    </div>
+    <p class="section-lede">도시공동체본부는 <strong>기업·공공기관·사회적경제조직·지역공동체</strong> 등 조직의 규모와 특성, ESG 수준과 요구사항을 고려한 <strong>맞춤형 ESG 컨설팅과 교육</strong>을 제공합니다. 획일적인 적용이 아니라, 조직이 스스로 지속가능한 ESG 경영체계를 구축하고 실천하도록 전 과정을 동반합니다.</p>
+
+    <ol class="esg-flow" aria-label="ESG 추진 흐름">
+      <li><span class="ef-no">01</span><h3>현황 진단</h3><p>ESG 수준진단·GAP 분석</p></li>
+      <li><span class="ef-no">02</span><h3>개선과제 도출</h3><p>핵심 이슈·우선순위 설정</p></li>
+      <li><span class="ef-no">03</span><h3>실행</h3><p>전략·체계 구축과 이행</p></li>
+      <li><span class="ef-no">04</span><h3>성과관리</h3><p>지표 관리·공시·지속개선</p></li>
+    </ol>
+  </div>
+</section>
+
+<%
+  const consulting = [
+    { no: "01", title: "ESG 진단 및 개선", items: ["ESG 수준진단 및 GAP 분석", "주요 ESG 이슈·리스크 도출", "개선과제 및 우선순위 설정", "ESG 실행 로드맵 수립"] },
+    { no: "02", title: "ESG 경영체계 구축", items: ["ESG 비전·전략 및 추진체계 수립", "핵심과제 및 ESG KPI 설정", "ESG 정책·규정 및 성과관리체계 구축", "조직 특성에 따른 맞춤형 경영체계 설계"] },
+    { no: "03", title: "공공·지역사회 ESG", items: ["공공기관 및 지역사회 ESG 진단", "사회적 가치 및 지역상생 전략", "주민참여형 ESG 프로젝트", "지역문제 해결·지속가능 공동체 모델"] },
+    { no: "04", title: "중소기업·공급망 ESG", items: ["고객사 및 공급망 ESG 요구사항 분석", "공급망 ESG 진단·평가 대응", "ESG Questionnaire 및 증빙자료 대응", "중소기업 맞춤형 개선과제 도출"] },
+    { no: "05", title: "탄소중립·온실가스 관리", items: ["온실가스 관리체계 진단", "Scope 1·2·3 배출원·활동자료 관리", "온실가스 배출량 산정 지원", "감축과제 발굴·탄소중립 실행계획"] },
+    { no: "06", title: "기업 지속가능경영보고서", items: ["ESG 공시현황·요구사항 분석", "이해관계자 및 중요 이슈 분석", "ESG 데이터·성과지표 관리", "보고서 기획·작성 및 정보공시 지원"] },
+    { no: "07", title: "공공기관 지속가능경영보고서", items: ["기관 특성 반영 ESG 공시체계 구축", "공공기관 ESG 경영현황·성과 분석", "사회적 가치·지역상생 성과 발굴", "데이터 관리 및 보고서 작성 지원"] }
+  ];
+  const education = [
+    { no: "01", title: "ESG 기본과정", items: ["ESG와 지속가능경영", "ESG 국내외 동향", "E·S·G 핵심 이슈와 사례"] },
+    { no: "02", title: "ESG 실무과정", items: ["ESG 수준진단 및 GAP 분석", "ESG 전략·개선과제·KPI 수립", "ESG 데이터 및 성과관리"] },
+    { no: "03", title: "공공·지역사회 ESG 과정", items: ["ESG와 사회적 가치", "지속가능도시와 지역공동체", "지역문제 해결·주민참여형 ESG", "지역순환경제와 회복탄력성"] },
+    { no: "04", title: "공급망 ESG 과정", items: ["공급망 ESG 및 글로벌 규제", "협력사 ESG 평가와 실사", "ESG Questionnaire 및 증빙 대응", "공급망 ESG 리스크·개선관리"] },
+    { no: "05", title: "탄소중립·온실가스 실무과정", items: ["탄소중립과 온실가스 관리", "Scope 1·2·3의 이해", "활동자료 수집·배출량 산정", "감축과제 및 실행계획"] },
+    { no: "06", title: "기업 지속가능경영보고서 실무과정", items: ["ESG 정보공시의 이해", "국내외 ESG 공시기준의 이해", "이해관계자·중요 이슈 분석", "데이터 수집·관리, 보고서 작성 실무"] },
+    { no: "07", title: "공공기관 지속가능경영보고서 실무과정", items: ["공공기관 ESG·지속가능경영의 이해", "ESG 성과 및 지표 관리", "환경·사회·거버넌스 성과 발굴", "사회적 가치·지역상생 성과 관리"] },
+    { no: "08", title: "ESG 전문가 과정", featured: true, items: ["ESG 진단·평가 방법론", "ESG 컨설팅 방법론", "ESG 전략 및 실행계획 수립", "공급망 ESG 및 탄소중립", "ESG 정보공시", "프로젝트 기반 ESG 컨설팅 실습"] }
+  ];
+%>
+
+<!-- ESG 컨설팅 -->
+<section class="section section--alt" id="consulting">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-green">ESG 컨설팅</h2><span class="section-en">CONSULTING</span></div>
+    </div>
+    <p class="section-lede">현황진단부터 경영체계 구축, 공급망 대응, 탄소중립, 지속가능경영보고서 공시까지 <strong>전 영역을 맞춤형으로</strong> 지원합니다.</p>
+    <div class="esg-mods">
+      <% consulting.forEach(function(m){ %>
+        <article class="esg-mod esg-mod--green">
+          <div class="esg-mod-head"><span class="esg-mod-no"><%= m.no %></span><h3 class="esg-mod-title"><%= m.title %></h3></div>
+          <ul class="esg-mod-list">
+            <% m.items.forEach(function(it){ %><li><%= it %></li><% }); %>
+          </ul>
+        </article>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<!-- ESG 교육 -->
+<section class="section" id="education">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-blue">ESG 교육</h2><span class="section-en">EDUCATION</span></div>
+    </div>
+    <p class="section-lede">교육 대상과 ESG 수준, 목적을 사전에 파악하여 <strong>기초부터 실무·전문가까지</strong> 맞춤형으로 설계합니다. 이론을 넘어 사례·실습·워크숍으로 현장 실행 역량을 기릅니다.</p>
+    <div class="esg-mods">
+      <% education.forEach(function(m){ %>
+        <article class="esg-mod esg-mod--blue<%= m.featured ? ' esg-mod--feature' : '' %>">
+          <div class="esg-mod-head"><span class="esg-mod-no"><%= m.no %></span><h3 class="esg-mod-title"><%= m.title %></h3><% if (m.featured) { %><span class="esg-mod-badge">대표과정</span><% } %></div>
+          <ul class="esg-mod-list">
+            <% m.items.forEach(function(it){ %><li><%= it %></li><% }); %>
+          </ul>
+        </article>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<!-- 차별성 -->
+<section class="section section--alt" id="difference">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-orange">도시공동체본부 ESG의 차별성</h2><span class="section-en">WHY US</span></div>
+    </div>
+    <div class="esg-diff">
+      <article class="esg-diff-card"><h3>맞춤형 ESG</h3><p>기업·공공기관·사회적경제조직·지역공동체의 규모·업종·ESG 수준과 요구사항을 진단하여 필요한 컨설팅과 교육을 <strong>선택·조합</strong>합니다.</p></article>
+      <article class="esg-diff-card"><h3>진단에서 실행까지</h3><p>단순 평가에 머무르지 않고 <strong>진단 → 개선 → 실행 → 성과관리</strong>까지 하나로 연결합니다.</p></article>
+      <article class="esg-diff-card"><h3>기업과 지역을 연결</h3><p>기업 중심 ESG를 넘어 공공기관·지역공동체·사회적경제까지 연결하여 <strong>사회적 가치와 지속가능한 지역생태계</strong> 조성을 지원합니다.</p></article>
+      <article class="esg-diff-card"><h3>교육과 컨설팅의 연계</h3><p>교육 → 진단 → 컨설팅 → 실행지원을 연계하여 조직이 <strong>스스로 ESG를 관리·개선</strong>할 역량을 구축합니다.</p></article>
+    </div>
+
+    <div class="solar-closing">
+      <p>조직에 맞는 <strong>ESG 컨설팅·교육</strong>이 필요하신가요? 진단부터 실행까지, 도시공동체본부가 함께합니다.</p>
+      <div class="region-cta" style="justify-content:center">
+        <a class="btn btn-primary" href="/learn/apply">교육 신청하기</a>
+        <a class="btn btn-ghost" href="/#contact">컨설팅 문의</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>
