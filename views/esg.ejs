@@ -2,50 +2,135 @@
 
 <section class="page-banner">
   <div class="container">
-    <span class="page-banner-en">ESG CONSULTING &amp; EDUCATION</span>
+    <span class="page-banner-en">ESG EDUCATION &amp; CERTIFICATION</span>
     <h1 class="page-banner-title">ESG전문가과정</h1>
-    <p class="page-banner-desc">조직의 특성에 맞는 ESG, 진단에서 실행까지 — 맞춤형 ESG 컨설팅·교육으로 지속가능경영을 설계합니다.</p>
+    <p class="page-banner-desc">학교(초·중·고·대학) 소양교육부터 기업 실무, 전문가 자격과정과 컨설팅까지 — 눈높이에 맞춘 ESG 교육을 제공합니다.</p>
   </div>
 </section>
 
-<!-- 개요 -->
-<section class="section" id="overview">
+<!-- 왜 지금 ESG인가 -->
+<section class="section" id="why">
   <div class="container">
     <div class="section-head">
-      <div><h2 class="section-title c-green">과정 개요</h2><span class="section-en">OVERVIEW</span></div>
+      <div><h2 class="section-title c-green">왜 지금 ESG인가</h2><span class="section-en">WHY ESG NOW</span></div>
     </div>
-    <p class="section-lede">도시공동체본부는 <strong>기업·공공기관·사회적경제조직·지역공동체</strong> 등 조직의 규모와 특성, ESG 수준과 요구사항을 고려한 <strong>맞춤형 ESG 컨설팅과 교육</strong>을 제공합니다. 획일적인 적용이 아니라, 조직이 스스로 지속가능한 ESG 경영체계를 구축하고 실천하도록 전 과정을 동반합니다.</p>
-
-    <ol class="esg-flow" aria-label="ESG 추진 흐름">
-      <li><span class="ef-no">01</span><h3>현황 진단</h3><p>ESG 수준진단·GAP 분석</p></li>
-      <li><span class="ef-no">02</span><h3>개선과제 도출</h3><p>핵심 이슈·우선순위 설정</p></li>
-      <li><span class="ef-no">03</span><h3>실행</h3><p>전략·체계 구축과 이행</p></li>
-      <li><span class="ef-no">04</span><h3>성과관리</h3><p>지표 관리·공시·지속개선</p></li>
-    </ol>
+    <p class="section-lede">탄소중립과 공시 의무화, 공급망 실사, 글로벌 투자 기준의 변화로 <strong>ESG는 선택이 아닌 필수</strong>가 되었습니다. 도시공동체본부는 ESG 경영 확산과 전문가 양성을 위한 교육·컨설팅을 지원합니다.</p>
+    <div class="sgrid sgrid--green">
+      <article class="scard"><h4>탄소중립 2050</h4><p>지속가능성을 기업 경영에 도입하도록 요구되는 시대, 전 국민 의식 개선과 여건 조성이 과제입니다.</p></article>
+      <article class="scard"><h4>공시 의무화</h4><p>2030년까지 코스피 상장사의 <strong>지속가능경영보고서 공시</strong>가 단계적으로 의무화됩니다.</p></article>
+      <article class="scard"><h4>공급망 실사</h4><p>2023 독일·2024 EU 공급망실사법 시행, EcoVadis·RBA 등 <strong>공급망 ESG 평가</strong> 요구가 확대됩니다.</p></article>
+      <article class="scard"><h4>글로벌 투자 기준</h4><p>블랙록 등 글로벌 투자자가 <strong>지속가능성을 투자 결정의 기준</strong>으로 삼고 있습니다.</p></article>
+    </div>
   </div>
 </section>
 
-<%
-  const consulting = [
-    { no: "01", title: "ESG 진단 및 개선", items: ["ESG 수준진단 및 GAP 분석", "주요 ESG 이슈·리스크 도출", "개선과제 및 우선순위 설정", "ESG 실행 로드맵 수립"] },
-    { no: "02", title: "ESG 경영체계 구축", items: ["ESG 비전·전략 및 추진체계 수립", "핵심과제 및 ESG KPI 설정", "ESG 정책·규정 및 성과관리체계 구축", "조직 특성에 따른 맞춤형 경영체계 설계"] },
-    { no: "03", title: "공공·지역사회 ESG", items: ["공공기관 및 지역사회 ESG 진단", "사회적 가치 및 지역상생 전략", "주민참여형 ESG 프로젝트", "지역문제 해결·지속가능 공동체 모델"] },
-    { no: "04", title: "중소기업·공급망 ESG", items: ["고객사 및 공급망 ESG 요구사항 분석", "공급망 ESG 진단·평가 대응", "ESG Questionnaire 및 증빙자료 대응", "중소기업 맞춤형 개선과제 도출"] },
-    { no: "05", title: "탄소중립·온실가스 관리", items: ["온실가스 관리체계 진단", "Scope 1·2·3 배출원·활동자료 관리", "온실가스 배출량 산정 지원", "감축과제 발굴·탄소중립 실행계획"] },
-    { no: "06", title: "기업 지속가능경영보고서", items: ["ESG 공시현황·요구사항 분석", "이해관계자 및 중요 이슈 분석", "ESG 데이터·성과지표 관리", "보고서 기획·작성 및 정보공시 지원"] },
-    { no: "07", title: "공공기관 지속가능경영보고서", items: ["기관 특성 반영 ESG 공시체계 구축", "공공기관 ESG 경영현황·성과 분석", "사회적 가치·지역상생 성과 발굴", "데이터 관리 및 보고서 작성 지원"] }
-  ];
-  const education = [
-    { no: "01", title: "ESG 기본과정", items: ["ESG와 지속가능경영", "ESG 국내외 동향", "E·S·G 핵심 이슈와 사례"] },
-    { no: "02", title: "ESG 실무과정", items: ["ESG 수준진단 및 GAP 분석", "ESG 전략·개선과제·KPI 수립", "ESG 데이터 및 성과관리"] },
-    { no: "03", title: "공공·지역사회 ESG 과정", items: ["ESG와 사회적 가치", "지속가능도시와 지역공동체", "지역문제 해결·주민참여형 ESG", "지역순환경제와 회복탄력성"] },
-    { no: "04", title: "공급망 ESG 과정", items: ["공급망 ESG 및 글로벌 규제", "협력사 ESG 평가와 실사", "ESG Questionnaire 및 증빙 대응", "공급망 ESG 리스크·개선관리"] },
-    { no: "05", title: "탄소중립·온실가스 실무과정", items: ["탄소중립과 온실가스 관리", "Scope 1·2·3의 이해", "활동자료 수집·배출량 산정", "감축과제 및 실행계획"] },
-    { no: "06", title: "기업 지속가능경영보고서 실무과정", items: ["ESG 정보공시의 이해", "국내외 ESG 공시기준의 이해", "이해관계자·중요 이슈 분석", "데이터 수집·관리, 보고서 작성 실무"] },
-    { no: "07", title: "공공기관 지속가능경영보고서 실무과정", items: ["공공기관 ESG·지속가능경영의 이해", "ESG 성과 및 지표 관리", "환경·사회·거버넌스 성과 발굴", "사회적 가치·지역상생 성과 관리"] },
-    { no: "08", title: "ESG 전문가 과정", featured: true, items: ["ESG 진단·평가 방법론", "ESG 컨설팅 방법론", "ESG 전략 및 실행계획 수립", "공급망 ESG 및 탄소중립", "ESG 정보공시", "프로젝트 기반 ESG 컨설팅 실습"] }
-  ];
-%>
+<!-- 교육 체계 · 대상별 -->
+<section class="section section--alt" id="ladder">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-blue">교육 체계 · 대상별 과정</h2><span class="section-en">LEARNING PATH</span></div>
+    </div>
+    <p class="section-lede">ESG <strong>인식(소양) → 기본 → 실무 → 전문가(자격)</strong> 로 이어지는 단계별 학습 사다리로, 학교부터 기업·전문가까지 눈높이에 맞춰 설계합니다.</p>
+
+    <ol class="esg-flow" aria-label="ESG 학습 단계">
+      <li><span class="ef-no">STEP 1</span><h3>소양</h3><p>학교·시민 · ESG 인식과 가치</p></li>
+      <li><span class="ef-no">STEP 2</span><h3>기본</h3><p>입문·임직원 · ESG 개념과 경영</p></li>
+      <li><span class="ef-no">STEP 3</span><h3>실무</h3><p>담당자 · 진단·데이터·보고서</p></li>
+      <li><span class="ef-no">STEP 4</span><h3>전문가</h3><p>자격 · 지도사·진단평가사·검증원</p></li>
+    </ol>
+
+    <div class="esg-mods" style="margin-top:30px">
+      <article class="esg-mod esg-mod--green"><div class="esg-mod-head"><span class="esg-mod-no">대상 A</span><h3 class="esg-mod-title">학교 ESG 소양교육</h3></div><ul class="esg-mod-list"><li>초·중·고·대학 눈높이별 소양·진로 교육</li><li>기후·환경, 사회적 책임, 지속가능 시민의식</li></ul></article>
+      <article class="esg-mod esg-mod--blue"><div class="esg-mod-head"><span class="esg-mod-no">대상 B</span><h3 class="esg-mod-title">기업·기관 임직원 교육</h3></div><ul class="esg-mod-list"><li>ESG 개념부터 실무·보고서까지 맞춤 과정</li><li>담당자 역량 강화, ESG 경영 내재화</li></ul></article>
+      <article class="esg-mod esg-mod--blue"><div class="esg-mod-head"><span class="esg-mod-no">대상 C</span><h3 class="esg-mod-title">ESG 전문가 기본·실무과정</h3></div><ul class="esg-mod-list"><li>ESG 진단·전략·데이터·공시 실무 역량</li><li>전문가 자격과정으로 이어지는 기초</li></ul></article>
+      <article class="esg-mod esg-mod--feature"><div class="esg-mod-head"><span class="esg-mod-no">대상 D</span><h3 class="esg-mod-title">ESG 전문가 자격과정</h3><span class="esg-mod-badge">자격증</span></div><ul class="esg-mod-list"><li>산업통상자원부 공인 민간자격 3단계</li><li>지도사 · 진단평가사 · 보고서검증원</li></ul></article>
+    </div>
+  </div>
+</section>
+
+<!-- 학교 ESG 소양교육 -->
+<section class="section" id="school">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-green">학교 ESG 소양교육</h2><span class="section-en">FOR SCHOOLS</span></div>
+    </div>
+    <p class="section-lede">초등학교부터 대학까지 <strong>발달 단계에 맞춘 ESG 소양교육</strong>으로, 지속가능한 미래를 만드는 시민의식과 진로 역량을 키웁니다.</p>
+    <div class="esg-mods">
+      <article class="esg-mod esg-mod--green"><div class="esg-mod-head"><span class="esg-mod-no">초등</span><h3 class="esg-mod-title">ESG가 뭐예요?</h3></div><ul class="esg-mod-list"><li>환경·나눔·약속을 놀이와 체험으로</li><li>기후·분리배출·에너지 절약 습관</li><li>배려와 나눔, 우리 동네 탐험</li></ul></article>
+      <article class="esg-mod esg-mod--green"><div class="esg-mod-head"><span class="esg-mod-no">중등</span><h3 class="esg-mod-title">지속가능한 지구시민</h3></div><ul class="esg-mod-list"><li>기후위기·사회문제 탐구</li><li>자원순환·사회적 책임의 이해</li><li>모둠 실천 프로젝트</li></ul></article>
+      <article class="esg-mod esg-mod--green"><div class="esg-mod-head"><span class="esg-mod-no">고등</span><h3 class="esg-mod-title">ESG와 나의 진로</h3></div><ul class="esg-mod-list"><li>지속가능경영·ESG 개념 이해</li><li>기업·사회 ESG 사례 탐구</li><li>진로·창업 연계 탐구활동</li></ul></article>
+      <article class="esg-mod esg-mod--green"><div class="esg-mod-head"><span class="esg-mod-no">대학</span><h3 class="esg-mod-title">ESG 리터러시 &amp; 커리어</h3></div><ul class="esg-mod-list"><li>ESG 경영·직무의 이해</li><li>산업별 ESG 트렌드와 사례</li><li>자격·인턴십·취업 연계</li></ul></article>
+    </div>
+  </div>
+</section>
+
+<!-- 기업·기관 ESG 교육과정 -->
+<section class="section section--alt" id="corporate">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-blue">기업·기관 ESG 교육과정</h2><span class="section-en">FOR ENTERPRISES</span></div>
+    </div>
+    <p class="section-lede">교육 대상과 ESG 수준·목적을 사전에 파악하여 <strong>기초부터 실무·전문가까지</strong> 맞춤 설계합니다. 이론을 넘어 사례·실습·워크숍으로 현장 실행 역량을 기릅니다.</p>
+    <%
+      const corporate = [
+        { no: "01", title: "ESG 기본과정", items: ["ESG와 지속가능경영", "ESG 국내외 동향", "E·S·G 핵심 이슈와 사례"] },
+        { no: "02", title: "ESG 실무과정", items: ["ESG 수준진단 및 GAP 분석", "ESG 전략·개선과제·KPI 수립", "ESG 데이터 및 성과관리"] },
+        { no: "03", title: "공공·지역사회 ESG 과정", items: ["ESG와 사회적 가치", "지속가능도시와 지역공동체", "지역순환경제와 회복탄력성"] },
+        { no: "04", title: "공급망 ESG 과정", items: ["공급망 ESG 및 글로벌 규제", "협력사 ESG 평가와 실사", "ESG Questionnaire·증빙 대응"] },
+        { no: "05", title: "탄소중립·온실가스 실무과정", items: ["탄소중립과 온실가스 관리", "Scope 1·2·3의 이해", "활동자료 수집·배출량 산정"] },
+        { no: "06", title: "기업 지속가능경영보고서 실무", items: ["ESG 정보공시·공시기준 이해", "이해관계자·중요 이슈 분석", "보고서 작성 실무"] },
+        { no: "07", title: "공공기관 지속가능경영보고서 실무", items: ["공공기관 ESG의 이해", "성과·지표 관리", "사회적 가치·지역상생 성과"] },
+        { no: "08", title: "ESG 전문가 과정", featured: true, items: ["ESG 진단·평가 방법론", "ESG 컨설팅 방법론", "프로젝트 기반 ESG 컨설팅 실습"] }
+      ];
+    %>
+    <div class="esg-mods">
+      <% corporate.forEach(function(m){ %>
+        <article class="esg-mod esg-mod--blue<%= m.featured ? ' esg-mod--feature' : '' %>">
+          <div class="esg-mod-head"><span class="esg-mod-no"><%= m.no %></span><h3 class="esg-mod-title"><%= m.title %></h3><% if (m.featured) { %><span class="esg-mod-badge">대표과정</span><% } %></div>
+          <ul class="esg-mod-list"><% m.items.forEach(function(it){ %><li><%= it %></li><% }); %></ul>
+        </article>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<!-- ESG 전문가 자격과정 -->
+<section class="section" id="cert">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-orange">ESG 전문가 양성 자격과정</h2><span class="section-en">CERTIFICATION</span></div>
+    </div>
+    <p class="section-lede"><strong>산업통상자원부 공인 민간자격</strong> 3단계 과정으로, 국내 최고의 ESG 전문가에게 <strong>ESG 경영·평가의 A to Z</strong>를 배웁니다.</p>
+
+    <ul class="esg-creds" aria-label="자격·협력">
+      <li>산업통상자원부 공인 민간자격</li>
+      <li>(사)한국사회공헌연구원 협력</li>
+      <li>英 Accountability AA1000AS 협약</li>
+      <li>혁신바우처 컨설팅 참여 자격</li>
+    </ul>
+
+    <%
+      const cert = [
+        { lv: "LEVEL 1", title: "ESG 지도사", cls: "green", items: ["ESG에 대한 이해", "K-ESG 가이드라인", "중소기업 대응 전략", "ESG 지도사 자격시험"] },
+        { lv: "LEVEL 2", title: "ESG 진단평가사", cls: "blue", items: ["ESG 진단", "GRI·SASB 평가 이해", "EcoVadis 평가 이해", "진단평가사 자격시험"] },
+        { lv: "LEVEL 3", title: "ESG보고서검증원", cls: "orange", items: ["ESG 보고서 실습", "보고서 작성 기법", "GRI·SASB 실습", "ESG 검증원 자격시험"] }
+      ];
+    %>
+    <div class="esg-mods esg-mods--3">
+      <% cert.forEach(function(m){ %>
+        <article class="esg-mod esg-mod--<%= m.cls %>">
+          <div class="esg-mod-head"><span class="esg-mod-no"><%= m.lv %></span><h3 class="esg-mod-title"><%= m.title %></h3></div>
+          <ul class="esg-mod-list"><% m.items.forEach(function(it, k){ %><li<%= k === m.items.length - 1 ? ' class="is-exam"' : '' %>><%= it %></li><% }); %></ul>
+        </article>
+      <% }); %>
+    </div>
+
+    <div class="esg-tracks">
+      <article class="esg-diff-card"><h3>Track 1 · 기업 내부 전문가</h3><p>기업 내부의 <strong>ESG 담당자 양성</strong> 및 ESG 경영 내재화 트랙</p></article>
+      <article class="esg-diff-card"><h3>Track 2 · 평가·검증 전문가</h3><p><strong>ESG 진단평가 및 경영보고서 검증</strong> 전문가 트랙</p></article>
+    </div>
+  </div>
+</section>
 
 <!-- ESG 컨설팅 -->
 <section class="section section--alt" id="consulting">
@@ -54,57 +139,46 @@
       <div><h2 class="section-title c-green">ESG 컨설팅</h2><span class="section-en">CONSULTING</span></div>
     </div>
     <p class="section-lede">현황진단부터 경영체계 구축, 공급망 대응, 탄소중립, 지속가능경영보고서 공시까지 <strong>전 영역을 맞춤형으로</strong> 지원합니다.</p>
+    <%
+      const consulting = [
+        { no: "01", title: "ESG 진단 및 개선", items: ["ESG 수준진단 및 GAP 분석", "주요 이슈·리스크 도출", "개선과제·우선순위, 실행 로드맵"] },
+        { no: "02", title: "ESG 경영체계 구축", items: ["ESG 비전·전략·추진체계", "핵심과제 및 ESG KPI", "정책·규정·성과관리체계 구축"] },
+        { no: "03", title: "공공·지역사회 ESG", items: ["공공기관·지역사회 ESG 진단", "사회적 가치·지역상생 전략", "주민참여형 ESG 프로젝트"] },
+        { no: "04", title: "중소기업·공급망 ESG", items: ["고객사·공급망 요구사항 분석", "공급망 ESG 진단·평가 대응", "Questionnaire·증빙 대응"] },
+        { no: "05", title: "탄소중립·온실가스 관리", items: ["온실가스 관리체계 진단", "Scope 1·2·3 산정 지원", "감축과제·탄소중립 실행계획"] },
+        { no: "06", title: "기업 지속가능경영보고서", items: ["공시현황·요구사항 분석", "중요 이슈·데이터 관리", "보고서 기획·작성·공시 지원"] },
+        { no: "07", title: "공공기관 지속가능경영보고서", items: ["기관 맞춤 ESG 공시체계", "경영현황·성과 분석", "사회적 가치·지역상생 성과"] }
+      ];
+    %>
     <div class="esg-mods">
       <% consulting.forEach(function(m){ %>
         <article class="esg-mod esg-mod--green">
           <div class="esg-mod-head"><span class="esg-mod-no"><%= m.no %></span><h3 class="esg-mod-title"><%= m.title %></h3></div>
-          <ul class="esg-mod-list">
-            <% m.items.forEach(function(it){ %><li><%= it %></li><% }); %>
-          </ul>
+          <ul class="esg-mod-list"><% m.items.forEach(function(it){ %><li><%= it %></li><% }); %></ul>
         </article>
       <% }); %>
     </div>
   </div>
 </section>
 
-<!-- ESG 교육 -->
-<section class="section" id="education">
+<!-- 강점 · 기대효과 -->
+<section class="section" id="strength">
   <div class="container">
     <div class="section-head">
-      <div><h2 class="section-title c-blue">ESG 교육</h2><span class="section-en">EDUCATION</span></div>
-    </div>
-    <p class="section-lede">교육 대상과 ESG 수준, 목적을 사전에 파악하여 <strong>기초부터 실무·전문가까지</strong> 맞춤형으로 설계합니다. 이론을 넘어 사례·실습·워크숍으로 현장 실행 역량을 기릅니다.</p>
-    <div class="esg-mods">
-      <% education.forEach(function(m){ %>
-        <article class="esg-mod esg-mod--blue<%= m.featured ? ' esg-mod--feature' : '' %>">
-          <div class="esg-mod-head"><span class="esg-mod-no"><%= m.no %></span><h3 class="esg-mod-title"><%= m.title %></h3><% if (m.featured) { %><span class="esg-mod-badge">대표과정</span><% } %></div>
-          <ul class="esg-mod-list">
-            <% m.items.forEach(function(it){ %><li><%= it %></li><% }); %>
-          </ul>
-        </article>
-      <% }); %>
-    </div>
-  </div>
-</section>
-
-<!-- 차별성 -->
-<section class="section section--alt" id="difference">
-  <div class="container">
-    <div class="section-head">
-      <div><h2 class="section-title c-orange">도시공동체본부 ESG의 차별성</h2><span class="section-en">WHY US</span></div>
+      <div><h2 class="section-title c-orange">도시공동체본부 ESG의 강점</h2><span class="section-en">WHY US</span></div>
     </div>
     <div class="esg-diff">
-      <article class="esg-diff-card"><h3>맞춤형 ESG</h3><p>기업·공공기관·사회적경제조직·지역공동체의 규모·업종·ESG 수준과 요구사항을 진단하여 필요한 컨설팅과 교육을 <strong>선택·조합</strong>합니다.</p></article>
+      <article class="esg-diff-card"><h3>맞춤형 ESG</h3><p>기업·공공기관·사회적경제조직·지역공동체, 그리고 학교까지 규모·업종·수준을 진단해 교육과 컨설팅을 <strong>선택·조합</strong>합니다.</p></article>
       <article class="esg-diff-card"><h3>진단에서 실행까지</h3><p>단순 평가에 머무르지 않고 <strong>진단 → 개선 → 실행 → 성과관리</strong>까지 하나로 연결합니다.</p></article>
-      <article class="esg-diff-card"><h3>기업과 지역을 연결</h3><p>기업 중심 ESG를 넘어 공공기관·지역공동체·사회적경제까지 연결하여 <strong>사회적 가치와 지속가능한 지역생태계</strong> 조성을 지원합니다.</p></article>
-      <article class="esg-diff-card"><h3>교육과 컨설팅의 연계</h3><p>교육 → 진단 → 컨설팅 → 실행지원을 연계하여 조직이 <strong>스스로 ESG를 관리·개선</strong>할 역량을 구축합니다.</p></article>
+      <article class="esg-diff-card"><h3>기업과 지역을 연결</h3><p>기업 중심 ESG를 넘어 공공·지역공동체·사회적경제까지 연결해 <strong>지속가능한 지역생태계</strong>를 조성합니다.</p></article>
+      <article class="esg-diff-card"><h3>교육과 컨설팅의 연계</h3><p>교육 → 진단 → 컨설팅 → 실행지원을 연계해 조직이 <strong>스스로 ESG를 관리·개선</strong>하도록 돕습니다.</p></article>
     </div>
 
     <div class="solar-closing">
-      <p>조직에 맞는 <strong>ESG 컨설팅·교육</strong>이 필요하신가요? 진단부터 실행까지, 도시공동체본부가 함께합니다.</p>
+      <p><strong>기대효과</strong> — 탄소중립 실현을 위한 의식 개선과 여건 조성, ESG 경영 도입·성과관리 역량 배양, 외부 평가 대응력 강화, 투자 생태계 개선까지. 학교·기업·기관의 ESG 여정을 도시공동체본부가 함께합니다.</p>
       <div class="region-cta" style="justify-content:center">
         <a class="btn btn-primary" href="/learn/apply">교육 신청하기</a>
-        <a class="btn btn-ghost" href="/#contact">컨설팅 문의</a>
+        <a class="btn btn-ghost" href="/#contact">교육·컨설팅 문의</a>
       </div>
     </div>
   </div>
