@@ -6,9 +6,7 @@
       <p class="admin-sub"><%= adminName %> 님으로 로그인됨</p>
     </div>
     <div class="admin-head-actions">
-      <a class="btn btn-neutral btn-sm" href="/admin/calendar">교육일정 관리</a>
-      <a class="btn btn-neutral btn-sm" href="/admin/solar">햇빛소득마을 관리</a>
-      <a class="btn btn-neutral btn-sm" href="/admin/applications">교육신청 내역</a>
+      <a class="btn btn-neutral btn-sm" href="/" target="_blank" rel="noopener">사이트 보기</a>
       <a class="btn btn-neutral btn-sm" href="/admin/password">비밀번호 변경</a>
       <form action="/admin/logout" method="post">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
@@ -17,6 +15,42 @@
     </div>
   </div>
 
+  <!-- 관리 허브 -->
+  <div class="admin-hub">
+    <a class="hub-card" href="/admin/contacts">
+      <span class="hub-ico">✉️</span>
+      <span class="hub-name">문의 관리</span>
+      <span class="hub-meta"><%= stats.contactsTotal %>건<% if (stats.contactsNew > 0) { %> · <b class="hub-new"><%= stats.contactsNew %> 신규</b><% } %></span>
+    </a>
+    <a class="hub-card" href="/admin/members">
+      <span class="hub-ico">👤</span>
+      <span class="hub-name">회원 관리</span>
+      <span class="hub-meta"><%= stats.members %>명</span>
+    </a>
+    <a class="hub-card" href="/admin/applications">
+      <span class="hub-ico">📝</span>
+      <span class="hub-name">교육 신청 내역</span>
+      <span class="hub-meta"><%= stats.applications %>건</span>
+    </a>
+    <a class="hub-card" href="/admin/calendar">
+      <span class="hub-ico">📅</span>
+      <span class="hub-name">교육일정 관리</span>
+      <span class="hub-meta">연간 캘린더</span>
+    </a>
+    <a class="hub-card" href="/admin/solar">
+      <span class="hub-ico">☀️</span>
+      <span class="hub-name">햇빛소득마을</span>
+      <span class="hub-meta">지역 현황</span>
+    </a>
+    <a class="hub-card" href="#board-manage">
+      <span class="hub-ico">📋</span>
+      <span class="hub-name">게시판 관리</span>
+      <span class="hub-meta">글 <%= stats.postsTotal %>건</span>
+    </a>
+  </div>
+
+  <!-- 게시판별 -->
+  <h2 class="admin-section-title" id="board-manage">게시판 관리</h2>
   <div class="admin-cards">
     <% boardKeys.forEach(function(k){ %>
       <a class="admin-card" href="/admin?board=<%= k %>">

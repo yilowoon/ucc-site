@@ -94,6 +94,19 @@ db.exec(`
     body       TEXT    NOT NULL DEFAULT '',  -- 상세(줄바꿈 텍스트)
     updated_at TEXT    NOT NULL DEFAULT ''
   );
+
+  -- 문의하기(홈 컨택 폼) 접수 내역
+  CREATE TABLE IF NOT EXISTS contacts (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT    NOT NULL,
+    email      TEXT    NOT NULL,
+    phone      TEXT    NOT NULL DEFAULT '',
+    topic      TEXT    NOT NULL DEFAULT '',
+    message    TEXT    NOT NULL DEFAULT '',
+    status     TEXT    NOT NULL DEFAULT '신규',   -- 신규 / 확인 / 완료
+    created_at TEXT    NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_contacts_created ON contacts(id DESC);
 `);
 
 // members 컬럼 마이그레이션 (이미 있으면 무시)

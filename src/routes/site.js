@@ -140,6 +140,27 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     res.json({ notices, news });
   });
 
+  // ---------- 문의하기 접수 (홈 컨택 폼 → DB) ----------
+  router.post("/api/contact", verifyCsrf, (req, res) => {
+    // 허니팟: 봇이 채우면 조용히 성공 처리(저장 안 함)
+    if ((req.body.website || "").trim()) return res.json({ ok: true });
+    const name = (req.body.name || "").trim();
+    const email = (req.body.email || "").trim();
+    const phone = (req.body.phone || "").trim();
+    const topic = (req.body.topic || "").trim();
+    const message = (req.body.message || "").trim();
+    if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !message) {
+      return res.status(400).json({ ok: false, error: "이름·이메일·문의 내용을 정확히 입력해 주세요." });
+    }
+    if (name.length > 100 || message.length > 5000) {
+      return res.status(400).json({ ok: false, error: "입력 길이가 너무 깁니다." });
+    }
+    db.prepare(
+      "INSERT INTO contacts (name, email, phone, topic, message, status, created_at) VALUES (?, ?, ?, ?, ?, '신규', ?)"
+    ).run(name, email, phone, topic, message, new Date().toISOString());
+    res.json({ ok: true });
+  });
+
   // ---------- 회원가입 ----------
   const MEMBER_TYPES = ["개인회원", "기업회원", "단체회원", "준회원"];
   router.get("/signup", (req, res) => {

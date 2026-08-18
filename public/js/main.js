@@ -177,7 +177,7 @@
     stats.forEach(function (el) { statObs.observe(el); });
   }
 
-  /* ---- Contact form (client-side only) ---- */
+  /* ---- Contact form (DB 저장) ---- */
   var form = document.getElementById("contactForm");
   var note = document.getElementById("formNote");
   if (form) {
@@ -192,16 +192,43 @@
         note.className = "form-note err";
         return;
       }
-      // No backend yet — guide the user to email directly.
-      var subject = encodeURIComponent("[홈페이지 문의] " + form.topic.value + " - " + name);
-      var body = encodeURIComponent(
-        "이름/기관: " + name + "\n이메일: " + email + "\n유형: " + form.topic.value + "\n\n" + msg
-      );
-      note.textContent = "메일 앱이 열립니다. 열리지 않으면 contact@ucc.or.kr 로 보내주세요.";
-      note.className = "form-note ok";
-      window.location.href =
-        "mailto:contact@ucc.or.kr?subject=" + subject + "&body=" + body;
-      form.reset();
+      var btn = form.querySelector('button[type="submit"]');
+      if (btn) btn.disabled = true;
+      note.textContent = "전송 중…";
+      note.className = "form-note";
+
+      var el = function (id) { return document.getElementById(id) || {}; };
+      var body = new URLSearchParams({
+        _csrf: el("cf-csrf").value || "",
+        name: name,
+        email: email,
+        phone: form.phone ? form.phone.value.trim() : "",
+        topic: form.topic ? form.topic.value : "",
+        message: msg,
+        website: el("cf-hp").value || "",
+      });
+
+      fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+        body: body,
+      })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          if (res.ok && res.d && res.d.ok) {
+            note.textContent = "문의가 정상 접수되었습니다. 담당자가 확인 후 연락드리겠습니다.";
+            note.className = "form-note ok";
+            form.reset();
+          } else {
+            note.textContent = (res.d && res.d.error) || "전송에 실패했습니다. 잠시 후 다시 시도해 주세요.";
+            note.className = "form-note err";
+          }
+        })
+        .catch(function () {
+          note.textContent = "전송 중 오류가 발생했습니다. contact@ucc.or.kr 로 보내주세요.";
+          note.className = "form-note err";
+        })
+        .then(function () { if (btn) btn.disabled = false; });
     });
   }
 

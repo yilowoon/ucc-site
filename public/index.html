@@ -343,6 +343,8 @@
             </ul>
           </div>
           <form class="contact-form" id="contactForm" novalidate>
+            <input type="hidden" name="_csrf" id="cf-csrf" value="__CSRF__" />
+            <div class="cf-hp" aria-hidden="true"><label>이 항목은 비워두세요<input type="text" name="website" id="cf-hp" tabindex="-1" autocomplete="off" /></label></div>
             <div class="field">
               <label for="cf-name">이름 / 기관</label>
               <input type="text" id="cf-name" name="name" autocomplete="name" required />
@@ -350,6 +352,10 @@
             <div class="field">
               <label for="cf-email">이메일</label>
               <input type="email" id="cf-email" name="email" autocomplete="email" required />
+            </div>
+            <div class="field">
+              <label for="cf-phone">연락처 <span class="field-hint">선택</span></label>
+              <input type="tel" id="cf-phone" name="phone" autocomplete="tel" />
             </div>
             <div class="field">
               <label for="cf-topic">문의 유형</label>

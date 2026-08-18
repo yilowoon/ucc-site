@@ -1,0 +1,59 @@
+<%- include('partials/header') %>
+<div class="container admin-wrap">
+  <div class="admin-head">
+    <div>
+      <h1>문의 관리</h1>
+      <p class="admin-sub">홈페이지 문의하기로 접수된 내역입니다.</p>
+    </div>
+    <div class="admin-head-actions">
+      <a class="btn btn-neutral btn-sm" href="/admin">대시보드</a>
+    </div>
+  </div>
+
+  <div class="admin-toolbar">
+    <div class="admin-filter">
+      <a href="/admin/contacts" class="<%= filter === 'all' ? 'active' : '' %>">전체 <%= counts.all %></a>
+      <% statuses.forEach(function(s){ %>
+        <a href="/admin/contacts?status=<%= encodeURIComponent(s) %>" class="<%= filter === s ? 'active' : '' %>"><%= s %> <%= counts[s] %></a>
+      <% }); %>
+    </div>
+  </div>
+
+  <% if (!contacts.length) { %>
+    <p class="post-empty">접수된 문의가 없습니다.</p>
+  <% } %>
+
+  <div class="contact-list">
+    <% contacts.forEach(function(c){ var cls = c.status === '완료' ? 'done' : (c.status === '확인' ? 'seen' : 'new'); %>
+      <article class="contact-item ct-<%= cls %>">
+        <div class="ct-main">
+          <div class="ct-top">
+            <span class="ct-status ct-badge-<%= cls %>"><%= c.status %></span>
+            <span class="ct-topic"><%= esc(c.topic || '문의') %></span>
+            <span class="ct-date"><%= fmtDateTime(c.created_at) %></span>
+          </div>
+          <p class="ct-msg"><%- nl2br(c.message) %></p>
+          <p class="ct-from">
+            <strong><%= esc(c.name) %></strong>
+            · <a href="mailto:<%= esc(c.email) %>"><%= esc(c.email) %></a>
+            <% if (c.phone) { %> · <%= esc(c.phone) %><% } %>
+          </p>
+        </div>
+        <div class="ct-actions">
+          <form method="post" action="/admin/contacts/<%= c.id %>/status">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input type="hidden" name="back" value="<%= filter === 'all' ? '' : filter %>" />
+            <select name="status" onchange="this.form.submit()" aria-label="상태 변경">
+              <% statuses.forEach(function(s){ %><option value="<%= s %>"<%= c.status === s ? ' selected' : '' %>><%= s %></option><% }); %>
+            </select>
+          </form>
+          <form method="post" action="/admin/contacts/<%= c.id %>/delete" onsubmit="return confirm('이 문의를 삭제하시겠습니까?');">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button type="submit" class="linkbtn linkbtn-danger">삭제</button>
+          </form>
+        </div>
+      </article>
+    <% }); %>
+  </div>
+</div>
+<%- include('partials/footer') %>

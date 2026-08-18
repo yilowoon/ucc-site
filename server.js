@@ -112,7 +112,9 @@ app.use(
 const INDEX_HTML = fs.readFileSync(path.join(__dirname, "public", "index.html"), "utf8");
 app.get("/", (req, res) => {
   const base = req.protocol + "://" + req.get("host");
-  res.type("html").send(INDEX_HTML.replace(/__BASE__/g, base));
+  res.type("html").send(
+    INDEX_HTML.replace(/__BASE__/g, base).replace(/__CSRF__/g, req.session.csrf || "")
+  );
 });
 
 app.use("/admin", adminRoutes({ baseLocals, verifyCsrf }));

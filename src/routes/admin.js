@@ -143,12 +143,20 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     for (const k of cfg.BOARD_KEYS) {
       counts[k] = db.prepare("SELECT COUNT(*) AS n FROM posts WHERE board = ?").get(k).n;
     }
+    const stats = {
+      postsTotal: db.prepare("SELECT COUNT(*) AS n FROM posts").get().n,
+      contactsNew: db.prepare("SELECT COUNT(*) AS n FROM contacts WHERE status = '신규'").get().n,
+      contactsTotal: db.prepare("SELECT COUNT(*) AS n FROM contacts").get().n,
+      members: db.prepare("SELECT COUNT(*) AS n FROM members").get().n,
+      applications: db.prepare("SELECT COUNT(*) AS n FROM edu_applications").get().n,
+    };
     res.render("admin-dashboard", {
       ...res.locals,
       title: "관리자",
       posts: rows,
       filterBoard: board,
       counts,
+      stats,
     });
   });
 
@@ -320,6 +328,56 @@ module.exports = function adminRoutes({ verifyCsrf }) {
   router.get("/applications", requireAdmin, (req, res) => {
     const apps = db.prepare("SELECT * FROM edu_applications ORDER BY id DESC LIMIT 300").all();
     res.render("admin-applications", { ...res.locals, title: "교육신청 내역", apps });
+  });
+
+  // ---------- 문의 관리 ----------
+  const CONTACT_STATUS = ["신규", "확인", "완료"];
+  router.get("/contacts", requireAdmin, (req, res) => {
+    const filter = CONTACT_STATUS.includes(req.query.status) ? req.query.status : "all";
+    const contacts = filter === "all"
+      ? db.prepare("SELECT * FROM contacts ORDER BY id DESC LIMIT 500").all()
+      : db.prepare("SELECT * FROM contacts WHERE status = ? ORDER BY id DESC LIMIT 500").all(filter);
+    const counts = {
+      all: db.prepare("SELECT COUNT(*) AS n FROM contacts").get().n,
+      신규: db.prepare("SELECT COUNT(*) AS n FROM contacts WHERE status = '신규'").get().n,
+      확인: db.prepare("SELECT COUNT(*) AS n FROM contacts WHERE status = '확인'").get().n,
+      완료: db.prepare("SELECT COUNT(*) AS n FROM contacts WHERE status = '완료'").get().n,
+    };
+    res.render("admin-contacts", { ...res.locals, title: "문의 관리", contacts, filter, counts, statuses: CONTACT_STATUS });
+  });
+  router.post("/contacts/:id/status", requireAdmin, verifyCsrf, (req, res) => {
+    const status = CONTACT_STATUS.includes(req.body.status) ? req.body.status : "신규";
+    db.prepare("UPDATE contacts SET status = ? WHERE id = ?").run(status, parseInt(req.params.id, 10));
+    res.redirect("/admin/contacts" + (CONTACT_STATUS.includes(req.body.back) ? "?status=" + encodeURIComponent(req.body.back) : ""));
+  });
+  router.post("/contacts/:id/delete", requireAdmin, verifyCsrf, (req, res) => {
+    db.prepare("DELETE FROM contacts WHERE id = ?").run(parseInt(req.params.id, 10));
+    res.redirect("/admin/contacts");
+  });
+
+  // ---------- 회원 관리 ----------
+  router.get("/members", requireAdmin, (req, res) => {
+    const q = (req.query.q || "").trim();
+    let members;
+    if (q) {
+      const like = "%" + q + "%";
+      members = db.prepare(
+        "SELECT id, name, email, phone, member_type, org_name, created_at FROM members WHERE name LIKE ? OR email LIKE ? OR org_name LIKE ? ORDER BY id DESC LIMIT 1000"
+      ).all(like, like, like);
+    } else {
+      members = db.prepare(
+        "SELECT id, name, email, phone, member_type, org_name, created_at FROM members ORDER BY id DESC LIMIT 1000"
+      ).all();
+    }
+    const byType = {};
+    for (const t of ["개인회원", "기업회원", "단체회원", "준회원"]) {
+      byType[t] = db.prepare("SELECT COUNT(*) AS n FROM members WHERE member_type = ?").get(t).n;
+    }
+    res.render("admin-members", { ...res.locals, title: "회원 관리", members, q, byType });
+  });
+  router.post("/members/:id/delete", requireAdmin, verifyCsrf, (req, res) => {
+    db.prepare("DELETE FROM members WHERE id = ?").run(parseInt(req.params.id, 10));
+    res.redirect("/admin/members");
   });
 
   // ---------- 햇빛소득마을 지역 현황 관리 ----------
