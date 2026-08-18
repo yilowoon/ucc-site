@@ -218,6 +218,76 @@ const PAGES = {
       <p class="page-note">각 과정의 세부 일정은 <a href="/learn/calendar">연간교육일정</a>에서, 신청은 <a href="/learn/apply">교육신청하기</a>에서 확인하세요.</p>
     `,
   },
+  esg: {
+    group: "learn", title: "ESG전문가과정", en: "ESG PROFESSIONAL",
+    html: `
+      <p class="lead">ESG·지속가능경영의 개념부터 <strong>평가·인증·보고서 공시 실무</strong>까지, 도시와 공동체에 적용하는 전문가를 양성합니다.</p>
+
+      <h3 class="page-h">과정 개요</h3>
+      <p>국내외 ESG 동향과 공시 규제를 이해하고, ESG 평가·지표 체계와 진단 방법론을 익혀 기업·기관·지역의 지속가능성 과제를 직접 설계·수행할 수 있는 역량을 기릅니다.</p>
+
+      <h3 class="page-h">교육 대상</h3>
+      <ul class="page-list">
+        <li>기업·기관 ESG·지속가능경영 담당자</li>
+        <li>도시재생·사회적경제·공동체 분야 실무자</li>
+        <li>ESG 진단·컨설팅·보고서 공시에 관심 있는 시민</li>
+      </ul>
+
+      <h3 class="page-h">주요 커리큘럼</h3>
+      <div class="page-cards page-cards--3">
+        <div class="page-card"><h3>1. ESG 기초·동향</h3><p>E·S·G 개념, 국내외 규제·공시 의무화 흐름, 이해관계자 자본주의</p></div>
+        <div class="page-card"><h3>2. 평가·지표 체계</h3><p>K-ESG·GRI 등 주요 프레임워크와 평가기관·등급 이해</p></div>
+        <div class="page-card"><h3>3. 도시·공동체 진단</h3><p>지역 지속가능성 지표, 회복력 진단, 데이터 기반 분석</p></div>
+        <div class="page-card"><h3>4. 보고서 공시 실무</h3><p>ESG 보고서 기획·작성, 중대성 평가, 공시 프로세스</p></div>
+        <div class="page-card"><h3>5. 컨설팅 실습</h3><p>사례 분석과 팀 프로젝트로 실제 진단·개선안 도출</p></div>
+        <div class="page-card"><h3>6. 인증·수료</h3><p>과정 평가 및 수료, 전문가 네트워크 연계</p></div>
+      </div>
+
+      <h3 class="page-h">수료 후 활용</h3>
+      <ul class="page-list">
+        <li>기업·기관 ESG 담당, ESG 진단·컨설팅 실무</li>
+        <li>ESG 보고서 작성·공시 지원</li>
+        <li>지역·공동체 지속가능성 프로젝트 참여</li>
+      </ul>
+
+      <p class="page-note">세부 일정은 <a href="/learn/calendar">연간교육일정</a>에서, 신청은 <a href="/learn/apply">교육신청하기</a>에서 확인하세요. ※ 커리큘럼은 운영 상황에 따라 조정될 수 있습니다.</p>
+    `,
+  },
+  rdc: {
+    group: "learn", title: "지역개발전문가과정", en: "RDC PROFESSIONAL",
+    html: `
+      <p class="lead">지역회복을 <strong>진단부터 자립까지</strong> 설계·실행하는 현장 전문가, <strong>지역발전혁신가(RDC)</strong>를 양성합니다.</p>
+
+      <h3 class="page-h">과정 개요</h3>
+      <p>리빙랩(Living Lab) 기반의 단계별 학습 체계로, 지역 자원을 조사하고 문제를 정의하여 표준 프로그램을 설계·실증하고, 지역이 스스로 설 수 있도록 자립·이양까지 이끄는 실무 역량을 기릅니다.</p>
+
+      <h3 class="page-h">교육 대상</h3>
+      <ul class="page-list">
+        <li>주민 리더·마을공동체 활동가</li>
+        <li>지자체·공공기관 정책 담당자</li>
+        <li>지역혁신·사회적경제 분야 종사자</li>
+      </ul>
+
+      <h3 class="page-h">주요 커리큘럼</h3>
+      <div class="page-cards page-cards--3">
+        <div class="page-card"><h3>1. 지역진단·회복력</h3><p>인구·경제·공동체 진단, 회복탄력성 개념과 지표</p></div>
+        <div class="page-card"><h3>2. 리빙랩 방법론</h3><p>주민참여형 문제해결, 현장 실험 설계와 운영</p></div>
+        <div class="page-card"><h3>3. 자원조사·문제정의</h3><p>지역자원 매핑, 이해관계자 분석, 과제 도출</p></div>
+        <div class="page-card"><h3>4. 표준 프로그램 설계</h3><p>지역회복 표준체계 적용, 실증(파일럿) 운영</p></div>
+        <div class="page-card"><h3>5. 자립·이양</h3><p>운영모델·거버넌스 구축, 성과관리와 이양</p></div>
+        <div class="page-card"><h3>6. 수료·네트워크</h3><p>프로젝트 발표·수료, RDC 전문가 네트워크 연계</p></div>
+      </div>
+
+      <h3 class="page-h">수료 후 활용</h3>
+      <ul class="page-list">
+        <li>지역혁신전문가(RDC)·마을 코디네이터</li>
+        <li>지역재생·공동체 사업 기획·운영</li>
+        <li>정책 자문 및 리빙랩 퍼실리테이터</li>
+      </ul>
+
+      <p class="page-note">세부 일정은 <a href="/learn/calendar">연간교육일정</a>에서, 신청은 <a href="/learn/apply">교육신청하기</a>에서 확인하세요. ※ 커리큘럼은 운영 상황에 따라 조정될 수 있습니다.</p>
+    `,
+  },
   open: {
     group: "learn", title: "교육과정개설", en: "COURSE OPENING",
     html: `
