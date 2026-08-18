@@ -125,6 +125,10 @@ db.exec(`
 // members 컬럼 마이그레이션 (이미 있으면 무시)
 try { db.exec("ALTER TABLE members ADD COLUMN member_type TEXT NOT NULL DEFAULT '개인회원'"); } catch (e) {}
 try { db.exec("ALTER TABLE members ADD COLUMN org_name TEXT NOT NULL DEFAULT ''"); } catch (e) {}
+// 회원 등급 체계: 가입 시 준회원, 관리자가 회비 확인 후 정회원 승인
+try { db.exec("ALTER TABLE members ADD COLUMN grade TEXT NOT NULL DEFAULT '준회원'"); } catch (e) {}
+try { db.exec("ALTER TABLE members ADD COLUMN fee_paid INTEGER NOT NULL DEFAULT 0"); } catch (e) {}
+try { db.exec("ALTER TABLE members ADD COLUMN confirmed_at TEXT NOT NULL DEFAULT ''"); } catch (e) {}
 // visits: 순방문자용 visitor 컬럼 (기존 DB 대비) — 컬럼 보장 후 인덱스 생성
 try { db.exec("ALTER TABLE visits ADD COLUMN visitor TEXT NOT NULL DEFAULT ''"); } catch (e) {}
 try { db.exec("CREATE INDEX IF NOT EXISTS idx_visits_visitor ON visits(visitor)"); } catch (e) {}

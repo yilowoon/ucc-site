@@ -101,9 +101,9 @@
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <div class="write-grid">
           <div class="field">
-            <label for="member_type">가입 유형</label>
+            <label for="member_type">회원 유형</label>
             <select id="member_type" name="member_type">
-              <% var types = ['개인회원','기업회원','단체회원','준회원'];
+              <% var types = ['개인회원','기업회원','단체회원'];
                  types.forEach(function(t){ %>
                 <option value="<%= t %>" <%= (form.member_type===t)?'selected':'' %>><%= t %></option>
               <% }); %>
@@ -119,11 +119,12 @@
         <div class="field"><label for="phone">연락처</label><input type="tel" id="phone" name="phone" value="<%= esc(form.phone || '') %>" autocomplete="tel" /></div>
         <div class="field"><label for="password">비밀번호 <span class="field-hint">8자 이상</span></label><input type="password" id="password" name="password" autocomplete="new-password" required minlength="8" /></div>
         <div class="field"><label for="confirm">비밀번호 확인</label><input type="password" id="confirm" name="confirm" autocomplete="new-password" required minlength="8" /></div>
+        <p class="ms-form-note">가입 시 <strong>준회원</strong>으로 등록됩니다. 회비 납부 확인 후 관리자가 <strong>정회원</strong>으로 전환해 드립니다.</p>
         <button type="submit" class="btn btn-primary btn-block">회원가입 신청</button>
         <p class="admin-auth-hint">이미 회원이신가요? <a href="/login">로그인</a></p>
       </form>
     </div>
-    <p class="ms-notes-inline">※ 신청 후 회비 납부 안내를 드립니다. 준회원은 회비 없이 가입되며, 이후 정회원 전환이 가능합니다.</p>
+    <p class="ms-notes-inline">※ 신청 후 회비 납부 안내를 드립니다. 가입 시 준회원으로 등록되며, 회비 납부 확인 후 정회원으로 전환됩니다.</p>
   </section>
 
   <!-- 문의처 -->

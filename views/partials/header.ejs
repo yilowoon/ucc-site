@@ -97,8 +97,9 @@
             </ul>
           </li>
           <% if (isMember) { %>
-            <li><a href="/about/greeting"><%= esc(memberName) %> 님</a></li>
-            <li><a href="#" class="nav-cta" onclick="document.getElementById('mLogout').submit();return false;">로그아웃</a></li>
+            <li><a href="/mypage"><%= esc(memberName) %> 님</a></li>
+            <li><a href="/mypage" class="nav-cta">마이페이지</a></li>
+            <li><a href="#" onclick="document.getElementById('mLogout').submit();return false;">로그아웃</a></li>
           <% } else { %>
             <li><a href="/login">로그인</a></li>
             <li><a href="/signup" class="nav-cta">회원가입</a></li>
@@ -155,7 +156,8 @@
         <a class="sub-link" href="/members/associate">준회원</a>
       </details>
       <% if (isMember) { %>
-        <a href="#" onclick="document.getElementById('mLogout').submit();return false;">로그아웃 (<%= esc(memberName) %> 님)</a>
+        <a href="/mypage">마이페이지 (<%= esc(memberName) %> 님)</a>
+        <a href="#" onclick="document.getElementById('mLogout').submit();return false;">로그아웃</a>
       <% } else { %>
         <a href="/login">로그인</a>
         <a href="/signup">회원가입</a>

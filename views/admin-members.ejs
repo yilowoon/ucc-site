@@ -3,7 +3,7 @@
   <div class="admin-head">
     <div>
       <h1>회원 관리</h1>
-      <p class="admin-sub">회원가입으로 등록된 회원 내역입니다. (개인정보는 최소 열람 원칙)</p>
+      <p class="admin-sub">가입 시 <b>준회원</b>으로 등록됩니다. 회비 납부를 확인한 뒤 <b>정회원</b>으로 승인하세요. (개인정보 최소 열람 원칙)</p>
     </div>
     <div class="admin-head-actions">
       <a class="btn btn-neutral btn-sm" href="/admin">대시보드</a>
@@ -11,48 +11,81 @@
   </div>
 
   <div class="member-stats">
-    <% ["개인회원","기업회원","단체회원","준회원"].forEach(function(t){ %>
+    <span class="mstat"><b><%= byGrade['준회원'] || 0 %></b> 준회원</span>
+    <span class="mstat"><b><%= byGrade['정회원'] || 0 %></b> 정회원</span>
+    <span class="mstat"><b><%= feePaid || 0 %></b> 회비 납부</span>
+    <span class="mstat">·</span>
+    <% ["개인회원","기업회원","단체회원"].forEach(function(t){ %>
       <span class="mstat"><b><%= byType[t] || 0 %></b> <%= t %></span>
     <% }); %>
   </div>
 
-  <form class="member-search" method="get" action="/admin/members">
-    <input type="text" name="q" value="<%= esc(q) %>" placeholder="이름·이메일·기관명 검색" />
-    <button type="submit" class="btn btn-primary btn-sm">검색</button>
-    <% if (q) { %><a class="btn btn-neutral btn-sm" href="/admin/members">초기화</a><% } %>
-  </form>
+  <div class="member-toolbar">
+    <div class="seg" role="tablist">
+      <a class="seg-btn <%= !grade ? 'on' : '' %>" href="/admin/members<%= q ? '?q='+encodeURIComponent(q) : '' %>">전체</a>
+      <a class="seg-btn <%= grade==='준회원' ? 'on' : '' %>" href="/admin/members?grade=준회원<%= q ? '&q='+encodeURIComponent(q) : '' %>">준회원</a>
+      <a class="seg-btn <%= grade==='정회원' ? 'on' : '' %>" href="/admin/members?grade=정회원<%= q ? '&q='+encodeURIComponent(q) : '' %>">정회원</a>
+    </div>
+    <form class="member-search" method="get" action="/admin/members">
+      <% if (grade) { %><input type="hidden" name="grade" value="<%= esc(grade) %>" /><% } %>
+      <input type="text" name="q" value="<%= esc(q) %>" placeholder="이름·이메일·기관명 검색" />
+      <button type="submit" class="btn btn-primary btn-sm">검색</button>
+      <% if (q) { %><a class="btn btn-neutral btn-sm" href="/admin/members<%= grade ? '?grade='+encodeURIComponent(grade) : '' %>">초기화</a><% } %>
+    </form>
+  </div>
 
   <% if (!members.length) { %>
     <p class="post-empty"><%= q ? '검색 결과가 없습니다.' : '가입한 회원이 없습니다.' %></p>
   <% } else { %>
-  <div class="member-scroll">
-  <ul class="admin-list member-list">
-    <li class="admin-list-head" aria-hidden="true">
-      <span class="col-mtype">구분</span>
-      <span class="col-mname">이름</span>
-      <span class="col-memail">이메일</span>
-      <span class="col-mphone">연락처</span>
-      <span class="col-morg">기관·단체</span>
-      <span class="col-mdate">가입일</span>
-      <span class="col-act">관리</span>
-    </li>
+  <div class="member-cards">
     <% members.forEach(function(m){ %>
-      <li class="admin-row">
-        <span class="col-mtype"><span class="board-tag"><%= esc(m.member_type) %></span></span>
-        <span class="col-mname"><%= esc(m.name) %></span>
-        <span class="col-memail"><a href="mailto:<%= esc(m.email) %>"><%= esc(m.email) %></a></span>
-        <span class="col-mphone"><%= esc(m.phone || '-') %></span>
-        <span class="col-morg"><%= esc(m.org_name || '-') %></span>
-        <span class="col-mdate"><%= fmtDate(m.created_at) %></span>
-        <span class="col-act">
+      <div class="mcard">
+        <div class="mcard-top">
+          <div class="mcard-name">
+            <%= esc(m.name) %>
+            <span class="mcard-mail"><%= esc(m.email) %></span>
+          </div>
+          <div class="mcard-badges">
+            <span class="grade-badge <%= m.grade === '정회원' ? 'grade-full' : 'grade-assoc' %>"><%= esc(m.grade || '준회원') %></span>
+            <span class="board-tag"><%= esc(m.member_type) %></span>
+            <span class="fee-badge <%= m.fee_paid ? 'fee-ok' : 'fee-no' %>"><%= m.fee_paid ? '회비납부' : '회비미납' %></span>
+          </div>
+        </div>
+        <div class="mcard-meta">
+          <span><b>연락처</b><%= esc(m.phone || '-') %></span>
+          <span><b>기관·단체</b><%= esc(m.org_name || '-') %></span>
+          <span><b>가입일</b><%= fmtDate(m.created_at) %><% if (m.grade === '정회원' && m.confirmed_at) { %> · 승인 <%= fmtDate(m.confirmed_at) %><% } %></span>
+        </div>
+        <div class="mcard-foot">
+          <% if (m.grade !== '정회원') { %>
+            <form action="/admin/members/<%= m.id %>/approve" method="post"
+                  onsubmit="if(!this.fee_confirm.checked){alert('회비 납부 여부를 확인하고 체크해 주세요.');return false;}return confirm('<%= esc(m.name) %> 님을 정회원으로 승인합니다. 계속할까요?');">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <input type="hidden" name="q" value="<%= esc(q) %>" />
+              <label class="fee-check"><input type="checkbox" name="fee_confirm" value="1" /> 회비 납부 확인</label>
+              <button type="submit" class="btn btn-primary btn-sm">정회원 승인</button>
+            </form>
+          <% } else { %>
+            <form action="/admin/members/<%= m.id %>/revert" method="post"
+                  onsubmit="return confirm('<%= esc(m.name) %> 님을 준회원으로 전환합니다. (회비 미납 등) 계속할까요?');">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <input type="hidden" name="q" value="<%= esc(q) %>" />
+              <button type="submit" class="linkbtn">준회원으로 전환</button>
+            </form>
+            <form action="/admin/members/<%= m.id %>/fee" method="post">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <input type="hidden" name="q" value="<%= esc(q) %>" />
+              <button type="submit" class="linkbtn"><%= m.fee_paid ? '회비 미납 처리' : '회비 납부 처리' %></button>
+            </form>
+          <% } %>
           <form action="/admin/members/<%= m.id %>/delete" method="post" onsubmit="return confirm('이 회원을 삭제하시겠습니까?');">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input type="hidden" name="q" value="<%= esc(q) %>" />
             <button type="submit" class="linkbtn linkbtn-danger">삭제</button>
           </form>
-        </span>
-      </li>
+        </div>
+      </div>
     <% }); %>
-  </ul>
   </div>
   <% } %>
 </div>

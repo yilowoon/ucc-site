@@ -22,6 +22,7 @@
       <% if (error) { %><p class="form-alert err"><%= error %></p><% } %>
       <form method="post" action="/login" class="admin-form-fields">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <% if (typeof next !== 'undefined' && next) { %><input type="hidden" name="next" value="<%= esc(next) %>" /><% } %>
         <div class="field"><label for="email">이메일</label><input type="email" id="email" name="email" value="<%= esc(form.email || '') %>" autocomplete="email" required autofocus /></div>
         <div class="field"><label for="password">비밀번호</label><input type="password" id="password" name="password" autocomplete="current-password" required /></div>
         <button type="submit" class="btn btn-primary btn-block">로그인</button>

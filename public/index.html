@@ -102,10 +102,10 @@
               <li><a href="/members/associate">준회원</a></li>
             </ul>
           </li>
-          <li><a href="/login">로그인</a></li>
-          <li><a href="/signup" class="nav-cta">회원가입</a></li>
+          __MEMBERNAV__
         </ul>
       </nav>
+      <form id="mLogout" action="/logout" method="post" hidden><input type="hidden" name="_csrf" value="__CSRF__" /></form>
 
       <button class="nav-toggle" id="navToggle" aria-label="메뉴 열기" aria-expanded="false" aria-controls="mobileNav">
         <span></span><span></span><span></span>
@@ -153,8 +153,7 @@
         <a class="sub-link" href="/members/corporate">– 기업·단체회원</a>
         <a class="sub-link" href="/members/associate">준회원</a>
       </details>
-      <a href="/login">로그인</a>
-      <a href="/signup">회원가입</a>
+      __MEMBERNAV_M__
     </div>
   </header>
 

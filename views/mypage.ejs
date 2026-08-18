@@ -1,0 +1,53 @@
+<%- include('partials/header') %>
+
+<section class="page-banner">
+  <div class="container">
+    <span class="page-banner-en">MY PAGE</span>
+    <h1 class="page-banner-title">마이페이지</h1>
+    <p class="page-banner-desc"><%= esc(m.name) %> 님, 반갑습니다. 회원 정보와 등급을 확인하실 수 있습니다.</p>
+  </div>
+</section>
+
+<div class="container page-wrap">
+  <div class="mypage-card">
+    <div class="mypage-top">
+      <div class="mypage-id">
+        <span class="mypage-avatar" aria-hidden="true"><%= esc(m.name.charAt(0)) %></span>
+        <div>
+          <h2 class="mypage-name"><%= esc(m.name) %></h2>
+          <div class="mypage-badges">
+            <span class="grade-badge <%= m.grade === '정회원' ? 'grade-full' : 'grade-assoc' %>"><%= esc(m.grade || '준회원') %></span>
+            <span class="board-tag"><%= esc(m.member_type) %></span>
+            <span class="fee-badge <%= m.fee_paid ? 'fee-ok' : 'fee-no' %>"><%= m.fee_paid ? '회비 납부' : '회비 미납' %></span>
+          </div>
+        </div>
+      </div>
+      <a class="btn btn-primary btn-sm" href="/mypage/edit">정보 수정</a>
+    </div>
+
+    <% if (m.grade !== '정회원') { %>
+      <p class="mypage-notice">현재 <strong>준회원</strong>입니다. 회비 납부 후 관리자 확인을 거치면 <strong>정회원</strong>으로 전환되어 모든 회원 혜택을 이용하실 수 있습니다. 문의: 1670-9678 · contact@ucc.or.kr</p>
+    <% } %>
+
+    <dl class="mypage-info">
+      <div><dt>이름</dt><dd><%= esc(m.name) %></dd></div>
+      <div><dt>이메일</dt><dd><%= esc(m.email) %></dd></div>
+      <div><dt>연락처</dt><dd><%= esc(m.phone || '-') %></dd></div>
+      <div><dt>기관·단체</dt><dd><%= esc(m.org_name || '-') %></dd></div>
+      <div><dt>회원 유형</dt><dd><%= esc(m.member_type) %></dd></div>
+      <div><dt>회원 등급</dt><dd><%= esc(m.grade || '준회원') %><% if (m.grade === '정회원' && m.confirmed_at) { %> <span class="mypage-sub">(<%= fmtDate(m.confirmed_at) %> 승인)</span><% } %></dd></div>
+      <div><dt>회비 납부</dt><dd><%= m.fee_paid ? '납부 완료' : '미납' %></dd></div>
+      <div><dt>가입일</dt><dd><%= fmtDate(m.created_at) %></dd></div>
+    </dl>
+
+    <div class="mypage-actions">
+      <a class="btn btn-neutral btn-sm" href="/mypage/edit">정보 수정</a>
+      <form action="/logout" method="post" style="display:inline">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit" class="btn btn-ghost btn-sm">로그아웃</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

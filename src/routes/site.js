@@ -163,7 +163,8 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   });
 
   // ---------- 회원가입 ----------
-  const MEMBER_TYPES = ["개인회원", "기업회원", "단체회원", "준회원"];
+  // 회원 유형(개인/기업/단체) — 가입 시 등급은 항상 '준회원', 관리자 승인 시 '정회원'
+  const MEMBER_TYPES = ["개인회원", "기업회원", "단체회원"];
   router.get("/signup", (req, res) => {
     if (req.session.member) return res.redirect("/");
     res.render("signup", { ...res.locals, title: "회원가입", error: null, form: {} });
@@ -197,32 +198,85 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   });
 
   // ---------- 회원 로그인 ----------
+  // 로그인 후 돌아갈 내부 경로만 허용(오픈 리다이렉트 방지)
+  function safeNext(next) {
+    return typeof next === "string" && /^\/[a-zA-Z0-9/_\-?=&.%]*$/.test(next) && !next.startsWith("//") ? next : "";
+  }
   router.get("/login", (req, res) => {
     if (req.session.member) return res.redirect("/");
     res.render("member-form", {
       ...res.locals, title: "로그인", mode: "login",
-      error: null, joined: req.query.joined === "1", form: {},
+      error: null, joined: req.query.joined === "1", form: {}, next: safeNext(req.query.next),
     });
   });
 
   router.post("/login", verifyCsrf, (req, res) => {
     const email = (req.body.email || "").trim().toLowerCase();
     const pw = req.body.password || "";
+    const next = safeNext(req.body.next);
     const m = db.prepare("SELECT * FROM members WHERE email = ?").get(email);
     const ok = m && bcrypt.compareSync(pw, m.password_hash);
     if (!ok) {
       return res.status(401).render("member-form", {
         ...res.locals, title: "로그인", mode: "login",
-        error: "이메일 또는 비밀번호가 올바르지 않습니다.", joined: false, form: { email },
+        error: "이메일 또는 비밀번호가 올바르지 않습니다.", joined: false, form: { email }, next,
       });
     }
     req.session.member = { id: m.id, name: m.name };
-    res.redirect("/");
+    res.redirect(next || "/");
   });
 
   router.post("/logout", verifyCsrf, (req, res) => {
     delete req.session.member;
     res.redirect("/");
+  });
+
+  // ---------- 마이페이지 (회원 전용) ----------
+  function requireMember(req, res, next) {
+    if (req.session && req.session.member) return next();
+    return res.redirect("/login?next=" + encodeURIComponent(req.originalUrl));
+  }
+
+  router.get("/mypage", requireMember, (req, res) => {
+    const m = db.prepare("SELECT * FROM members WHERE id = ?").get(req.session.member.id);
+    if (!m) { delete req.session.member; return res.redirect("/login"); }
+    res.render("mypage", { ...res.locals, title: "마이페이지", m });
+  });
+
+  router.get("/mypage/edit", requireMember, (req, res) => {
+    const m = db.prepare("SELECT * FROM members WHERE id = ?").get(req.session.member.id);
+    if (!m) { delete req.session.member; return res.redirect("/login"); }
+    res.render("mypage-edit", { ...res.locals, title: "내 정보 수정", m, error: null, pwError: null, done: null });
+  });
+
+  // 정보 수정 — 현재 비밀번호 재확인(보안 게이트)
+  router.post("/mypage/edit", requireMember, verifyCsrf, (req, res) => {
+    const m = db.prepare("SELECT * FROM members WHERE id = ?").get(req.session.member.id);
+    if (!m) { delete req.session.member; return res.redirect("/login"); }
+    const view = (extra) => res.render("mypage-edit", { ...res.locals, title: "내 정보 수정", m, error: null, pwError: null, done: null, ...extra });
+    if (!bcrypt.compareSync(req.body.current || "", m.password_hash)) {
+      return res.status(400).render("mypage-edit", { ...res.locals, title: "내 정보 수정", m, error: "현재 비밀번호가 올바르지 않습니다.", pwError: null, done: null });
+    }
+    const name = (req.body.name || "").trim() || m.name;
+    const phone = (req.body.phone || "").trim();
+    const orgName = (req.body.org_name || "").trim();
+    db.prepare("UPDATE members SET name = ?, phone = ?, org_name = ? WHERE id = ?").run(name, phone, orgName, m.id);
+    req.session.member.name = name;
+    const m2 = db.prepare("SELECT * FROM members WHERE id = ?").get(m.id);
+    res.render("mypage-edit", { ...res.locals, title: "내 정보 수정", m: m2, error: null, pwError: null, done: "정보가 수정되었습니다." });
+  });
+
+  // 비밀번호 변경 — 현재 비밀번호 확인 + 새 비밀번호
+  router.post("/mypage/password", requireMember, verifyCsrf, (req, res) => {
+    const m = db.prepare("SELECT * FROM members WHERE id = ?").get(req.session.member.id);
+    if (!m) { delete req.session.member; return res.redirect("/login"); }
+    const cur = req.body.current || "", np = req.body.newpw || "", cf = req.body.confirm || "";
+    const back = (pwError, done) => res.render("mypage-edit", { ...res.locals, title: "내 정보 수정", m, error: null, pwError, done });
+    if (!bcrypt.compareSync(cur, m.password_hash)) return back("현재 비밀번호가 올바르지 않습니다.", null);
+    if (np.length < 8) return back("새 비밀번호는 8자 이상이어야 합니다.", null);
+    if (np !== cf) return back("새 비밀번호 확인이 일치하지 않습니다.", null);
+    db.prepare("UPDATE members SET password_hash = ? WHERE id = ?").run(bcrypt.hashSync(np, 10), m.id);
+    back(null, "비밀번호가 변경되었습니다.");
   });
 
   return router;

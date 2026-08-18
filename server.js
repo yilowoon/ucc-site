@@ -157,10 +157,28 @@ app.use((req, res, next) => {
 // ---- Routes ----
 // 홈: 정적 index.html에 OG 절대 URL(__BASE__)을 요청 호스트 기준으로 주입해 서빙
 const INDEX_HTML = fs.readFileSync(path.join(__dirname, "public", "index.html"), "utf8");
+const GUEST_NAV = '<li><a href="/login">로그인</a></li><li><a href="/signup" class="nav-cta">회원가입</a></li>';
+const GUEST_NAV_M = '<a href="/login">로그인</a><a href="/signup">회원가입</a>';
 app.get("/", (req, res) => {
   const base = req.protocol + "://" + req.get("host");
+  const member = req.session && req.session.member;
+  let nav = GUEST_NAV, navM = GUEST_NAV_M;
+  if (member) {
+    const nm = cfg.escapeHtml(member.name || "회원");
+    nav =
+      '<li><a href="/mypage">' + nm + ' 님</a></li>' +
+      '<li><a href="/mypage" class="nav-cta">마이페이지</a></li>' +
+      '<li><a href="#" onclick="document.getElementById(\'mLogout\').submit();return false;">로그아웃</a></li>';
+    navM =
+      '<a href="/mypage">마이페이지 (' + nm + ' 님)</a>' +
+      '<a href="#" onclick="document.getElementById(\'mLogout\').submit();return false;">로그아웃</a>';
+  }
   res.type("html").send(
-    INDEX_HTML.replace(/__BASE__/g, base).replace(/__CSRF__/g, req.session.csrf || "")
+    INDEX_HTML
+      .replace(/__BASE__/g, base)
+      .replace(/__CSRF__/g, req.session.csrf || "")
+      .replace(/__MEMBERNAV__/g, nav)
+      .replace(/__MEMBERNAV_M__/g, navM)
   );
 });
 
