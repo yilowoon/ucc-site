@@ -222,7 +222,8 @@ module.exports = function siteRoutes({ verifyCsrf }) {
         error: "이메일 또는 비밀번호가 올바르지 않습니다.", joined: false, form: { email }, next,
       });
     }
-    req.session.member = { id: m.id, name: m.name };
+    req.session.member = { id: m.id, name: m.name, loginAt: Date.now() };
+    req.session.cookie.maxAge = 1000 * 60 * 60; // 로그인 시점부터 1시간
     res.redirect(next || "/");
   });
 

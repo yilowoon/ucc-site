@@ -43,10 +43,25 @@ app.use(
       // "auto": HTTPS 연결이면 secure 쿠키, HTTP면 일반 쿠키 (trust proxy + X-Forwarded-Proto 기준)
       // → HTTPS 적용 전 IP/HTTP 테스트에서도 세션·CSRF 정상 동작
       secure: "auto",
-      maxAge: 1000 * 60 * 60 * 8, // 8시간
+      maxAge: 1000 * 60 * 60, // 1시간 (보안: 로그인 후 1시간 뒤 자동 만료)
     },
   })
 );
+
+// ---- 세션 절대 만료: 로그인(회원·관리자) 후 1시간 경과 시 자동 로그아웃 ----
+const SESSION_MAX_MS = 1000 * 60 * 60; // 1시간
+app.use((req, res, next) => {
+  if (req.session) {
+    const now = Date.now();
+    if (req.session.member && now - (req.session.member.loginAt || 0) > SESSION_MAX_MS) {
+      delete req.session.member;
+    }
+    if (req.session.admin && now - (req.session.admin.loginAt || 0) > SESSION_MAX_MS) {
+      delete req.session.admin;
+    }
+  }
+  next();
+});
 
 // ---- CSRF (세션 기반 토큰) ----
 app.use((req, res, next) => {
