@@ -927,6 +927,18 @@
 .member-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
 a.seg-btn { display: inline-block; text-decoration: none; }
 .member-toolbar .member-search { margin-bottom: 0; }
+
+/* ===== 관리자: 접속기록(IP 로그) ===== */
+.log-table { width: 100%; min-width: 720px; border-collapse: collapse; font-size: .9rem; }
+.log-table th, .log-table td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.log-table thead th { background: var(--paper-warm); color: var(--ink-soft); font-weight: 700; font-size: .82rem; position: sticky; top: 0; }
+.log-table tbody tr:hover { background: var(--paper-warm); }
+.log-time { color: var(--muted); font-variant-numeric: tabular-nums; }
+.log-ip { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--green-800); font-weight: 600; }
+.log-path { max-width: 320px; overflow: hidden; text-overflow: ellipsis; }
+.log-vid { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--muted); }
+.pager { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 18px; }
+.pager-info { font-size: .9rem; color: var(--muted); }
 @media (max-width: 720px) {
   .mypage-info { grid-template-columns: 1fr; }
   .mypage-edit-grid { grid-template-columns: 1fr; }

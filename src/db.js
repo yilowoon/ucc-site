@@ -139,6 +139,8 @@ try { db.exec("ALTER TABLE members ADD COLUMN specialty TEXT NOT NULL DEFAULT ''
 // visits: 순방문자용 visitor 컬럼 (기존 DB 대비) — 컬럼 보장 후 인덱스 생성
 try { db.exec("ALTER TABLE visits ADD COLUMN visitor TEXT NOT NULL DEFAULT ''"); } catch (e) {}
 try { db.exec("CREATE INDEX IF NOT EXISTS idx_visits_visitor ON visits(visitor)"); } catch (e) {}
+// visits: 접속 IP 기록 컬럼(관리자 접속기록용) — 개인정보처리방침 고지·보관기간 준수 필요
+try { db.exec("ALTER TABLE visits ADD COLUMN ip TEXT NOT NULL DEFAULT ''"); } catch (e) {}
 
 /* ---- 햇빛소득마을: 시·도 시드 (없을 때만) ---- */
 function seedSolarRegions() {

@@ -1,0 +1,58 @@
+<%- include('partials/header') %>
+<div class="container admin-wrap">
+  <div class="admin-head">
+    <div>
+      <h1>접속기록 (IP)</h1>
+      <p class="admin-sub">서버에 접속한 방문 기록입니다. 최신순 · IP는 개인정보이므로 열람·이용에 유의하세요.</p>
+    </div>
+    <div class="admin-head-actions">
+      <a class="btn btn-neutral btn-sm" href="/admin/stats">트래픽 통계</a>
+      <a class="btn btn-neutral btn-sm" href="/admin">대시보드</a>
+    </div>
+  </div>
+
+  <div class="member-stats">
+    <span class="mstat"><b><%= total.toLocaleString() %></b> 총 기록</span>
+    <span class="mstat"><b><%= uniqueIps.toLocaleString() %></b> 고유 IP</span>
+  </div>
+
+  <form class="member-search" method="get" action="/admin/access-log">
+    <input type="text" name="q" value="<%= esc(q) %>" placeholder="IP · 경로 검색" />
+    <button type="submit" class="btn btn-primary btn-sm">검색</button>
+    <% if (q) { %><a class="btn btn-neutral btn-sm" href="/admin/access-log">초기화</a><% } %>
+  </form>
+
+  <% if (!rows.length) { %>
+    <p class="post-empty"><%= q ? '검색 결과가 없습니다.' : '접속 기록이 없습니다.' %></p>
+  <% } else { %>
+  <div class="member-scroll">
+    <table class="log-table">
+      <thead>
+        <tr><th>시간(KST)</th><th>IP</th><th>기기</th><th>유입</th><th>경로</th><th>방문자ID</th></tr>
+      </thead>
+      <tbody>
+        <% rows.forEach(function(r){ %>
+          <tr>
+            <td class="log-time"><%= fmtDateTime(r.created_at) %></td>
+            <td class="log-ip"><%= esc(r.ip || '-') %></td>
+            <td><%= esc(r.device || '-') %></td>
+            <td><%= esc(r.source || '-') %></td>
+            <td class="log-path"><%= esc(r.path) %></td>
+            <td class="log-vid"><%= r.visitor ? esc(r.visitor.slice(0, 8)) : '-' %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pager">
+    <% var qs = q ? ('&q=' + encodeURIComponent(q)) : ''; %>
+    <% if (page > 1) { %><a class="btn btn-neutral btn-sm" href="/admin/access-log?page=<%= page-1 %><%= qs %>">← 이전</a><% } %>
+    <span class="pager-info"><%= page %> / <%= pages %> 페이지</span>
+    <% if (page < pages) { %><a class="btn btn-neutral btn-sm" href="/admin/access-log?page=<%= page+1 %><%= qs %>">다음 →</a><% } %>
+  </div>
+  <% } %>
+
+  <p class="panel-note" style="margin-top:18px">※ IP 주소는 「개인정보 보호법」상 개인정보에 해당합니다. 수집·이용 목적(부정접속 방지·통계)과 보관기간을 개인정보처리방침에 고지하고, 목적 달성 후 파기해 주세요.</p>
+</div>
+<%- include('partials/footer') %>

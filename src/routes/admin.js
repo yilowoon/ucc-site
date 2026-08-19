@@ -459,6 +459,27 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     res.render("admin-stats", { ...res.locals, title: "트래픽 통계", summary, daily, weekly, monthly, refRows, pageRows, devRows, since, today });
   });
 
+  // ---------- 접속기록(IP 로그) ----------
+  router.get("/access-log", requireAdmin, (req, res) => {
+    const PER = 100;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const q = (req.query.q || "").trim();          // IP·경로 검색
+    const where = [], params = [];
+    if (q) { where.push("(ip LIKE ? OR path LIKE ?)"); params.push("%" + q + "%", "%" + q + "%"); }
+    const cond = where.length ? " WHERE " + where.join(" AND ") : "";
+    const total = db.prepare("SELECT COUNT(*) AS n FROM visits" + cond).get(...params).n;
+    const pages = Math.max(1, Math.ceil(total / PER));
+    const cur = Math.min(page, pages);
+    const rows = db.prepare(
+      "SELECT created_at, ip, device, source, path, visitor FROM visits" + cond +
+      " ORDER BY id DESC LIMIT ? OFFSET ?"
+    ).all(...params, PER, (cur - 1) * PER);
+    const uniqueIps = db.prepare("SELECT COUNT(DISTINCT ip) AS n FROM visits WHERE ip <> ''").get().n;
+    res.render("admin-access-log", {
+      ...res.locals, title: "접속기록(IP)", rows, q, page: cur, pages, total, per: PER, uniqueIps,
+    });
+  });
+
   // ---------- 햇빛소득마을 지역 현황 관리 ----------
   const SOLAR_STATUSES = ["준비중", "추진중", "운영중"];
   router.get("/solar", requireAdmin, (req, res) => {
