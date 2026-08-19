@@ -944,3 +944,17 @@ a.seg-btn { display: inline-block; text-decoration: none; }
   .mypage-edit-grid { grid-template-columns: 1fr; }
   .member-cards { grid-template-columns: 1fr; }
 }
+
+/* ===== 문화예술과학융합 (convergence) ===== */
+.conv-hero { padding: 72px 0 60px; }
+.conv-hero .page-banner-title { max-width: 920px; line-height: 1.28; }
+.conv-hero .page-banner-desc { max-width: 760px; }
+.banner-cta { margin-top: 28px; position: relative; z-index: 1; }
+.conv-vision { margin: 32px 0 0; padding: 24px 28px; border-radius: 16px;
+  background: linear-gradient(120deg, var(--green-800), var(--green-900)); color: #fff;
+  font-size: clamp(1.05rem, 2.4vw, 1.28rem); font-weight: 700; line-height: 1.55;
+  text-align: center; box-shadow: var(--shadow-sm); }
+.conv-vision-tag { display: inline-block; margin-right: 12px; font-size: .7rem; letter-spacing: .14em;
+  font-weight: 800; color: var(--gold-400); vertical-align: middle; }
+.conv-table .ms-cat { font-weight: 800; color: var(--green-800); white-space: nowrap; }
+.conv-ko { display: block; font-size: .78rem; font-weight: 600; color: var(--muted); margin-top: 2px; }

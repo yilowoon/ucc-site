@@ -25,6 +25,7 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   router.get("/business", (req, res) => res.render("biz", { ...res.locals, title: "프로젝트" }));
   router.get("/projects/forum", (req, res) => res.render("forum", { ...res.locals, title: "두잉새롬마당" }));
   router.get("/projects/community", (req, res) => res.render("community", { ...res.locals, title: "커뮤니티모임" }));
+  router.get("/projects/convergence", (req, res) => res.render("convergence", { ...res.locals, title: "문화예술과학융합" }));
 
   // ---------- 햇빛소득마을 (프로젝트) ----------
   const SOLAR_STATUS_CLASS = { "준비중": "prep", "추진중": "active", "운영중": "live" };
