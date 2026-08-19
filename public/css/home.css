@@ -679,9 +679,9 @@
 
 @media (max-width: 860px) { .directors { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 640px) {
-  .exec { grid-template-columns: 1fr; gap: 20px; text-align: center; }
-  .exec-photo img { max-width: 260px; margin: 0 auto; }
-  .exec-careers li { justify-content: center; text-align: left; }
+  .exec { grid-template-columns: 1fr; gap: 20px; text-align: left; }
+  .exec-photo img { max-width: 260px; }
+  .exec-careers li { justify-content: flex-start; text-align: left; }
 }
 @media (max-width: 460px) { .directors { grid-template-columns: 1fr; } }
 
