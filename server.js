@@ -194,6 +194,20 @@ app.get("/", (req, res) => {
       '<a href="/mypage">마이페이지</a>' +
       '<a href="#" onclick="document.getElementById(\'mLogout\').submit();return false;">로그아웃</a>';
   }
+  // 관리자 세션(회원과 별개)에 따른 관리자 메뉴 — 서브페이지(header/footer.ejs)와 동일하게
+  const isAdmin = !!(req.session && req.session.admin);
+  const csrf = req.session.csrf || "";
+  let adminNav = "", adminNavM = "";
+  let adminFoot = '<a href="/admin/login">관리자</a>';
+  if (isAdmin) {
+    adminNav = '<li><a href="/admin" class="nav-admin">관리자</a></li>';
+    adminNavM = '<a href="/admin">관리자</a>';
+    adminFoot =
+      '<a href="/admin">관리자</a>' +
+      '<form action="/admin/logout" method="post" style="display:inline">' +
+      '<input type="hidden" name="_csrf" value="' + csrf + '" />' +
+      '<button type="submit" class="linkbtn">로그아웃</button></form>';
+  }
   // 홈 응답은 로그인 여부(세션)에 따라 메뉴가 달라지므로 캐시 금지 —
   // 브라우저/프록시가 로그인 전 게스트 화면을 캐시해 로그인 후에도 재사용하는 것을 방지
   res.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
@@ -201,9 +215,12 @@ app.get("/", (req, res) => {
   res.type("html").send(
     INDEX_HTML
       .replace(/__BASE__/g, base)
-      .replace(/__CSRF__/g, req.session.csrf || "")
+      .replace(/__CSRF__/g, csrf)
       .replace(/__MEMBERNAV__/g, nav)
       .replace(/__MEMBERNAV_M__/g, navM)
+      .replace(/__ADMINNAV__/g, adminNav)
+      .replace(/__ADMINNAV_M__/g, adminNavM)
+      .replace(/__ADMINFOOT__/g, adminFoot)
   );
 });
 
