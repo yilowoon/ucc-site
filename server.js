@@ -177,6 +177,34 @@ app.use((req, res, next) => {
   next();
 });
 
+// ---- 보안 모니터링: 알려진 공격/스캔 경로 요청 기록 (모든 메서드) ----
+const THREAT_PATTERNS = [
+  { re: /(wp-json|wp-login|wp-admin|wp-content|wp-includes|xmlrpc\.php|wlwmanifest|wp-config)/i, cat: "wordpress" },
+  { re: /(\/\.env|\/\.git|\/\.aws|\/\.ssh|\/\.htaccess|\/\.htpasswd|\.sql(\?|$)|\.bak(\?|$))/i, cat: "secret" },
+  { re: /(phpmyadmin|\/pma\b|adminer|dbadmin|\/administrator)/i, cat: "dbadmin" },
+  { re: /(vendor\/phpunit|eval-stdin|\/cgi-bin|boaform|GponForm|\/shell|\/cmd\b|jndi:|\$\{)/i, cat: "rce" },
+  { re: /(\.\.\/|\.\.%2f|%2e%2e|\/etc\/passwd)/i, cat: "traversal" },
+  { re: /\.(php|asp|aspx|jsp)(\?|$|\/)/i, cat: "php" },
+  { re: /(\/actuator|\/solr\b|\/struts|\/telescope|\/\.vscode)/i, cat: "appscan" },
+];
+const insertSecEvent = db.prepare(
+  "INSERT INTO security_events (ip, method, path, ua, category, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+);
+app.use((req, res, next) => {
+  try {
+    const raw = (req.originalUrl || "").slice(0, 300);
+    let dec = raw; try { dec = decodeURIComponent(raw); } catch (e) {}
+    const hay = raw + " " + dec;
+    for (const t of THREAT_PATTERNS) {
+      if (t.re.test(hay)) {
+        insertSecEvent.run(clientIp(req), req.method, raw, (req.get("user-agent") || "").slice(0, 200), t.cat, new Date().toISOString());
+        break;
+      }
+    }
+  } catch (e) { /* 보안 로깅 실패는 서비스에 영향 주지 않음 */ }
+  next();
+});
+
 // ---- Routes ----
 // 홈: 정적 index.html에 OG 절대 URL(__BASE__)을 요청 호스트 기준으로 주입해 서빙
 const INDEX_HTML = fs.readFileSync(path.join(__dirname, "public", "index.html"), "utf8");

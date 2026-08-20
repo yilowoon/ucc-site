@@ -1,0 +1,138 @@
+<%- include('partials/header') %>
+<%
+  var META = {
+    wordpress: { label: "워드프레스 취약점 스캔", sev: "낮음",
+      desc: "워드프레스 전용 경로(/wp-json, /wp-login.php 등)를 찾는 자동 봇입니다. 본 사이트는 워드프레스가 아니라 모두 404로 처리됩니다.",
+      action: "실질적 위험 없음. 같은 IP가 반복되면 nginx에서 차단하세요." },
+    secret: { label: "설정·비밀정보 탐색", sev: "중간",
+      desc: ".env·.git 등 민감 파일을 노립니다. 서버 웹 루트에 노출돼 있으면 위험합니다.",
+      action: ".env/.git이 공개 경로에 노출되지 않았는지 확인하고, nginx에서 숨김 파일(.으로 시작) 접근을 차단하세요." },
+    dbadmin: { label: "DB 관리도구 탐색", sev: "중간",
+      desc: "phpMyAdmin·Adminer 등 DB 관리도구를 찾습니다. 본 사이트엔 설치돼 있지 않습니다.",
+      action: "해당 도구 미설치 확인. 반복 IP 차단." },
+    php: { label: "PHP 등 서버 스크립트 탐색", sev: "낮음",
+      desc: "PHP/ASP 스크립트를 찾습니다. 본 사이트는 Node.js라 실행되지 않습니다.",
+      action: "실질적 위험 없음. 반복 시 차단." },
+    rce: { label: "원격코드실행·쉘 시도", sev: "높음",
+      desc: "취약 컴포넌트·쉘 업로드 등으로 서버 장악을 시도합니다. 실제 취약점이 있으면 위험합니다.",
+      action: "서버·의존성 최신화, 해당 IP 즉시 차단, 로그 주시. 반복·집중 시 호스팅사에 신고." },
+    traversal: { label: "경로 탐색(디렉터리 트래버설)", sev: "높음",
+      desc: "../ 등으로 서버 파일(/etc/passwd 등) 접근을 시도합니다.",
+      action: "앱은 정적·라우트 기반이라 기본 방어됩니다. 해당 IP 차단." },
+    appscan: { label: "애플리케이션 스캐너", sev: "낮음",
+      desc: "특정 프레임워크(Actuator·Solr 등) 노출을 탐색합니다.",
+      action: "해당 서비스 미노출 확인." },
+    other: { label: "기타 의심", sev: "낮음", desc: "분류되지 않은 의심 요청.", action: "패턴 확인 후 필요 시 차단." },
+  };
+  var sevClass = { "낮음": "sev-low", "중간": "sev-mid", "높음": "sev-high" };
+%>
+<div class="container admin-wrap">
+  <div class="admin-head">
+    <div>
+      <h1>보안 모니터링</h1>
+      <p class="admin-sub">알려진 공격·스캔 경로로 들어온 의심 접속을 모아 보여줍니다. 대부분은 자동 봇의 무해한 시도이며, 반복·고위험 IP만 대응하면 됩니다.</p>
+    </div>
+    <div class="admin-head-actions">
+      <a class="btn btn-neutral btn-sm" href="/admin/access-log">접속기록(IP)</a>
+      <a class="btn btn-neutral btn-sm" href="/admin">대시보드</a>
+    </div>
+  </div>
+
+  <div class="member-stats">
+    <span class="mstat"><b><%= total.toLocaleString() %></b> 의심 요청(누적)</span>
+    <span class="mstat"><b><%= uniqueIps.toLocaleString() %></b> 의심 IP</span>
+    <% var hi = (byCat.rce||0) + (byCat.traversal||0); %>
+    <span class="mstat"><b class="<%= hi ? 'hub-new' : '' %>"><%= hi %></b> 고위험(표본)</span>
+  </div>
+
+  <!-- 진단 요약 -->
+  <div class="sec-banner <%= hi ? 'sec-banner--warn' : 'sec-banner--ok' %>">
+    <% if (hi) { %>
+      ⚠ 고위험 유형(원격코드실행·경로탐색)이 표본에서 <strong><%= hi %>건</strong> 감지됐습니다. 아래 ‘주요 의심 IP’에서 해당 IP를 확인해 nginx 차단을 권장합니다.
+    <% } else { %>
+      ✓ 현재 표본에서 고위험(원격코드실행·경로탐색) 시도는 없습니다. 감지된 항목은 대부분 워드프레스·PHP를 노린 무해한 자동 스캔입니다. 본 사이트는 워드프레스/PHP가 아니라 모두 404 처리됩니다.
+    <% } %>
+  </div>
+
+  <!-- 유형별 대응 가이드 -->
+  <h2 class="sec-h">위협 유형별 대응</h2>
+  <div class="sec-cards">
+    <% Object.keys(META).forEach(function(k){ var m = META[k]; var c = byCat[k] || 0; if (k==='other' && !c) return; %>
+      <div class="sec-card">
+        <div class="sec-card-top">
+          <span class="sev-badge <%= sevClass[m.sev] %>"><%= m.sev %></span>
+          <span class="sec-count"><%= c %>건</span>
+        </div>
+        <h3><%= m.label %></h3>
+        <p class="sec-desc"><%= m.desc %></p>
+        <p class="sec-action"><strong>대응</strong> <%= m.action %></p>
+      </div>
+    <% }); %>
+  </div>
+
+  <!-- 주요 의심 IP -->
+  <h2 class="sec-h">주요 의심 IP <span class="sec-h-note">(최근 표본 기준)</span></h2>
+  <% if (!topIps.length) { %>
+    <p class="post-empty">감지된 의심 IP가 없습니다.</p>
+  <% } else { %>
+  <div class="member-scroll">
+    <table class="log-table">
+      <thead><tr><th>IP</th><th>요청 수</th><th>유형</th><th>최근 시각(KST)</th></tr></thead>
+      <tbody>
+        <% topIps.forEach(function(t){ %>
+          <tr>
+            <td class="log-ip"><%= esc(t.ip) %></td>
+            <td><b><%= t.count %></b></td>
+            <td><% t.cats.forEach(function(c){ %><span class="cat-tag <%= sevClass[(META[c]||META.other).sev] %>"><%= (META[c]||META.other).label %></span> <% }); %></td>
+            <td class="log-time"><%= fmtDateTime(t.last) %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+
+  <!-- 최근 의심 접속 -->
+  <h2 class="sec-h">최근 의심 접속</h2>
+  <% if (!recent.length) { %>
+    <p class="post-empty">의심 접속 기록이 없습니다.</p>
+  <% } else { %>
+  <div class="member-scroll">
+    <table class="log-table">
+      <thead><tr><th>시간(KST)</th><th>IP</th><th>유형</th><th>메서드</th><th>경로</th></tr></thead>
+      <tbody>
+        <% recent.forEach(function(r){ var m = META[r.category] || META.other; %>
+          <tr>
+            <td class="log-time"><%= fmtDateTime(r.created_at) %></td>
+            <td class="log-ip"><%= esc(r.ip || '-') %></td>
+            <td><span class="cat-tag <%= sevClass[m.sev] %>"><%= m.label %></span></td>
+            <td><%= esc(r.method || 'GET') %></td>
+            <td class="log-path"><%= esc(r.path) %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+
+  <!-- 전반 대응 가이드 -->
+  <h2 class="sec-h">권장 대응 가이드</h2>
+  <div class="sec-guide">
+    <ol>
+      <li><strong>대부분은 무해</strong> — 이 사이트는 워드프레스·PHP가 아니므로 관련 스캔은 전부 404로 튕겨냅니다. 매일 들어오는 정상적인 인터넷 배경 소음입니다.</li>
+      <li><strong>반복·고위험 IP는 차단</strong> — 위 ‘주요 의심 IP’에서 요청 수가 많거나 고위험(빨강) 유형인 IP는 서버 nginx에서 차단하세요.</li>
+      <li><strong>스캔 경로를 로그 없이 즉시 차단</strong>(nginx 예시) — 아래 블록을 server 블록에 추가하면 워드프레스 스캔을 444로 즉시 종료합니다.
+        <pre class="sec-pre">location ~* (^/wp-|xmlrpc\.php|/\.env|/\.git|phpmyadmin|/vendor/) {
+    return 444;   # 응답 없이 연결 종료
+}
+# 숨김 파일 접근 차단
+location ~ /\. { deny all; }</pre>
+      </li>
+      <li><strong>특정 IP 차단</strong>(nginx) — <code class="sec-code">deny 91.92.34.102;</code> 를 server 블록에 추가 후 <code class="sec-code">sudo nginx -t &amp;&amp; sudo systemctl reload nginx</code>.</li>
+      <li><strong>자동 차단(fail2ban) 권장</strong> — 반복 스캐너를 자동으로 일정 시간 차단하려면 fail2ban 설치를 검토하세요. 설정을 원하시면 안내해 드립니다.</li>
+      <li><strong>기본 위생</strong> — 서버·Node·의존성 최신화(<code class="sec-code">npm audit</code>), 관리자 비밀번호 강화, HTTPS 적용 유지.</li>
+    </ol>
+    <p class="panel-note">※ IP는 개인정보이므로 열람·보관에 유의하고, 차단·신고 등 정당한 보안 목적에만 이용하세요.</p>
+  </div>
+</div>
+<%- include('partials/footer') %>

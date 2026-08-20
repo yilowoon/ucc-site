@@ -480,6 +480,71 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     });
   });
 
+  // ---------- 보안 모니터링(의심 접속) ----------
+  const THREAT_PATTERNS = [
+    { re: /(wp-json|wp-login|wp-admin|wp-content|wp-includes|xmlrpc\.php|wlwmanifest|wp-config)/i, cat: "wordpress" },
+    { re: /(\/\.env|\/\.git|\/\.aws|\/\.ssh|\/\.htaccess|\/\.htpasswd|\.sql(\?|$)|\.bak(\?|$))/i, cat: "secret" },
+    { re: /(phpmyadmin|\/pma\b|adminer|dbadmin|\/administrator)/i, cat: "dbadmin" },
+    { re: /(vendor\/phpunit|eval-stdin|\/cgi-bin|boaform|GponForm|\/shell|\/cmd\b|jndi:|\$\{)/i, cat: "rce" },
+    { re: /(\.\.\/|\.\.%2f|%2e%2e|\/etc\/passwd)/i, cat: "traversal" },
+    { re: /\.(php|asp|aspx|jsp)(\?|$|\/)/i, cat: "php" },
+    { re: /(\/actuator|\/solr\b|\/struts|\/telescope|\/\.vscode)/i, cat: "appscan" },
+  ];
+  const categorize = (p) => {
+    const s = p || "";
+    for (const t of THREAT_PATTERNS) if (t.re.test(s)) return t.cat;
+    return "other";
+  };
+  // 기존 접속기록(visits)에서 의심 경로를 함께 집계하기 위한 SQL 조건
+  const SUSPECT_SQL =
+    "(path LIKE '/wp%' OR path LIKE '%xmlrpc%' OR path LIKE '%wlwmanifest%' OR path LIKE '%/.env%' " +
+    "OR path LIKE '%/.git%' OR path LIKE '%/.aws%' OR path LIKE '%phpmyadmin%' OR path LIKE '%adminer%' " +
+    "OR path LIKE '%administrator%' OR path LIKE '%.php%' OR path LIKE '%.asp%' OR path LIKE '%cgi-bin%' " +
+    "OR path LIKE '%actuator%' OR path LIKE '%/etc/passwd%' OR path LIKE '%..%')";
+
+  router.get("/security", requireAdmin, (req, res) => {
+    // 1) 최근 이벤트: security_events(향후) + visits의 의심 경로(기존) 병합
+    const secRows = db.prepare(
+      "SELECT created_at, ip, method, path, category FROM security_events ORDER BY id DESC LIMIT 300"
+    ).all();
+    const visRows = db.prepare(
+      "SELECT created_at, ip, 'GET' AS method, path FROM visits WHERE " + SUSPECT_SQL + " ORDER BY id DESC LIMIT 300"
+    ).all().map((r) => ({ ...r, category: categorize(r.path) }));
+
+    const merged = secRows.concat(visRows)
+      .sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+    const recent = merged.slice(0, 120);
+
+    // 2) 요약
+    const secTotal = db.prepare("SELECT COUNT(*) AS n FROM security_events").get().n;
+    const visTotal = db.prepare("SELECT COUNT(*) AS n FROM visits WHERE " + SUSPECT_SQL).get().n;
+    const total = secTotal + visTotal;
+    const uniqueIps = db.prepare(
+      "SELECT COUNT(*) AS n FROM (SELECT ip FROM security_events WHERE ip<>'' " +
+      "UNION SELECT ip FROM visits WHERE " + SUSPECT_SQL + " AND ip<>'')"
+    ).get().n;
+
+    // 3) 유형별 집계 (병합 표본 기준)
+    const byCat = {};
+    merged.forEach((r) => { byCat[r.category] = (byCat[r.category] || 0) + 1; });
+
+    // 4) 주요 의심 IP (병합 표본 기준)
+    const ipMap = {};
+    merged.forEach((r) => {
+      if (!r.ip) return;
+      const m = ipMap[r.ip] || (ipMap[r.ip] = { ip: r.ip, count: 0, cats: {}, last: r.created_at });
+      m.count++; m.cats[r.category] = true;
+      if (r.created_at > m.last) m.last = r.created_at;
+    });
+    const topIps = Object.values(ipMap)
+      .map((m) => ({ ip: m.ip, count: m.count, cats: Object.keys(m.cats), last: m.last }))
+      .sort((a, b) => b.count - a.count).slice(0, 15);
+
+    res.render("admin-security", {
+      ...res.locals, title: "보안 모니터링", recent, total, uniqueIps, byCat, topIps, sampleNote: merged.length,
+    });
+  });
+
   // ---------- 햇빛소득마을 지역 현황 관리 ----------
   const SOLAR_STATUSES = ["준비중", "추진중", "운영중"];
   router.get("/solar", requireAdmin, (req, res) => {

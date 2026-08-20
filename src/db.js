@@ -120,6 +120,19 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_visits_day ON visits(day);
   CREATE INDEX IF NOT EXISTS idx_visits_source ON visits(source);
+
+  -- 보안 모니터링: 알려진 공격/스캔 경로 요청 기록
+  CREATE TABLE IF NOT EXISTS security_events (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    ip         TEXT    NOT NULL DEFAULT '',
+    method     TEXT    NOT NULL DEFAULT 'GET',
+    path       TEXT    NOT NULL DEFAULT '',
+    ua         TEXT    NOT NULL DEFAULT '',
+    category   TEXT    NOT NULL DEFAULT '',   -- wordpress/secret/dbadmin/php/rce/traversal/appscan
+    created_at TEXT    NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_secev_created ON security_events(id DESC);
+  CREATE INDEX IF NOT EXISTS idx_secev_ip ON security_events(ip);
 `);
 
 // members 컬럼 마이그레이션 (이미 있으면 무시)
