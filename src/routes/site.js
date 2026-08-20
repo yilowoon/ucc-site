@@ -37,11 +37,24 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const items = db.prepare("SELECT * FROM newsletter ORDER BY id DESC LIMIT ? OFFSET ?").all(PER, (cur - 1) * PER);
     res.render("newsletter", { ...res.locals, title: "뉴스레터", items, page: cur, pages, total, per: PER });
   });
+  // 생성 이미지(SVG): 기사 사진이 1장뿐일 때 키워드·제목 기반 이미지를 즉석 생성
+  router.get("/newsletter/gen/:id.svg", (req, res, next) => {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return next();
+    const n = db.prepare("SELECT keyword, title FROM newsletter WHERE id = ?").get(id);
+    if (!n) return next();
+    res.type("image/svg+xml");
+    res.set("Cache-Control", "public, max-age=86400");
+    res.send(require("../newsletter").buildGenSvg(n.keyword, n.title));
+  });
+  const nlImg = (v, id) => (v === "gen" ? "/newsletter/gen/" + id + ".svg" : v);
   router.get("/newsletter/:id", (req, res, next) => {
     const id = parseInt(req.params.id, 10);
     if (!id) return next();
     const n = db.prepare("SELECT * FROM newsletter WHERE id = ?").get(id);
     if (!n) return next();
+    n.image1 = nlImg(n.image1, n.id);
+    n.image2 = nlImg(n.image2, n.id);
     const prev = db.prepare("SELECT id, title FROM newsletter WHERE id < ? ORDER BY id DESC LIMIT 1").get(id); // 더 오래된 글
     const nextRow = db.prepare("SELECT id, title FROM newsletter WHERE id > ? ORDER BY id ASC LIMIT 1").get(id); // 더 최신 글
     const backPage = Math.max(1, parseInt(req.query.page, 10) || 1);
@@ -164,7 +177,11 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const nl = db
       .prepare("SELECT id, title, summary, source, url, image1, image2, created_at FROM newsletter ORDER BY id DESC LIMIT 1")
       .get();
-    const newsletter = nl ? { ...nl, date: cfg.formatDate(nl.created_at) } : null;
+    const genImg = (v, id) => (v === "gen" ? "/newsletter/gen/" + id + ".svg" : v);
+    const newsletter = nl ? {
+      ...nl, date: cfg.formatDate(nl.created_at),
+      image1: genImg(nl.image1, nl.id), image2: genImg(nl.image2, nl.id),
+    } : null;
 
     res.json({ notices, news, newsletter });
   });
