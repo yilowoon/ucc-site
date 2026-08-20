@@ -8,39 +8,50 @@
   </div>
 </section>
 
-<div class="container page-wrap">
-  <% if (!items.length) { %>
-    <p class="post-empty">아직 수집된 뉴스레터가 없습니다. 매일 오전 8시·오후 6시에 자동으로 업데이트됩니다.</p>
-  <% } else { %>
-  <ul class="nl-list">
-    <% items.forEach(function(n){ %>
-      <li class="nl-item">
-        <div class="nl-imgs">
-          <span class="nl-img" style="background-image:url('<%= encodeURI(n.image1) %>')"></span>
-          <span class="nl-img" style="background-image:url('<%= encodeURI(n.image2) %>')"></span>
-        </div>
-        <div class="nl-body">
-          <div class="nl-meta">
-            <% if (n.keyword) { %><span class="nl-kw"><%= esc(n.keyword) %></span><% } %>
-            <% if (n.source) { %><span class="nl-src"><%= esc(n.source) %></span><% } %>
-            <span class="nl-date"><%= fmtDate(n.created_at) %></span>
-          </div>
-          <h3 class="nl-title"><%= esc(n.title) %></h3>
-          <p class="nl-summary"><%= esc(n.summary) %></p>
-          <% if (n.url) { %><a class="nl-link" href="<%= esc(n.url) %>" target="_blank" rel="noopener noreferrer">원문 보기 →</a><% } %>
-        </div>
+<div class="container board-wrap">
+  <div class="board-toolbar">
+    <span class="board-count">전체 <strong><%= total %></strong>건</span>
+  </div>
+
+  <ul class="post-list post-list--nl">
+    <li class="post-list-head" aria-hidden="true">
+      <span class="col-no">번호</span>
+      <span class="col-title">제목</span>
+      <span class="col-src">출처</span>
+      <span class="col-kw">키워드</span>
+      <span class="col-date">등록일</span>
+    </li>
+    <% if (!items.length) { %>
+      <li class="post-empty">아직 수집된 뉴스레터가 없습니다. 매일 오전 8시·오후 6시에 자동으로 업데이트됩니다.</li>
+    <% } %>
+    <% items.forEach(function(n, i){ %>
+      <li class="post-row">
+        <span class="col-no"><%= total - ((page - 1) * per) - i %></span>
+        <span class="col-title">
+          <a href="/newsletter/<%= n.id %>?page=<%= page %>">
+            <span class="thumb-dot" title="이미지 포함" aria-hidden="true"></span>
+            <span class="post-title-text"><%= n.title %></span>
+          </a>
+        </span>
+        <span class="col-src"><%= n.source || '-' %></span>
+        <span class="col-kw"><span class="nl-kw"><%= n.keyword %></span></span>
+        <span class="col-date"><%= fmtDate(n.created_at) %></span>
       </li>
     <% }); %>
   </ul>
 
-  <div class="pager">
-    <% if (page > 1) { %><a class="btn btn-neutral btn-sm" href="/newsletter?page=<%= page-1 %>">← 이전</a><% } %>
-    <span class="pager-info"><%= page %> / <%= pages %> 페이지 · 총 <%= total %>건</span>
-    <% if (page < pages) { %><a class="btn btn-neutral btn-sm" href="/newsletter?page=<%= page+1 %>">다음 →</a><% } %>
-  </div>
+  <% if (pages > 1) { %>
+    <nav class="pagination" aria-label="페이지">
+      <% if (page > 1) { %><a href="?page=<%= page - 1 %>" class="page-prev">이전</a><% } %>
+      <% for (var p = 1; p <= pages; p++) { %>
+        <% if (p === page) { %><span class="page-num active" aria-current="page"><%= p %></span>
+        <% } else { %><a href="?page=<%= p %>" class="page-num"><%= p %></a><% } %>
+      <% } %>
+      <% if (page < pages) { %><a href="?page=<%= page + 1 %>" class="page-next">다음</a><% } %>
+    </nav>
   <% } %>
 
-  <p class="panel-note" style="margin-top:22px">※ 본 뉴스레터는 외부 언론 기사를 <strong>제목·요약·출처 링크</strong> 형태로 큐레이션한 것입니다. 각 기사의 저작권은 해당 언론사에 있으며, 전체 내용은 ‘원문 보기’에서 확인하실 수 있습니다.</p>
+  <p class="panel-note" style="margin-top:22px">※ 본 뉴스레터는 외부 언론 기사를 <strong>제목·요약·출처 링크</strong> 형태로 큐레이션한 것입니다. 각 기사의 저작권은 해당 언론사에 있으며, 전체 내용은 상세 페이지의 ‘원문 보기’에서 확인하실 수 있습니다.</p>
 </div>
 
 <%- include('partials/footer') %>

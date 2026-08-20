@@ -35,7 +35,17 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const pages = Math.max(1, Math.ceil(total / PER));
     const cur = Math.min(page, pages);
     const items = db.prepare("SELECT * FROM newsletter ORDER BY id DESC LIMIT ? OFFSET ?").all(PER, (cur - 1) * PER);
-    res.render("newsletter", { ...res.locals, title: "뉴스레터", items, page: cur, pages, total });
+    res.render("newsletter", { ...res.locals, title: "뉴스레터", items, page: cur, pages, total, per: PER });
+  });
+  router.get("/newsletter/:id", (req, res, next) => {
+    const id = parseInt(req.params.id, 10);
+    if (!id) return next();
+    const n = db.prepare("SELECT * FROM newsletter WHERE id = ?").get(id);
+    if (!n) return next();
+    const prev = db.prepare("SELECT id, title FROM newsletter WHERE id < ? ORDER BY id DESC LIMIT 1").get(id); // 더 오래된 글
+    const nextRow = db.prepare("SELECT id, title FROM newsletter WHERE id > ? ORDER BY id ASC LIMIT 1").get(id); // 더 최신 글
+    const backPage = Math.max(1, parseInt(req.query.page, 10) || 1);
+    res.render("newsletter-post", { ...res.locals, title: n.title, n, prev, next: nextRow, backPage });
   });
 
   // ---------- 햇빛소득마을 (프로젝트) ----------

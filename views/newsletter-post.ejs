@@ -1,0 +1,64 @@
+<%- include('partials/header') %>
+
+<section class="page-banner page-banner--sm">
+  <div class="container">
+    <span class="page-banner-en">NEWSLETTER</span>
+    <h1 class="page-banner-title">뉴스레터</h1>
+  </div>
+</section>
+
+<div class="container board-wrap">
+  <article class="post-view">
+    <header class="post-view-head">
+      <div class="nl-view-tags">
+        <% if (n.keyword) { %><span class="nl-kw"><%= n.keyword %></span><% } %>
+        <% if (n.source) { %><span class="nl-view-src"><%= n.source %></span><% } %>
+      </div>
+      <h2 class="post-view-title"><%= n.title %></h2>
+      <div class="post-view-meta">
+        <span>등록일 <%= fmtDateTime(n.created_at) %></span>
+        <% if (n.published_at) { %><span>보도 <%= fmtDate(n.published_at) %></span><% } %>
+      </div>
+    </header>
+
+    <div class="post-images nl-view-imgs">
+      <figure class="post-image"><span class="nl-view-img" style="background-image:url('<%= encodeURI(n.image1) %>')"></span></figure>
+      <figure class="post-image"><span class="nl-view-img" style="background-image:url('<%= encodeURI(n.image2) %>')"></span></figure>
+    </div>
+
+    <div class="post-content"><%= n.summary %></div>
+
+    <% if (n.url) { %>
+      <div class="nl-view-origin">
+        <a class="btn btn-primary" href="<%= n.url %>" target="_blank" rel="noopener noreferrer">원문 보기 →</a>
+        <span class="nl-view-origin-note">외부 언론사 원문으로 이동합니다. 저작권은 해당 언론사에 있습니다.</span>
+      </div>
+    <% } %>
+
+    <% if (isAdmin) { %>
+      <div class="post-admin-actions">
+        <form action="/admin/newsletter/<%= n.id %>/delete" method="post" onsubmit="return confirm('이 뉴스레터를 삭제하시겠습니까?');">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+        </form>
+      </div>
+    <% } %>
+  </article>
+
+  <nav class="post-nav" aria-label="이전 다음 글">
+    <div class="post-nav-item">
+      <span>이전</span>
+      <% if (prev) { %><a href="/newsletter/<%= prev.id %>"><%= prev.title %></a><% } else { %><em>이전 글이 없습니다</em><% } %>
+    </div>
+    <div class="post-nav-item">
+      <span>다음</span>
+      <% if (next) { %><a href="/newsletter/<%= next.id %>"><%= next.title %></a><% } else { %><em>다음 글이 없습니다</em><% } %>
+    </div>
+  </nav>
+
+  <div class="post-view-foot">
+    <a class="btn btn-neutral" href="/newsletter?page=<%= backPage %>">목록으로</a>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

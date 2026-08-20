@@ -33,10 +33,10 @@
         <% items.forEach(function(n){ %>
           <tr>
             <td class="log-time"><%= fmtDate(n.created_at) %></td>
-            <td><span class="nl-kw"><%= esc(n.keyword) %></span></td>
-            <td><%= esc(n.source || '-') %></td>
-            <td class="log-path"><%= esc(n.title) %></td>
-            <td><% if (n.url) { %><a href="<%= esc(n.url) %>" target="_blank" rel="noopener">링크</a><% } else { %>-<% } %></td>
+            <td><span class="nl-kw"><%= n.keyword %></span></td>
+            <td><%= n.source || '-' %></td>
+            <td class="log-path"><%= n.title %></td>
+            <td><% if (n.url) { %><a href="<%= n.url %>" target="_blank" rel="noopener">링크</a><% } else { %>-<% } %></td>
             <td>
               <form action="/admin/newsletter/<%= n.id %>/delete" method="post" onsubmit="return confirm('이 항목을 삭제할까요?');">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
