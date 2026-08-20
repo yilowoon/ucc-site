@@ -48,47 +48,61 @@
     fetch("/api/home", { headers: { Accept: "application/json" } })
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        // 주요 최근 소식: 최신 뉴스레터 1건 (좌: 제목+요약 5줄 / 우: 이미지 2컷)
-        if (brief && data.newsletter) {
-          var nl = data.newsletter;
+        // 주요 최근 소식: (1) 최신 뉴스레터 피처 + (2) 기존 공지 3단(공지사항·사업안내·보도자료)
+        if (brief) {
           brief.classList.add("brief-grid--feature");
-          brief.innerHTML =
-            '<a class="nl-feature" href="/newsletter">' +
-              '<div class="nl-feature-text">' +
-                '<span class="nl-feature-badge">뉴스레터</span>' +
-                '<h3 class="nl-feature-title">' + esc(nl.title) + "</h3>" +
-                '<p class="nl-feature-summary">' + esc(nl.summary) + "</p>" +
-                '<span class="nl-feature-foot">' + esc(nl.source || "") +
-                  (nl.date ? " · " + esc(nl.date) : "") + ' <span class="brief-arrow">→</span></span>' +
-              "</div>" +
-              '<div class="nl-feature-imgs">' +
-                '<span class="nl-feature-img" style="background-image:url(\'' + encodeURI(nl.image1) + "')\"></span>" +
-                '<span class="nl-feature-img" style="background-image:url(\'' + encodeURI(nl.image2) + "')\"></span>" +
-              "</div>" +
-            "</a>";
-        }
-        // 뉴스레터가 없으면 기존 공지 3박스로 폴백
-        else if (brief && data.notices) {
-          brief.innerHTML = data.notices.map(function (n) {
-            var cls = "brief-card brief-card--" + n.board;
-            if (n.post) {
+          var parts = [];
+
+          // (1) 최신 뉴스레터 (좌: 제목+요약 5줄 / 우: 이미지 2컷)
+          if (data.newsletter) {
+            var nl = data.newsletter;
+            parts.push(
+              '<a class="nl-feature" href="/newsletter">' +
+                '<div class="nl-feature-text">' +
+                  '<span class="nl-feature-badge">뉴스레터</span>' +
+                  '<h3 class="nl-feature-title">' + esc(nl.title) + "</h3>" +
+                  '<p class="nl-feature-summary">' + esc(nl.summary) + "</p>" +
+                  '<span class="nl-feature-foot">' + esc(nl.source || "") +
+                    (nl.date ? " · " + esc(nl.date) : "") + ' <span class="brief-arrow">→</span></span>' +
+                "</div>" +
+                '<div class="nl-feature-imgs">' +
+                  '<span class="nl-feature-img" style="background-image:url(\'' + encodeURI(nl.image1) + "')\"></span>" +
+                  '<span class="nl-feature-img" style="background-image:url(\'' + encodeURI(nl.image2) + "')\"></span>" +
+                "</div>" +
+              "</a>"
+            );
+          }
+
+          // (2) 공지 3단 — 순서: 공지사항 → 사업안내 → 보도자료
+          if (data.notices && data.notices.length) {
+            var order = { notice: 0, business: 1, press: 2 };
+            var notices = data.notices.slice().sort(function (a, b) {
+              return (order[a.board] == null ? 9 : order[a.board]) - (order[b.board] == null ? 9 : order[b.board]);
+            });
+            var cards = notices.map(function (n) {
+              var cls = "brief-card brief-card--" + n.board;
+              if (n.post) {
+                return (
+                  '<a class="' + cls + '" href="/board/' + n.board + "/" + n.post.id + '">' +
+                  '<span class="brief-badge">' + esc(n.name) + "</span>" +
+                  '<span class="brief-en">' + esc(n.en) + "</span>" +
+                  '<span class="brief-title">' + esc(n.post.title) + "</span>" +
+                  '<span class="brief-foot"><span class="brief-date">' + esc(n.post.date) +
+                  '</span><span class="brief-arrow">→</span></span></a>'
+                );
+              }
               return (
-                '<a class="' + cls + '" href="/board/' + n.board + "/" + n.post.id + '">' +
+                '<a class="' + cls + '" href="/board/' + n.board + '">' +
                 '<span class="brief-badge">' + esc(n.name) + "</span>" +
                 '<span class="brief-en">' + esc(n.en) + "</span>" +
-                '<span class="brief-title">' + esc(n.post.title) + "</span>" +
-                '<span class="brief-foot"><span class="brief-date">' + esc(n.post.date) +
-                '</span><span class="brief-arrow">→</span></span></a>'
+                '<span class="brief-title brief-empty">등록된 게시물이 없습니다.</span>' +
+                '<span class="brief-foot"><span class="brief-date"></span><span class="brief-arrow">→</span></span></a>'
               );
-            }
-            return (
-              '<a class="' + cls + '" href="/board/' + n.board + '">' +
-              '<span class="brief-badge">' + esc(n.name) + "</span>" +
-              '<span class="brief-en">' + esc(n.en) + "</span>" +
-              '<span class="brief-title brief-empty">등록된 게시물이 없습니다.</span>' +
-              '<span class="brief-foot"><span class="brief-date"></span><span class="brief-arrow">→</span></span></a>'
-            );
-          }).join("");
+            }).join("");
+            parts.push('<div class="brief-cards">' + cards + "</div>");
+          }
+
+          brief.innerHTML = parts.join("");
         }
 
         // 도시공동체본부 소식 (이미지 카드, 최대 4개)
