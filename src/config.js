@@ -6,7 +6,7 @@ const BOARDS = {
   notice: { key: "notice", name: "공지사항", en: "NOTICE", desc: "본부의 새 소식과 안내를 전합니다." },
   press: { key: "press", name: "보도자료", en: "PRESS", desc: "언론 보도와 배포 자료를 모았습니다." },
   business: { key: "business", name: "사업안내", en: "PROGRAMS", desc: "진행 사업과 프로그램을 안내합니다." },
-  news: { key: "news", name: "도시공동체본부 소식", en: "UCC NEWS", desc: "본부의 활동 소식과 이미지 자료입니다.", image: true },
+  news: { key: "news", name: "도시공동체본부 활동", en: "UCC NEWS", desc: "본부의 활동 소식과 이미지 자료입니다.", image: true },
 };
 const BOARD_KEYS = Object.keys(BOARDS);
 // 메인 '주요 전달 소식' 3박스에 쓰는 게시판(공지·보도·사업)

@@ -1,5 +1,5 @@
 /* =========================================================
-   메인 추가 섹션: 주요 전달 소식 · 도시공동체본부 소식 · MOU · 약관
+   메인 추가 섹션: 주요 전달 소식 · 도시공동체본부 활동 · MOU · 약관
    ========================================================= */
 
 /* 헤더 변형: 번호 없는 섹션 헤드 */
@@ -122,7 +122,7 @@
 .brief-date { font-size: .88rem; color: var(--muted); }
 .brief-arrow { color: var(--gold-600); font-weight: 700; }
 
-/* ---- 도시공동체본부 소식 (이미지 카드) ---- */
+/* ---- 도시공동체본부 활동 (이미지 카드) ---- */
 .ucc-news-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
 .ucc-card {
   display: block; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius);

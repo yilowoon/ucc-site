@@ -33,7 +33,7 @@
     });
   })();
 
-  /* ---- 홈: 주요 전달 소식 + 도시공동체본부 소식 (DB에서 로드) ---- */
+  /* ---- 홈: 주요 전달 소식 + 도시공동체본부 활동 (DB에서 로드) ---- */
   (function () {
     var brief = document.getElementById("briefGrid");
     var uccGrid = document.getElementById("uccNewsGrid");
@@ -105,7 +105,7 @@
           brief.innerHTML = parts.join("");
         }
 
-        // 도시공동체본부 소식 (이미지 카드, 최대 4개)
+        // 도시공동체본부 활동 (이미지 카드, 최대 4개)
         if (uccGrid) {
           var items = (data.news || []).slice(0, 3);
           if (!items.length) {
