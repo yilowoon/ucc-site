@@ -86,13 +86,13 @@ async function fromDaum(keyword) {
   let links = [];
   try { links = await daumArticleLinks(keyword); } catch (e) { return []; }
   const out = [];
-  for (const link of links.slice(0, 4)) {
+  for (const link of links.slice(0, 8)) {
     try {
       const a = await parseDaumArticle(link);
       if (a && a.title) out.push(a);
     } catch (e) { /* 개별 기사 실패 무시 */ }
-    await sleep(250);
-    if (out.length >= 3) break;
+    await sleep(220);
+    if (out.length >= 6) break;
   }
   return out;
 }
@@ -256,8 +256,9 @@ ${titleTspans}
 // ---------- 1회 수집 ----------
 async function collectOnce() {
   const useNaver = !!(process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET);
-  let inserted = 0, scanned = 0, genCount = 0;
-  const MAX_PER_KEYWORD = 2, MAX_TOTAL = 16, MAX_GEN = 12; // AI 이미지 생성 상한(비용/시간 보호)
+  let inserted = 0, scanned = 0;
+  // 1회 수집 규칙: 총 2건만 저장, 키워드당 1건, '실제 기사 이미지 2개 이상'인 기사만 채택
+  const MAX_PER_KEYWORD = 1, MAX_TOTAL = 2, MIN_IMAGES = 2;
   for (const kw of KEYWORDS) {
     if (inserted >= MAX_TOTAL) break;
     let items = [];
@@ -272,15 +273,11 @@ async function collectOnce() {
       scanned++;
       if (!it.title || !it.guid) continue;
       if (existsGuid.get(it.guid)) continue;
-      // 이미지 2컷: 기사 사진 우선 → 부족분은 Gemini AI 이미지(키 있을 때) → 그래도 없으면 생성 SVG("gen")
+      // 실제 기사 이미지가 2개 이상인 기사만 채택 (두 컷 모두 원문 사진 사용)
       const imgs = (it.images || []).filter(Boolean);
-      let slot1 = imgs[0] || "", slot2 = imgs[1] || "";
-      if (GEMINI_KEY() && (!slot1 || !slot2) && genCount < MAX_GEN) {
-        const g = await geminiImage(it.title, kw);
-        if (g) { genCount++; if (!slot1) slot1 = g; else if (!slot2) slot2 = g; }
-      }
-      const image1 = slot1 || "gen";
-      const image2 = slot2 || "gen";
+      if (imgs.length < MIN_IMAGES) continue;
+      const image1 = imgs[0];
+      const image2 = imgs[1];
       const summary = (it.summary && it.summary.length >= 20)
         ? it.summary
         : `‘${kw}’ 관련 최신 보도입니다. 원문에서 자세한 내용을 확인하실 수 있습니다.${it.source ? " (출처: " + it.source + ")" : ""}`;
