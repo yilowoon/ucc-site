@@ -545,6 +545,36 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     });
   });
 
+  // ---------- 뉴스레터 관리 ----------
+  router.get("/newsletter", requireAdmin, (req, res) => {
+    const PER = 30;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const total = db.prepare("SELECT COUNT(*) AS n FROM newsletter").get().n;
+    const pages = Math.max(1, Math.ceil(total / PER));
+    const cur = Math.min(page, pages);
+    const items = db.prepare(
+      "SELECT id, title, source, keyword, url, created_at FROM newsletter ORDER BY id DESC LIMIT ? OFFSET ?"
+    ).all(PER, (cur - 1) * PER);
+    const naver = !!(process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET);
+    res.render("admin-newsletter", {
+      ...res.locals, title: "뉴스레터 관리", items, page: cur, pages, total, naver,
+      msg: req.query.msg || "",
+    });
+  });
+  router.post("/newsletter/collect", requireAdmin, verifyCsrf, (req, res) => {
+    // 백그라운드로 수집 실행(응답은 즉시) — 결과는 잠시 후 새로고침으로 확인
+    try {
+      const { collectOnce } = require("../newsletter");
+      collectOnce().then((r) => console.log("[newsletter] 수동 수집:", JSON.stringify(r)))
+        .catch((e) => console.error("[newsletter] 수동 수집 오류:", e.message));
+    } catch (e) { /* 무시 */ }
+    res.redirect("/admin/newsletter?msg=collecting");
+  });
+  router.post("/newsletter/:id/delete", requireAdmin, verifyCsrf, (req, res) => {
+    db.prepare("DELETE FROM newsletter WHERE id = ?").run(parseInt(req.params.id, 10));
+    res.redirect("/admin/newsletter" + (req.body.page ? "?page=" + encodeURIComponent(req.body.page) : ""));
+  });
+
   // ---------- 햇빛소득마을 지역 현황 관리 ----------
   const SOLAR_STATUSES = ["준비중", "추진중", "운영중"];
   router.get("/solar", requireAdmin, (req, res) => {

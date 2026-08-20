@@ -1,0 +1,46 @@
+<%- include('partials/header') %>
+
+<section class="page-banner">
+  <div class="container">
+    <span class="page-banner-en">NEWSLETTER</span>
+    <h1 class="page-banner-title">뉴스레터</h1>
+    <p class="page-banner-desc">사회적경제·사회연대경제·마을기업·협동조합·사회적기업·소셜벤처·혁신생태계 등 도시공동체본부의 미션과 맞닿은 소식을 매일 아침·저녁 자동으로 모아 전해드립니다.</p>
+  </div>
+</section>
+
+<div class="container page-wrap">
+  <% if (!items.length) { %>
+    <p class="post-empty">아직 수집된 뉴스레터가 없습니다. 매일 오전 8시·오후 6시에 자동으로 업데이트됩니다.</p>
+  <% } else { %>
+  <ul class="nl-list">
+    <% items.forEach(function(n){ %>
+      <li class="nl-item">
+        <div class="nl-imgs">
+          <span class="nl-img" style="background-image:url('<%= encodeURI(n.image1) %>')"></span>
+          <span class="nl-img" style="background-image:url('<%= encodeURI(n.image2) %>')"></span>
+        </div>
+        <div class="nl-body">
+          <div class="nl-meta">
+            <% if (n.keyword) { %><span class="nl-kw"><%= esc(n.keyword) %></span><% } %>
+            <% if (n.source) { %><span class="nl-src"><%= esc(n.source) %></span><% } %>
+            <span class="nl-date"><%= fmtDate(n.created_at) %></span>
+          </div>
+          <h3 class="nl-title"><%= esc(n.title) %></h3>
+          <p class="nl-summary"><%= esc(n.summary) %></p>
+          <% if (n.url) { %><a class="nl-link" href="<%= esc(n.url) %>" target="_blank" rel="noopener noreferrer">원문 보기 →</a><% } %>
+        </div>
+      </li>
+    <% }); %>
+  </ul>
+
+  <div class="pager">
+    <% if (page > 1) { %><a class="btn btn-neutral btn-sm" href="/newsletter?page=<%= page-1 %>">← 이전</a><% } %>
+    <span class="pager-info"><%= page %> / <%= pages %> 페이지 · 총 <%= total %>건</span>
+    <% if (page < pages) { %><a class="btn btn-neutral btn-sm" href="/newsletter?page=<%= page+1 %>">다음 →</a><% } %>
+  </div>
+  <% } %>
+
+  <p class="panel-note" style="margin-top:22px">※ 본 뉴스레터는 외부 언론 기사를 <strong>제목·요약·출처 링크</strong> 형태로 큐레이션한 것입니다. 각 기사의 저작권은 해당 언론사에 있으며, 전체 내용은 ‘원문 보기’에서 확인하실 수 있습니다.</p>
+</div>
+
+<%- include('partials/footer') %>

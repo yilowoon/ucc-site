@@ -133,6 +133,23 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_secev_created ON security_events(id DESC);
   CREATE INDEX IF NOT EXISTS idx_secev_ip ON security_events(ip);
+
+  -- 뉴스레터: 사회적경제 등 키워드 뉴스 큐레이션(제목·요약·출처·링크·이미지 2컷)
+  CREATE TABLE IF NOT EXISTS newsletter (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    title        TEXT NOT NULL,
+    summary      TEXT NOT NULL DEFAULT '',
+    source       TEXT NOT NULL DEFAULT '',   -- 언론사명
+    url          TEXT NOT NULL DEFAULT '',    -- 원문 링크
+    keyword      TEXT NOT NULL DEFAULT '',    -- 매칭 키워드
+    image1       TEXT NOT NULL DEFAULT '',
+    image2       TEXT NOT NULL DEFAULT '',
+    guid         TEXT NOT NULL DEFAULT '',    -- 중복 방지 키
+    published_at TEXT NOT NULL DEFAULT '',
+    created_at   TEXT NOT NULL
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_newsletter_guid ON newsletter(guid);
+  CREATE INDEX IF NOT EXISTS idx_newsletter_id ON newsletter(id DESC);
 `);
 
 // members 컬럼 마이그레이션 (이미 있으면 무시)

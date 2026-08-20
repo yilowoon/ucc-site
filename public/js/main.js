@@ -48,8 +48,27 @@
     fetch("/api/home", { headers: { Accept: "application/json" } })
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        // 주요 전달 소식 3박스
-        if (brief && data.notices) {
+        // 주요 최근 소식: 최신 뉴스레터 1건 (좌: 제목+요약 5줄 / 우: 이미지 2컷)
+        if (brief && data.newsletter) {
+          var nl = data.newsletter;
+          brief.classList.add("brief-grid--feature");
+          brief.innerHTML =
+            '<a class="nl-feature" href="/newsletter">' +
+              '<div class="nl-feature-text">' +
+                '<span class="nl-feature-badge">뉴스레터</span>' +
+                '<h3 class="nl-feature-title">' + esc(nl.title) + "</h3>" +
+                '<p class="nl-feature-summary">' + esc(nl.summary) + "</p>" +
+                '<span class="nl-feature-foot">' + esc(nl.source || "") +
+                  (nl.date ? " · " + esc(nl.date) : "") + ' <span class="brief-arrow">→</span></span>' +
+              "</div>" +
+              '<div class="nl-feature-imgs">' +
+                '<span class="nl-feature-img" style="background-image:url(\'' + encodeURI(nl.image1) + "')\"></span>" +
+                '<span class="nl-feature-img" style="background-image:url(\'' + encodeURI(nl.image2) + "')\"></span>" +
+              "</div>" +
+            "</a>";
+        }
+        // 뉴스레터가 없으면 기존 공지 3박스로 폴백
+        else if (brief && data.notices) {
           brief.innerHTML = data.notices.map(function (n) {
             var cls = "brief-card brief-card--" + n.board;
             if (n.post) {

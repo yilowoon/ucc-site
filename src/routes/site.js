@@ -27,6 +27,17 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   router.get("/projects/community", (req, res) => res.render("community", { ...res.locals, title: "커뮤니티모임" }));
   router.get("/projects/convergence", (req, res) => res.render("convergence", { ...res.locals, title: "문화예술과학융합" }));
 
+  // ---------- 알림마당: 뉴스레터 (사회적경제 등 키워드 뉴스 큐레이션) ----------
+  router.get("/newsletter", (req, res) => {
+    const PER = 12;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const total = db.prepare("SELECT COUNT(*) AS n FROM newsletter").get().n;
+    const pages = Math.max(1, Math.ceil(total / PER));
+    const cur = Math.min(page, pages);
+    const items = db.prepare("SELECT * FROM newsletter ORDER BY id DESC LIMIT ? OFFSET ?").all(PER, (cur - 1) * PER);
+    res.render("newsletter", { ...res.locals, title: "뉴스레터", items, page: cur, pages, total });
+  });
+
   // ---------- 햇빛소득마을 (프로젝트) ----------
   const SOLAR_STATUS_CLASS = { "준비중": "prep", "추진중": "active", "운영중": "live" };
   router.get("/projects/solar", (req, res) => {
@@ -139,7 +150,13 @@ module.exports = function siteRoutes({ verifyCsrf }) {
       thumb: r.thumb ? "/uploads/" + r.thumb : null,
     }));
 
-    res.json({ notices, news });
+    // 최신 뉴스레터 1건 (홈 '주요 최근 소식'용)
+    const nl = db
+      .prepare("SELECT id, title, summary, source, url, image1, image2, created_at FROM newsletter ORDER BY id DESC LIMIT 1")
+      .get();
+    const newsletter = nl ? { ...nl, date: cfg.formatDate(nl.created_at) } : null;
+
+    res.json({ notices, news, newsletter });
   });
 
   // ---------- 문의하기 접수 (홈 컨택 폼 → DB) ----------
