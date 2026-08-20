@@ -2,8 +2,8 @@
 
 <section class="page-banner page-banner--sm">
   <div class="container">
-    <span class="page-banner-en">NEWSLETTER</span>
-    <h1 class="page-banner-title">뉴스레터</h1>
+    <span class="page-banner-en">DAILY NEWS</span>
+    <h1 class="page-banner-title">데일리뉴스</h1>
   </div>
 </section>
 
@@ -40,7 +40,7 @@
 
     <% if (isAdmin) { %>
       <div class="post-admin-actions">
-        <form action="/admin/newsletter/<%= n.id %>/delete" method="post" onsubmit="return confirm('이 뉴스레터를 삭제하시겠습니까?');">
+        <form action="/admin/newsletter/<%= n.id %>/delete" method="post" onsubmit="return confirm('이 데일리뉴스를 삭제하시겠습니까?');">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <button type="submit" class="btn btn-danger btn-sm">삭제</button>
         </form>

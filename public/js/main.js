@@ -59,7 +59,7 @@
             parts.push(
               '<a class="nl-feature" href="/newsletter">' +
                 '<div class="nl-feature-text">' +
-                  '<span class="nl-feature-badge">뉴스레터</span>' +
+                  '<span class="nl-feature-badge">데일리뉴스</span>' +
                   '<h3 class="nl-feature-title">' + esc(nl.title) + "</h3>" +
                   '<p class="nl-feature-summary">' + esc(nl.summary) + "</p>" +
                   '<span class="nl-feature-foot">' + esc(nl.source || "") +
