@@ -41,11 +41,14 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   router.get("/newsletter/gen/:id.svg", (req, res, next) => {
     const id = parseInt(req.params.id, 10);
     if (!id) return next();
-    const n = db.prepare("SELECT keyword, title FROM newsletter WHERE id = ?").get(id);
+    const n = db.prepare("SELECT keyword, title, created_at FROM newsletter WHERE id = ?").get(id);
     if (!n) return next();
+    // 날짜: 수집일(KST) yyyy-mm-dd
+    const kst = new Date(new Date(n.created_at).getTime() + 9 * 3600 * 1000);
+    const dateStr = kst.toISOString().slice(0, 10);
     res.type("image/svg+xml");
     res.set("Cache-Control", "public, max-age=86400");
-    res.send(require("../newsletter").buildGenSvg(n.keyword, n.title));
+    res.send(require("../newsletter").buildGenSvg(n.keyword, n.title, dateStr));
   });
   const nlImg = (v, id) => (v === "gen" ? "/newsletter/gen/" + id + ".svg" : v);
   router.get("/newsletter/:id", (req, res, next) => {

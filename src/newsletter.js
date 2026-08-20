@@ -145,7 +145,7 @@ async function fromGoogle(keyword) {
   return out;
 }
 
-// ---------- 생성 이미지(SVG): 기사 키워드·제목 기반 ----------
+// ---------- 생성 이미지(SVG): 흰 배경 + 관련 무늬 + 캐릭터 + 고정 레이아웃 ----------
 function xmlEsc(s) { return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
 function wrapLines(s, per, max) {
   const t = String(s || "").trim(); const lines = [];
@@ -153,22 +153,61 @@ function wrapLines(s, per, max) {
   if (lines.length === max && t.length > per * max) lines[max - 1] = lines[max - 1].slice(0, per - 1) + "…";
   return lines;
 }
-function buildGenSvg(keyword, title) {
-  const pals = [["#123a2e", "#2f8f63"], ["#102a22", "#cd9b4c"], ["#164a3a", "#3b7fb0"], ["#14382c", "#ec9226"]];
+// 기사 제목에서 핵심 주제어(타이틀)와 서브주제를 분리
+function deriveTitleSub(title, keyword) {
+  let t = String(title || "").replace(/^\s*[\[\(【][^\]\)】]*[\]\)】]\s*/, "").replace(/\s*[\[\(【][^\]\)】]*[\]\)】]\s*$/, "").trim();
+  const parts = t.split(/\s*(?:\.\.\.|…|·|—|–|-|\||~|:|,)\s*/).filter(Boolean);
+  let core = (parts[0] || t).trim();
+  let sub = parts.slice(1).join(" ").trim();
+  if (core.length > 30) { sub = core.slice(30).trim() + (sub ? " " + sub : ""); core = core.slice(0, 30).trim(); }
+  if (!sub) sub = keyword + " 관련 동향";
+  return { core, sub };
+}
+function buildGenSvg(keyword, title, dateStr) {
+  const accents = ["#2f8f63", "#3b7fb0", "#cd9b4c", "#ec9226", "#2f9e8f", "#7b61b0"];
   const h = Math.abs([...String(keyword || "x")].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7));
-  const [c0, c1] = pals[h % pals.length];
-  const lines = wrapLines(title, 15, 3);
-  const tspans = lines.map((l, i) => `<text x="48" y="${232 + i * 40}" font-family="'Pretendard','Malgun Gothic',sans-serif" font-size="30" font-weight="800" fill="#ffffff">${xmlEsc(l)}</text>`).join("");
+  const accent = accents[h % accents.length];
+  const jacket = accent, hair = "#3a2e26", skin = "#f0c9a8";
+  const { core, sub } = deriveTitleSub(title, keyword);
+  const catText = xmlEsc(keyword);
+  const titleLines = wrapLines(core, 13, 2);
+  const subText = xmlEsc(sub.length > 22 ? sub.slice(0, 21) + "…" : sub);
+  const dateFmt = "-'" + xmlEsc(dateStr || "") + "'-";
+  const titleTspans = titleLines.map((l, i) => `<text x="44" y="${248 + i * 34}" font-family="'Pretendard','Malgun Gothic',sans-serif" font-size="27" font-weight="800" fill="#16241d">${xmlEsc(l)}</text>`).join("");
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="600" height="400">
-<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c0}"/><stop offset="1" stop-color="${c1}"/></linearGradient></defs>
-<rect width="600" height="400" fill="url(#g)"/>
-<circle cx="500" cy="70" r="150" fill="#ffffff" opacity="0.06"/>
-<circle cx="540" cy="120" r="90" fill="#ffffff" opacity="0.05"/>
-<text x="48" y="70" font-family="sans-serif" font-size="15" letter-spacing="3" fill="#e9d9b4" opacity="0.9">UCC NEWSLETTER</text>
-<rect x="46" y="96" rx="14" ry="14" width="${Math.min(360, 34 + (keyword || "").length * 26)}" height="34" fill="#ffffff" opacity="0.16"/>
-<text x="62" y="119" font-family="'Pretendard','Malgun Gothic',sans-serif" font-size="18" font-weight="700" fill="#ffffff">#${xmlEsc(keyword)}</text>
-${tspans}
-<text x="48" y="372" font-family="'Pretendard','Malgun Gothic',sans-serif" font-size="14" fill="#ffffff" opacity="0.7">사단법인 도시공동체본부</text>
+<rect width="600" height="400" fill="#ffffff"/>
+<!-- 관련 무늬: 우상단 링·점 패턴 -->
+<g opacity="0.14" stroke="${accent}" fill="none" stroke-width="10">
+  <circle cx="520" cy="60" r="120"/><circle cx="560" cy="120" r="70"/>
+</g>
+<g opacity="0.18" fill="${accent}">
+  <circle cx="360" cy="40" r="5"/><circle cx="400" cy="70" r="4"/><circle cx="440" cy="30" r="4"/>
+  <circle cx="330" cy="90" r="4"/><circle cx="470" cy="90" r="5"/>
+</g>
+<line x1="44" y1="150" x2="120" y2="150" stroke="${accent}" stroke-width="4"/>
+<!-- 캐릭터(가상 인물 일러스트) -->
+<g transform="translate(452,196)">
+  <ellipse cx="0" cy="150" rx="120" ry="26" fill="${accent}" opacity="0.10"/>
+  <path d="M-78,155 C-78,78 -44,52 0,52 C44,52 78,78 78,155 Z" fill="${jacket}"/>
+  <path d="M-20,62 L0,86 L20,62" stroke="#ffffff" stroke-width="9" fill="none" stroke-linejoin="round"/>
+  <rect x="-16" y="18" width="32" height="46" rx="14" fill="${skin}"/>
+  <circle cx="0" cy="-12" r="46" fill="${skin}"/>
+  <path d="M-47,-14 C-47,-46 -22,-58 0,-58 C22,-58 47,-46 47,-14 C40,-30 26,-40 0,-38 C-26,-40 -40,-30 -47,-14 Z" fill="${hair}"/>
+  <circle cx="-16" cy="-14" r="3.4" fill="#33403a"/><circle cx="16" cy="-14" r="3.4" fill="#33403a"/>
+  <path d="M-13,4 Q0,15 13,4" stroke="#c07a5e" stroke-width="3" fill="none" stroke-linecap="round"/>
+</g>
+<!-- 상단: UCC NEWSLETTER + 카테고리 -->
+<text x="44" y="52" font-family="sans-serif" font-size="15" letter-spacing="3" font-weight="700" fill="#16241d">UCC NEWSLETTER</text>
+<rect x="44" y="70" rx="13" ry="13" width="${Math.min(300, 30 + catText.length * 20)}" height="30" fill="${accent}"/>
+<text x="60" y="90" font-family="'Pretendard','Malgun Gothic',sans-serif" font-size="16" font-weight="700" fill="#ffffff">${catText}</text>
+<!-- 핵심 주제어(타이틀) -->
+${titleTspans}
+<!-- 서브주제 -->
+<text x="44" y="${248 + titleLines.length * 34 + 8}" font-family="'Pretendard','Malgun Gothic',sans-serif" font-size="16" font-weight="600" fill="#5a6b62">${subText}</text>
+<!-- 날짜 -->
+<text x="44" y="${248 + titleLines.length * 34 + 34}" font-family="'Pretendard','Malgun Gothic',sans-serif" font-size="15" font-weight="700" fill="${accent}">${dateFmt}</text>
+<!-- 하단 -->
+<text x="44" y="378" font-family="'Pretendard','Malgun Gothic',sans-serif" font-size="14" fill="#8a968f">사단법인 도시공동체본부</text>
 </svg>`;
 }
 
