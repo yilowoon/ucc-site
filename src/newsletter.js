@@ -8,7 +8,9 @@
  */
 "use strict";
 
-const { db } = require("./db");
+const fs = require("fs");
+const path = require("path");
+const { db, UPLOAD_DIR } = require("./db");
 
 const KEYWORDS = [
   "사회적경제", "사회연대경제", "마을기업", "협동조합",
@@ -145,6 +147,46 @@ async function fromGoogle(keyword) {
   return out;
 }
 
+// ---------- AI 이미지 생성: Gemini(Generative Language API) ----------
+// 환경변수: GEMINI_API_KEY(필수), GEMINI_IMAGE_MODEL(선택), GEMINI_BASE_URL(선택)
+const GEMINI_KEY = () => process.env.GEMINI_API_KEY || "";
+const GEMINI_BASE = () => (process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com").replace(/\/+$/, "");
+const GEMINI_MODEL = () => process.env.GEMINI_IMAGE_MODEL || "imagen-3.0-generate-002";
+async function postJson(url, body, ms) {
+  const ctrl = new AbortController();
+  const to = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const r = await fetch(url, { method: "POST", signal: ctrl.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const t = await r.text();
+    if (!r.ok) { console.error("[newsletter] Gemini HTTP", r.status, t.slice(0, 200)); return null; }
+    try { return JSON.parse(t); } catch (e) { return null; }
+  } finally { clearTimeout(to); }
+}
+async function geminiImage(title, keyword) {
+  const key = GEMINI_KEY(); if (!key) return "";
+  const model = GEMINI_MODEL(), base = GEMINI_BASE();
+  const prompt = `사회적경제 분야 '${keyword}' 주제를 상징하는 사실적인 편집용 대표 이미지. 맥락: ${String(title).slice(0, 120)}. 특정 실존 인물이 아닌 일반적인 한국인 인물이 등장하는 자연스럽고 전문적인 장면, 협력과 공동체의 따뜻하고 희망적인 분위기, 고품질 사진 스타일(photorealistic), 가로 구도. 글자·로고·워터마크 없음.`;
+  try {
+    let b64 = "";
+    if (/^imagen/i.test(model)) {
+      const r = await postJson(`${base}/v1beta/models/${model}:predict?key=${encodeURIComponent(key)}`,
+        { instances: [{ prompt }], parameters: { sampleCount: 1, aspectRatio: "16:9" } }, 40000);
+      b64 = r && r.predictions && r.predictions[0] && r.predictions[0].bytesBase64Encoded || "";
+    } else {
+      const r = await postJson(`${base}/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`,
+        { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseModalities: ["IMAGE"] } }, 40000);
+      const parts = (r && r.candidates && r.candidates[0] && r.candidates[0].content && r.candidates[0].content.parts) || [];
+      const p = parts.find((x) => x.inlineData || x.inline_data);
+      b64 = (p && (p.inlineData || p.inline_data) && (p.inlineData || p.inline_data).data) || "";
+    }
+    if (!b64) return "";
+    const fname = `nl-gen-${Date.now().toString(36)}-${Math.abs(hashInt(title)).toString(36)}.png`;
+    fs.writeFileSync(path.join(UPLOAD_DIR, fname), Buffer.from(b64, "base64"));
+    console.log("[newsletter] Gemini 이미지 생성:", fname);
+    return "/uploads/" + fname;
+  } catch (e) { console.error("[newsletter] Gemini 이미지 생성 실패:", e.message); return ""; }
+}
+
 // ---------- 생성 이미지(SVG): 흰 배경 + 관련 무늬 + 캐릭터 + 고정 레이아웃 ----------
 function xmlEsc(s) { return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
 function wrapLines(s, per, max) {
@@ -214,8 +256,8 @@ ${titleTspans}
 // ---------- 1회 수집 ----------
 async function collectOnce() {
   const useNaver = !!(process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET);
-  let inserted = 0, scanned = 0;
-  const MAX_PER_KEYWORD = 2, MAX_TOTAL = 16;
+  let inserted = 0, scanned = 0, genCount = 0;
+  const MAX_PER_KEYWORD = 2, MAX_TOTAL = 16, MAX_GEN = 12; // AI 이미지 생성 상한(비용/시간 보호)
   for (const kw of KEYWORDS) {
     if (inserted >= MAX_TOTAL) break;
     let items = [];
@@ -230,10 +272,15 @@ async function collectOnce() {
       scanned++;
       if (!it.title || !it.guid) continue;
       if (existsGuid.get(it.guid)) continue;
-      // 이미지 2컷: 기사 사진 우선, 부족분은 생성 이미지("gen" 표식 → SVG 라우트)
+      // 이미지 2컷: 기사 사진 우선 → 부족분은 Gemini AI 이미지(키 있을 때) → 그래도 없으면 생성 SVG("gen")
       const imgs = (it.images || []).filter(Boolean);
-      const image1 = imgs[0] || "gen";
-      const image2 = imgs[1] || "gen";
+      let slot1 = imgs[0] || "", slot2 = imgs[1] || "";
+      if (GEMINI_KEY() && (!slot1 || !slot2) && genCount < MAX_GEN) {
+        const g = await geminiImage(it.title, kw);
+        if (g) { genCount++; if (!slot1) slot1 = g; else if (!slot2) slot2 = g; }
+      }
+      const image1 = slot1 || "gen";
+      const image2 = slot2 || "gen";
       const summary = (it.summary && it.summary.length >= 20)
         ? it.summary
         : `‘${kw}’ 관련 최신 보도입니다. 원문에서 자세한 내용을 확인하실 수 있습니다.${it.source ? " (출처: " + it.source + ")" : ""}`;
