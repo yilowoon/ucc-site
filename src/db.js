@@ -182,6 +182,8 @@ try { db.exec("CREATE INDEX IF NOT EXISTS idx_visits_visitor ON visits(visitor)"
 try { db.exec("ALTER TABLE visits ADD COLUMN ip TEXT NOT NULL DEFAULT ''"); } catch (e) {}
 // newsletter: 기사 본문 전체 컬럼
 try { db.exec("ALTER TABLE newsletter ADD COLUMN content TEXT NOT NULL DEFAULT ''"); } catch (e) {}
+// newsletter: 조회수
+try { db.exec("ALTER TABLE newsletter ADD COLUMN views INTEGER NOT NULL DEFAULT 0"); } catch (e) {}
 
 /* ---- 햇빛소득마을: 시·도 시드 (없을 때만) ---- */
 function seedSolarRegions() {

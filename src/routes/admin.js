@@ -583,11 +583,12 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     const pages = Math.max(1, Math.ceil(total / PER));
     const cur = Math.min(page, pages);
     const items = db.prepare(
-      "SELECT id, title, source, keyword, url, created_at FROM newsletter ORDER BY id DESC LIMIT ? OFFSET ?"
+      "SELECT id, title, source, keyword, url, views, created_at FROM newsletter ORDER BY id DESC LIMIT ? OFFSET ?"
     ).all(PER, (cur - 1) * PER);
+    const totalViews = db.prepare("SELECT COALESCE(SUM(views),0) AS n FROM newsletter").get().n;
     const naver = !!(process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET);
     res.render("admin-newsletter", {
-      ...res.locals, title: "뉴스레터 관리", items, page: cur, pages, total, naver,
+      ...res.locals, title: "뉴스레터 관리", items, page: cur, pages, total, naver, totalViews,
       msg: req.query.msg || "",
     });
   });

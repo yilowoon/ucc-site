@@ -77,6 +77,7 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     if (!id) return next();
     const n = db.prepare("SELECT * FROM newsletter WHERE id = ?").get(id);
     if (!n) return next();
+    try { db.prepare("UPDATE newsletter SET views = views + 1 WHERE id = ?").run(id); n.views = (n.views || 0) + 1; } catch (e) {}
     n.image1 = nlImg(n.image1, n.id);
     n.image2 = nlImg(n.image2, n.id);
     const prev = db.prepare("SELECT id, title FROM newsletter WHERE id < ? ORDER BY id DESC LIMIT 1").get(id); // 더 오래된 글

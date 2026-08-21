@@ -16,7 +16,7 @@
   <% } %>
 
   <div class="member-toolbar">
-    <div class="member-stats" style="margin:0"><span class="mstat"><b><%= total.toLocaleString() %></b> 총 데일리뉴스</span></div>
+    <div class="member-stats" style="margin:0"><span class="mstat"><b><%= total.toLocaleString() %></b> 총 데일리뉴스</span><span class="mstat"><b><%= (totalViews||0).toLocaleString() %></b> 총 조회수</span></div>
     <form method="post" action="/admin/newsletter/collect" onsubmit="return confirm('지금 뉴스를 수집할까요? (약 1분 소요)');">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <button type="submit" class="btn btn-primary btn-sm">지금 수집</button>
@@ -28,7 +28,7 @@
   <% } else { %>
   <div class="member-scroll">
     <table class="log-table">
-      <thead><tr><th>수집일(KST)</th><th>키워드</th><th>출처</th><th>제목</th><th>원문</th><th>관리</th></tr></thead>
+      <thead><tr><th>수집일(KST)</th><th>키워드</th><th>출처</th><th>제목</th><th>조회수</th><th>원문</th><th>관리</th></tr></thead>
       <tbody>
         <% items.forEach(function(n){ %>
           <tr>
@@ -36,6 +36,7 @@
             <td><span class="nl-kw"><%= n.keyword %></span></td>
             <td><%= n.source || '-' %></td>
             <td class="log-path"><%= n.title %></td>
+            <td><b><%= (n.views||0).toLocaleString() %></b></td>
             <td><% if (n.url) { %><a href="<%= n.url %>" target="_blank" rel="noopener">링크</a><% } else { %>-<% } %></td>
             <td>
               <form action="/admin/newsletter/<%= n.id %>/delete" method="post" onsubmit="return confirm('이 항목을 삭제할까요?');">
