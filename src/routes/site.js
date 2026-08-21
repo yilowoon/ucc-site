@@ -8,6 +8,27 @@ const cfg = require("../config");
 const { PAGES } = require("../pages");
 const KOREA_SIDO = require("../korea-sido.json"); // 전국 시·도 경계 지오메트리
 
+// 메인 '데일리뉴스' 리드: 본문에서 완결된 문장(2문장 이상, 5줄가량) 추출
+function homeLead(content, summary) {
+  let text = String(content || "").trim();
+  if (text) {
+    const paras = text.split(/\n+/).map((s) => s.trim()).filter(Boolean)
+      // 바이라인/기호성 짧은 문단 제거
+      .filter((p) => !/^[\[【(◇▲■□●※@=\-]/.test(p) && !/[가-힣]{2,4}\s*기자\s*[\]】]?$/.test(p) && !/무단전재|재배포|저작권|편집자|ⓒ|Copyright/i.test(p) && p.length >= 15);
+    text = paras.join(" ");
+  }
+  if (!text) text = String(summary || "").trim();
+  text = text.replace(/\s+/g, " ").trim();
+  const parts = text.match(/[^.!?。]+[.!?。]+/g) || (text ? [text] : []);
+  const out = []; let len = 0;
+  for (const s of parts) {
+    out.push(s.trim()); len += s.length;
+    if (out.length >= 2 && len >= 180) break; // 2문장 이상 + 충분한 분량(약 5줄)
+    if (out.length >= 6) break;
+  }
+  return out.join(" ").trim() || text.slice(0, 240);
+}
+
 module.exports = function siteRoutes({ verifyCsrf }) {
   const router = express.Router();
 
@@ -178,11 +199,13 @@ module.exports = function siteRoutes({ verifyCsrf }) {
 
     // 최신 뉴스레터 1건 (홈 '주요 최근 소식'용)
     const nl = db
-      .prepare("SELECT id, title, summary, source, url, image1, image2, created_at FROM newsletter ORDER BY id DESC LIMIT 1")
+      .prepare("SELECT id, title, summary, content, source, url, image1, image2, created_at FROM newsletter ORDER BY id DESC LIMIT 1")
       .get();
     const genImg = (v, id) => (v === "gen" ? "/newsletter/gen/" + id + ".svg" : v);
     const newsletter = nl ? {
-      ...nl, date: cfg.formatDate(nl.created_at),
+      id: nl.id, title: nl.title, source: nl.source, url: nl.url,
+      date: cfg.formatDate(nl.created_at),
+      lead: homeLead(nl.content, nl.summary),
       image1: genImg(nl.image1, nl.id), image2: genImg(nl.image2, nl.id),
     } : null;
 

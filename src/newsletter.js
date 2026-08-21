@@ -19,7 +19,7 @@ const KEYWORDS = [
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
 
 const insertRow = db.prepare(
-  "INSERT OR IGNORE INTO newsletter (title, summary, source, url, keyword, image1, image2, guid, published_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  "INSERT OR IGNORE INTO newsletter (title, summary, content, source, url, keyword, image1, image2, guid, published_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 );
 const existsGuid = db.prepare("SELECT 1 FROM newsletter WHERE guid = ?");
 
@@ -68,16 +68,24 @@ function daumPhotos(h) {
   for (const m of h.matchAll(/<img[^>]+(?:data-src|src)=["'](https?:\/\/img[0-9]?\.daumcdn\.net\/thumb\/[^"']+?fname=[^"']+?)["']/gi)) push(m[1]);
   return [...map.values()];
 }
+// 기사 본문(문단) 추출 — Daum dmcf 일반 문단
+function daumBody(h) {
+  const paras = [...h.matchAll(/<p[^>]*dmcf-ptype=["']general["'][^>]*>([\s\S]*?)<\/p>/gi)]
+    .map((m) => decodeEntities(stripTags(m[1])))
+    .filter((t) => t.length > 1);
+  return paras.join("\n\n").slice(0, 8000);
+}
 async function parseDaumArticle(link) {
   const { text: h } = await fetchText(link, 10000);
   const title = metaTag(h, "og:title");
   if (!title) return null;
   let summary = metaTag(h, "og:description");
+  const content = daumBody(h);
   const source = metaTag(h, "og:article:author") || metaTag(h, "author") || "다음뉴스";
   const pub = metaTag(h, "article:published_time");
   const id = (link.match(/\/v\/([0-9]+)/) || [])[1] || link;
   return {
-    title, summary, source, url: link, guid: "daum:" + id,
+    title, summary, content, source, url: link, guid: "daum:" + id,
     published_at: pub ? new Date(pub).toISOString() : "",
     images: daumPhotos(h),
   };
@@ -283,8 +291,8 @@ async function collectOnce() {
         : `‘${kw}’ 관련 최신 보도입니다. 원문에서 자세한 내용을 확인하실 수 있습니다.${it.source ? " (출처: " + it.source + ")" : ""}`;
       try {
         const res = insertRow.run(
-          it.title.slice(0, 300), summary.slice(0, 1000), it.source.slice(0, 100),
-          it.url.slice(0, 500), kw, image1, image2, it.guid.slice(0, 400),
+          it.title.slice(0, 300), summary.slice(0, 1000), (it.content || "").slice(0, 8000),
+          it.source.slice(0, 100), it.url.slice(0, 500), kw, image1, image2, it.guid.slice(0, 400),
           it.published_at || new Date().toISOString(), new Date().toISOString()
         );
         if (res.changes > 0) { inserted++; perKw++; }

@@ -57,11 +57,11 @@
           if (data.newsletter) {
             var nl = data.newsletter;
             parts.push(
-              '<a class="nl-feature" href="/newsletter">' +
+              '<a class="nl-feature" href="/newsletter/' + encodeURIComponent(nl.id) + '">' +
                 '<div class="nl-feature-text">' +
                   '<span class="nl-feature-badge">데일리뉴스</span>' +
                   '<h3 class="nl-feature-title">' + esc(nl.title) + "</h3>" +
-                  '<p class="nl-feature-summary">' + esc(nl.summary) + "</p>" +
+                  '<p class="nl-feature-summary">' + esc(nl.lead || nl.summary || "") + "</p>" +
                   '<span class="nl-feature-foot">' + esc(nl.source || "") +
                     (nl.date ? " · " + esc(nl.date) : "") + ' <span class="brief-arrow">→</span></span>' +
                 "</div>" +
