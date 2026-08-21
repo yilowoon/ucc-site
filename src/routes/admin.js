@@ -540,9 +540,39 @@ module.exports = function adminRoutes({ verifyCsrf }) {
       .map((m) => ({ ip: m.ip, count: m.count, cats: Object.keys(m.cats), last: m.last }))
       .sort((a, b) => b.count - a.count).slice(0, 15);
 
+    // 5) 자동 차단된 IP
+    const nowIso = new Date().toISOString();
+    const blockedList = db.prepare(
+      "SELECT ip, reason, hits, until, created_at FROM blocked_ips ORDER BY created_at DESC LIMIT 200"
+    ).all().map((b) => ({ ...b, active: !b.until || b.until > nowIso }));
+    const blockedActive = blockedList.filter((b) => b.active).length;
+
     res.render("admin-security", {
-      ...res.locals, title: "보안 모니터링", recent, total, uniqueIps, byCat, topIps, sampleNote: merged.length,
+      ...res.locals, title: "보안 모니터링", recent, total, uniqueIps, byCat, topIps,
+      sampleNote: merged.length, blockedList, blockedActive,
     });
+  });
+  // 차단 해제
+  router.post("/security/unblock", requireAdmin, verifyCsrf, (req, res) => {
+    const ip = (req.body.ip || "").trim();
+    if (ip) {
+      db.prepare("DELETE FROM blocked_ips WHERE ip = ?").run(ip);
+      const m = req.app.locals.blockedIps; if (m) m.delete(ip);
+    }
+    res.redirect("/admin/security");
+  });
+  // 수동 차단 (7일)
+  router.post("/security/block", requireAdmin, verifyCsrf, (req, res) => {
+    const ip = (req.body.ip || "").trim();
+    if (/^[0-9a-fA-F:.]{3,45}$/.test(ip)) {
+      const until = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString();
+      db.prepare(
+        "INSERT INTO blocked_ips (ip, reason, hits, until, created_at) VALUES (?, '수동', 1, ?, ?) " +
+        "ON CONFLICT(ip) DO UPDATE SET until = excluded.until, reason = '수동'"
+      ).run(ip, until, new Date().toISOString());
+      const m = req.app.locals.blockedIps; if (m) m.set(ip, Date.parse(until));
+    }
+    res.redirect("/admin/security");
   });
 
   // ---------- 뉴스레터 관리 ----------

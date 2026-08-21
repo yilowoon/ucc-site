@@ -190,20 +190,71 @@ const THREAT_PATTERNS = [
 const insertSecEvent = db.prepare(
   "INSERT INTO security_events (ip, method, path, ua, category, created_at) VALUES (?, ?, ?, ?, ?, ?)"
 );
+const upsertBlock = db.prepare(
+  "INSERT INTO blocked_ips (ip, reason, hits, until, created_at) VALUES (?, ?, 1, ?, ?) " +
+  "ON CONFLICT(ip) DO UPDATE SET reason = excluded.reason, hits = blocked_ips.hits + 1, until = excluded.until"
+);
+// 차단 IP 캐시(메모리) — DB에서 로드
+const blockedIps = new Map(); // ip -> untilMs (0 = 영구)
+try {
+  for (const r of db.prepare("SELECT ip, until FROM blocked_ips").all()) {
+    blockedIps.set(r.ip, r.until ? (Date.parse(r.until) || 0) : 0);
+  }
+  console.log(`[security] 차단 IP ${blockedIps.size}건 로드`);
+} catch (e) {}
+
+// 자동 차단 정책
+const BAN_TTL = 24 * 3600 * 1000;                 // 24시간 차단
+const HIGH_SEVERITY = new Set(["rce", "secret", "traversal"]); // 즉시 차단
+const SOFT_LIMIT = 5;                              // 그 외: 1시간 내 5회 초과 시 IP 차단
+const threatWindow = new Map();                    // ip -> { count, first }
+const IP_ALLOW = new Set(["127.0.0.1", "::1", ""]); // 루프백 등은 IP 전면 차단 제외(요청 차단은 유지)
+
+function banIp(ip, reason) {
+  const untilMs = Date.now() + BAN_TTL;
+  blockedIps.set(ip, untilMs);
+  try { upsertBlock.run(ip, reason, new Date(untilMs).toISOString(), new Date().toISOString()); } catch (e) {}
+}
+function forbid(res) { return res.status(403).type("text/plain").send("Forbidden"); }
+
+// 보안 미들웨어: (1) 차단 IP 즉시 거부 (2) 공격 패턴 탐지 시 로깅·요청 차단·자동 IP 차단
 app.use((req, res, next) => {
+  let ip = "";
   try {
-    const raw = (req.originalUrl || "").slice(0, 300);
-    let dec = raw; try { dec = decodeURIComponent(raw); } catch (e) {}
-    const hay = raw + " " + dec;
+    ip = clientIp(req);
+    // (1) 이미 차단된 IP
+    const until = blockedIps.get(ip);
+    if (until !== undefined) {
+      if (until === 0 || until > Date.now()) return forbid(res);
+      blockedIps.delete(ip); // 만료 → 해제
+    }
+    // (2) 공격 패턴 탐지 — 경로(쿼리 제외)만 검사해 정상 검색어 오탐 방지
+    const rawPath = (req.originalUrl || "").split("?")[0].slice(0, 300);
+    let decPath = rawPath; try { decPath = decodeURIComponent(rawPath); } catch (e) {}
+    const hay = rawPath + " " + decPath;
     for (const t of THREAT_PATTERNS) {
       if (t.re.test(hay)) {
-        insertSecEvent.run(clientIp(req), req.method, raw, (req.get("user-agent") || "").slice(0, 200), t.cat, new Date().toISOString());
-        break;
+        insertSecEvent.run(ip, req.method, rawPath, (req.get("user-agent") || "").slice(0, 200), t.cat, new Date().toISOString());
+        // 심각 유형은 즉시 IP 차단, 그 외는 1시간 내 누적 5회 초과 시 차단 (루프백 제외)
+        if (!IP_ALLOW.has(ip)) {
+          if (HIGH_SEVERITY.has(t.cat)) {
+            banIp(ip, t.cat);
+          } else {
+            const now = Date.now();
+            const w = threatWindow.get(ip) || { count: 0, first: now };
+            if (now - w.first > 3600 * 1000) { w.count = 0; w.first = now; }
+            w.count++; threatWindow.set(ip, w);
+            if (w.count > SOFT_LIMIT) banIp(ip, t.cat);
+          }
+        }
+        return forbid(res); // 해당 악성 요청 자체를 차단
       }
     }
-  } catch (e) { /* 보안 로깅 실패는 서비스에 영향 주지 않음 */ }
+  } catch (e) { /* 보안 처리 실패는 서비스에 영향 주지 않음 */ }
   next();
 });
+// 관리자에서 차단 목록 조회/해제할 수 있도록 캐시 공유
+app.locals.blockedIps = blockedIps;
 
 // ---- Routes ----
 // 홈: 정적 index.html에 OG 절대 URL(__BASE__)을 요청 호스트 기준으로 주입해 서빙

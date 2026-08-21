@@ -134,6 +134,15 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_secev_created ON security_events(id DESC);
   CREATE INDEX IF NOT EXISTS idx_secev_ip ON security_events(ip);
 
+  -- 자동 차단된 IP (공격/스캔 시도)
+  CREATE TABLE IF NOT EXISTS blocked_ips (
+    ip         TEXT PRIMARY KEY,
+    reason     TEXT NOT NULL DEFAULT '',
+    hits       INTEGER NOT NULL DEFAULT 1,
+    until      TEXT NOT NULL DEFAULT '',   -- 차단 해제 시각(ISO), 빈값=영구
+    created_at TEXT NOT NULL
+  );
+
   -- 뉴스레터: 사회적경제 등 키워드 뉴스 큐레이션(제목·요약·출처·링크·이미지 2컷)
   CREATE TABLE IF NOT EXISTS newsletter (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,

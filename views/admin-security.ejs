@@ -30,7 +30,7 @@
   <div class="admin-head">
     <div>
       <h1>보안 모니터링</h1>
-      <p class="admin-sub">알려진 공격·스캔 경로로 들어온 의심 접속을 모아 보여줍니다. 대부분은 자동 봇의 무해한 시도이며, 반복·고위험 IP만 대응하면 됩니다.</p>
+      <p class="admin-sub">알려진 공격·스캔 경로 요청을 <strong>자동 차단</strong>합니다. 원격코드실행·쉘·비밀정보 탐색은 <strong>즉시 IP 차단</strong>, 그 외 반복 스캔(1시간 내 5회 초과)도 자동 차단됩니다.</p>
     </div>
     <div class="admin-head-actions">
       <a class="btn btn-neutral btn-sm" href="/admin/access-log">접속기록(IP)</a>
@@ -43,7 +43,45 @@
     <span class="mstat"><b><%= uniqueIps.toLocaleString() %></b> 의심 IP</span>
     <% var hi = (byCat.rce||0) + (byCat.traversal||0); %>
     <span class="mstat"><b class="<%= hi ? 'hub-new' : '' %>"><%= hi %></b> 고위험(표본)</span>
+    <span class="mstat"><b class="<%= blockedActive ? 'hub-new' : '' %>"><%= blockedActive %></b> 현재 차단 IP</span>
   </div>
+
+  <div class="sec-banner sec-banner--ok">🛡 <strong>자동 차단 작동 중</strong> — 악성 스캔 요청은 즉시 403으로 거부되며, 고위험·반복 IP는 24시간 자동 차단됩니다. 아래에서 차단 목록을 확인·해제할 수 있습니다.</div>
+
+  <!-- 차단된 IP -->
+  <h2 class="sec-h">차단된 IP <span class="sec-h-note">(자동·수동)</span></h2>
+  <form class="member-search" method="post" action="/admin/security/block" style="margin-bottom:14px">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+    <input type="text" name="ip" placeholder="수동 차단할 IP (예: 91.92.34.102)" />
+    <button type="submit" class="btn btn-primary btn-sm">IP 차단(7일)</button>
+  </form>
+  <% if (!blockedList.length) { %>
+    <p class="post-empty">현재 차단된 IP가 없습니다.</p>
+  <% } else { %>
+  <div class="member-scroll">
+    <table class="log-table">
+      <thead><tr><th>IP</th><th>사유</th><th>누적</th><th>해제 예정(KST)</th><th>상태</th><th>관리</th></tr></thead>
+      <tbody>
+        <% blockedList.forEach(function(b){ %>
+          <tr>
+            <td class="log-ip"><%= esc(b.ip) %></td>
+            <td><span class="cat-tag <%= sevClass[(META[b.reason]||META.other).sev] || 'sev-low' %>"><%= (META[b.reason]||{label:b.reason}).label || b.reason %></span></td>
+            <td><b><%= b.hits %></b></td>
+            <td class="log-time"><%= b.until ? fmtDateTime(b.until) : '영구' %></td>
+            <td><% if (b.active) { %><span class="sev-badge sev-high">차단중</span><% } else { %><span class="sev-badge sev-low">만료</span><% } %></td>
+            <td>
+              <form action="/admin/security/unblock" method="post" onsubmit="return confirm('이 IP 차단을 해제할까요?');">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <input type="hidden" name="ip" value="<%= esc(b.ip) %>" />
+                <button type="submit" class="linkbtn">해제</button>
+              </form>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
 
   <!-- 진단 요약 -->
   <div class="sec-banner <%= hi ? 'sec-banner--warn' : 'sec-banner--ok' %>">
@@ -119,8 +157,8 @@
   <h2 class="sec-h">권장 대응 가이드</h2>
   <div class="sec-guide">
     <ol>
-      <li><strong>대부분은 무해</strong> — 이 사이트는 워드프레스·PHP가 아니므로 관련 스캔은 전부 404로 튕겨냅니다. 매일 들어오는 정상적인 인터넷 배경 소음입니다.</li>
-      <li><strong>반복·고위험 IP는 차단</strong> — 위 ‘주요 의심 IP’에서 요청 수가 많거나 고위험(빨강) 유형인 IP는 서버 nginx에서 차단하세요.</li>
+      <li><strong>앱 자동 차단 작동</strong> — 악성 스캔 요청은 앱에서 즉시 403으로 거부하고, 고위험·반복 IP는 24시간 자동 차단합니다(위 ‘차단된 IP’에서 해제 가능). 별도 조치 없이도 기본 방어됩니다.</li>
+      <li><strong>더 강한 차단(선택)</strong> — 트래픽이 서버에 닿기 전에 막으려면 아래 nginx 설정을 추가하면 됩니다(앱 차단과 병행).</li>
       <li><strong>스캔 경로를 로그 없이 즉시 차단</strong>(nginx 예시) — 아래 블록을 server 블록에 추가하면 워드프레스 스캔을 444로 즉시 종료합니다.
         <pre class="sec-pre">location ~* (^/wp-|xmlrpc\.php|/\.env|/\.git|phpmyadmin|/vendor/) {
     return 444;   # 응답 없이 연결 종료
