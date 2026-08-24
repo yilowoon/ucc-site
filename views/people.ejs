@@ -53,6 +53,12 @@
           ["전", "현대오토넷 기획팀장"],
           ["전", "현대캐피탈 경영전략팀장"],
           ["전", "현대차서비스 과장"]
+        ] },
+        { name: "정용환", specialty: "원자력재료기술개발", careers: [
+          ["수상", "대한민국 최고과학기술인상"],
+          ["창립", "벽돌한장"],
+          ["현", "벽돌한장 명예회장"],
+          ["전", "한국원자력연구원 단장"]
         ] }
       ];
     %>
@@ -66,6 +72,9 @@
           <% } %>
           <div class="dir-body">
             <h3 class="dir-name"><%= d.name %> <span class="dir-title">자문위원</span></h3>
+            <% if (d.specialty) { %>
+              <p class="dir-spec"><span class="dir-spec-label">전문분야</span><%= d.specialty %></p>
+            <% } %>
             <% if (d.careers) { %>
               <ul class="dir-careers">
                 <% d.careers.forEach(function(c){ %>
