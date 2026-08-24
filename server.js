@@ -112,11 +112,13 @@ app.use((req, res, next) => {
 });
 
 // ---- Static (홈은 아래 핸들러에서 OG 절대 URL 주입을 위해 index 자동서빙 비활성) ----
-app.use(express.static(path.join(__dirname, "public"), { index: false }));
+// dotfiles:"deny" — .env/.git 등 숨김파일 요청은 403 (실제로 public에는 없지만 이중 방어)
+app.use(express.static(path.join(__dirname, "public"), { index: false, dotfiles: "deny" }));
 app.use(
   "/uploads",
   express.static(UPLOAD_DIR, {
     maxAge: "7d",
+    dotfiles: "deny",
     setHeaders(res) {
       // 업로드 파일은 인라인 표시(이미지)만 허용, 스크립트 실행 방지
       res.setHeader("X-Content-Type-Options", "nosniff");
