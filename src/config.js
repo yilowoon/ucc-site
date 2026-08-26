@@ -11,7 +11,7 @@ const BOARDS = {
     key: "global",
     name: "지구촌소식AI기자",
     en: "GLOBAL NEWS",
-    desc: "도시공동체본부의 미션과 맞닿은 지구촌 소식을 AI기자가 찾아 정리해 전해드립니다.",
+    desc: "사회연대경제로 전환하는 세계의 흐름과 해외 사례를, 지구촌소식 AI기자가 매주 한 편의 이슈리포트로 정리해 전해드립니다.",
   },
 };
 const BOARD_KEYS = Object.keys(BOARDS);

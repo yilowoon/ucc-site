@@ -133,8 +133,10 @@ function xe(s) {
 }
 
 /**
- * 한 문단(w:p)을 만든다.
- * opts: { size(반포인트), bold, color(hex 6자리), before, after(단위 twips), align }
+ * 한 문단(w:p)을 만든다. 여러 런을 담을 수 있어 굵은 라벨 + 일반 본문 혼합이 된다.
+ * text 는 문자열(단일 런) 또는 [{ t, bold, color, size }] 런 배열.
+ * opts: { size, bold, color, before, after(twips), line(줄간격 twips), align,
+ *         indent(들여쓰기 twips), topBorder(hex|null), shade(hex|null) }
  */
 function para(text, opts = {}) {
   const {
@@ -143,51 +145,132 @@ function para(text, opts = {}) {
     color = null,
     before = 0,
     after = 120,
+    line = null,
     align = null,
+    indent = 0,
+    topBorder = null,
+    shade = null,
   } = opts;
 
-  const rpr =
-    "<w:rPr>" +
-    (bold ? "<w:b/>" : "") +
-    `<w:sz w:val="${size}"/><w:szCs w:val="${size}"/>` +
-    (color ? `<w:color w:val="${color}"/>` : "") +
-    "</w:rPr>";
+  const spacing =
+    `<w:spacing w:before="${before}" w:after="${after}"` +
+    (line ? ` w:line="${line}" w:lineRule="auto"` : "") +
+    "/>";
+  const bdr = topBorder
+    ? `<w:pBdr><w:top w:val="single" w:sz="6" w:space="6" w:color="${topBorder}"/></w:pBdr>`
+    : "";
+  const shd = shade ? `<w:shd w:val="clear" w:color="auto" w:fill="${shade}"/>` : "";
+  const ind = indent ? `<w:ind w:left="${indent}"/>` : "";
+  const jc = align ? `<w:jc w:val="${align}"/>` : "";
 
-  const ppr =
-    "<w:pPr>" +
-    `<w:spacing w:before="${before}" w:after="${after}"/>` +
-    (align ? `<w:jc w:val="${align}"/>` : "") +
-    "</w:pPr>";
+  const ppr = "<w:pPr>" + spacing + bdr + shd + ind + jc + "</w:pPr>";
 
-  // 빈 문단(간격용)도 허용
-  const run = text === "" ? "" : `<w:r>${rpr}<w:t xml:space="preserve">${xe(text)}</w:t></w:r>`;
-  return `<w:p>${ppr}${run}</w:p>`;
+  const runs = Array.isArray(text)
+    ? text
+    : [{ t: text, bold, color, size }];
+
+  let runXml = "";
+  for (const r of runs) {
+    if (r.t == null || r.t === "") continue;
+    const rpr =
+      "<w:rPr>" +
+      (r.bold ? "<w:b/>" : "") +
+      `<w:sz w:val="${r.size || size}"/><w:szCs w:val="${r.size || size}"/>` +
+      ((r.color || color) ? `<w:color w:val="${r.color || color}"/>` : "") +
+      "</w:rPr>";
+    runXml += `<w:r>${rpr}<w:t xml:space="preserve">${xe(r.t)}</w:t></w:r>`;
+  }
+  return `<w:p>${ppr}${runXml}</w:p>`;
+}
+
+/* 브랜드 색(딥그린+골드) */
+const GREEN = "1B4332";
+const GREEN2 = "2D6A4F";
+const GOLD = "9A7B29";
+const GRAY = "6B7280";
+const INK = "1F2937";
+
+/**
+ * 섹션 문단 하나를 렌더한다. p 는 문자열 또는 형태 객체.
+ *  "본문"                       → 일반 본문
+ *  { lead: "..." }               → 도입 문단(조금 큼)
+ *  { h3: "소제목" }              → 소제목
+ *  { bullet: "..." }             → 불릿 항목
+ *  { label: "라벨", text: "..." }→ 굵은 라벨 + 본문(한 줄)
+ *  { note: "..." }               → 작은 회색 주석
+ */
+function renderPara(p) {
+  if (typeof p === "string") {
+    return para(p, { size: 21, color: INK, after: 130, line: 288 });
+  }
+  if (p.lead != null) {
+    return para(p.lead, { size: 23, color: INK, after: 160, line: 300 });
+  }
+  if (p.h3 != null) {
+    return para(p.h3, { size: 23, bold: true, color: GREEN2, before: 200, after: 90 });
+  }
+  if (p.bullet != null) {
+    return para([{ t: "•  ", bold: true, color: GOLD }, { t: p.bullet, color: INK }],
+      { size: 21, after: 90, indent: 260, line: 282 });
+  }
+  if (p.label != null) {
+    return para([{ t: p.label + "  ", bold: true, color: GREEN2 }, { t: p.text || "", color: INK }],
+      { size: 21, after: 110, line: 282 });
+  }
+  if (p.note != null) {
+    return para(p.note, { size: 17, color: GRAY, after: 90, line: 270 });
+  }
+  return para(String(p), { size: 21, color: INK, after: 130 });
 }
 
 /**
- * 보고서 구조를 받아 .docx Buffer 를 만든다.
- * { title, meta:[string], sections:[{ heading, paragraphs:[string] }] }
+ * 수준 높은 보고서 한 편을 .docx Buffer 로 만든다.
+ * {
+ *   title, subtitle,
+ *   publisher, date,               // 표지 발행정보
+ *   sections: [{ heading, paragraphs:[...] }],
+ *   colophon: [string],            // 마지막 판권(발행처 주소·연락처 등)
+ *   meta:[string]                  // (구버전 호환) 있으면 표지 아래 회색 줄로 표기
+ * }
  */
-function buildDocx({ title = "보고서", meta = [], sections = [] } = {}) {
+function buildDocx({
+  title = "보고서",
+  subtitle = "",
+  publisher = "",
+  date = "",
+  meta = [],
+  sections = [],
+  colophon = [],
+} = {}) {
   const body = [];
 
-  // 제목
-  body.push(para(title, { size: 36, bold: true, color: "1B4332", after: 80 }));
+  // ── 표지 블록 ──
+  body.push(para("R E P O R T", { size: 16, bold: true, color: GOLD, after: 60 }));
+  body.push(para(title, { size: 40, bold: true, color: GREEN, after: subtitle ? 40 : 120, line: 360 }));
+  if (subtitle) body.push(para(subtitle, { size: 24, color: GREEN2, after: 140, line: 320 }));
 
-  // 메타(매체·작성자 등) — 회색 작은 글씨
-  for (const m of meta) {
-    body.push(para(m, { size: 18, color: "6B7280", after: 40 }));
-  }
-  if (meta.length) body.push(para("", { after: 120 }));
+  // 발행 정보(가로줄 위)
+  const pubRun = [];
+  if (publisher) pubRun.push({ t: "발행  ", bold: true, color: GREEN2 }, { t: publisher + "     ", color: INK });
+  if (date) pubRun.push({ t: "발행일  ", bold: true, color: GREEN2 }, { t: date, color: INK });
+  if (pubRun.length) body.push(para(pubRun, { size: 19, before: 40, after: 60, topBorder: GOLD }));
+  for (const m of meta) body.push(para(m, { size: 18, color: GRAY, after: 40 }));
+  body.push(para("", { after: 40, topBorder: "D9D9D9" }));
 
-  // 섹션
+  // ── 섹션 ──
   for (const sec of sections) {
     if (sec.heading) {
-      body.push(para(sec.heading, { size: 26, bold: true, color: "2D6A4F", before: 160, after: 80 }));
+      body.push(para(sec.heading, { size: 28, bold: true, color: GREEN, before: 260, after: 110, topBorder: "E5E7EB" }));
     }
-    for (const p of sec.paragraphs || []) {
-      body.push(para(p, { size: 22, after: 120 }));
-    }
+    for (const p of sec.paragraphs || []) body.push(renderPara(p));
+  }
+
+  // ── 판권(colophon) ──
+  if (colophon.length) {
+    body.push(para("", { before: 240, after: 60, topBorder: GOLD }));
+    colophon.forEach((line, i) => {
+      body.push(para(line, { size: i === 0 ? 19 : 17, bold: i === 0, color: i === 0 ? GREEN : GRAY, after: 40 }));
+    });
   }
 
   const documentXml =

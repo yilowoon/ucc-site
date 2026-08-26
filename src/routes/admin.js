@@ -623,17 +623,18 @@ module.exports = function adminRoutes({ verifyCsrf }) {
 
   // ---------- 햇빛소득마을 지역 현황 관리 ----------
   const SOLAR_STATUSES = ["준비중", "추진중", "운영중"];
-  // ---------- 지구촌소식 AI기자: 수동 수집 ----------
-  // 스케줄러가 매일 07:00/19:00 에 자동 실행하지만, 관리자가 즉시 돌릴 수도 있게 한다.
+  // ---------- 지구촌소식 AI기자: 수동 리포트 발행 ----------
+  // 스케줄러가 매주 월요일 08:30 에 자동 발행하지만, 관리자가 즉시 새 리포트를 낼 수도 있게 한다.
   router.post("/global/collect", requireAdmin, verifyCsrf, (req, res) => {
     try {
       const { collectOnce } = require("../globalnews");
-      // 수집은 외부 요청이라 오래 걸린다. 응답은 즉시 돌려주고 백그라운드로 진행.
-      collectOnce()
-        .then((r) => console.log("[globalnews] 수동 수집:", JSON.stringify(r)))
-        .catch((e) => console.error("[globalnews] 수동 수집 오류:", e.message));
+      // 자료 조사·집필로 오래 걸린다. 응답은 즉시 돌려주고 백그라운드로 진행.
+      // force: 이번 주 리포트가 이미 있어도 다음 주제로 새 리포트를 발행한다.
+      collectOnce({ force: true })
+        .then((r) => console.log("[report] 수동 발행:", JSON.stringify(r)))
+        .catch((e) => console.error("[report] 수동 발행 오류:", e.message));
     } catch (e) {
-      console.error("[globalnews] 수동 수집 시작 실패:", e.message);
+      console.error("[report] 수동 발행 시작 실패:", e.message);
     }
     res.redirect("/admin?board=global&msg=collecting");
   });

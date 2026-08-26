@@ -91,9 +91,9 @@
     <div class="admin-head-actions">
       <% if (filterBoard === 'global') { %>
         <form method="post" action="/admin/global/collect" style="display:inline"
-              onsubmit="return confirm('지금 지구촌 소식을 수집할까요? (약 1분 소요)');">
+              onsubmit="return confirm('지금 사회연대경제 이슈리포트를 새로 발행할까요? (자료 조사·집필로 약 1~2분 소요)');">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <button type="submit" class="btn btn-neutral btn-sm">🌏 지금 수집</button>
+          <button type="submit" class="btn btn-neutral btn-sm">📄 지금 리포트 발행</button>
         </form>
       <% } %>
       <a class="btn btn-primary btn-sm" href="/admin/write?board=<%= filterBoard === 'all' ? 'notice' : filterBoard %>">＋ 새 글 작성</a>
@@ -101,7 +101,7 @@
   </div>
 
   <% if (typeof msg !== 'undefined' && msg === 'collecting') { %>
-    <p class="form-alert ok">수집을 시작했습니다. 잠시 후(약 1분) 새로고침하면 반영됩니다.</p>
+    <p class="form-alert ok">리포트 발행을 시작했습니다. 자료 조사·집필로 1~2분 뒤 새로고침하면 반영됩니다.</p>
   <% } %>
 
   <ul class="admin-list">
