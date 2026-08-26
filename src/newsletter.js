@@ -328,4 +328,5 @@ function startScheduler() {
   console.log(`[newsletter] 스케줄러 시작 — 다음 수집: ${next.toLocaleString()}`);
 }
 
-module.exports = { collectOnce, startScheduler, buildGenSvg, KEYWORDS };
+// fromDaum / fromGoogle 은 지구촌소식 AI기자(globalnews.js)에서도 재사용한다.
+module.exports = { collectOnce, startScheduler, buildGenSvg, KEYWORDS, fromDaum, fromGoogle };

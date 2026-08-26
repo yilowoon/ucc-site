@@ -157,6 +157,7 @@ module.exports = function adminRoutes({ verifyCsrf }) {
       filterBoard: board,
       counts,
       stats,
+      msg: req.query.msg || null,
     });
   });
 
@@ -622,6 +623,21 @@ module.exports = function adminRoutes({ verifyCsrf }) {
 
   // ---------- 햇빛소득마을 지역 현황 관리 ----------
   const SOLAR_STATUSES = ["준비중", "추진중", "운영중"];
+  // ---------- 지구촌소식 AI기자: 수동 수집 ----------
+  // 스케줄러가 매일 07:00/19:00 에 자동 실행하지만, 관리자가 즉시 돌릴 수도 있게 한다.
+  router.post("/global/collect", requireAdmin, verifyCsrf, (req, res) => {
+    try {
+      const { collectOnce } = require("../globalnews");
+      // 수집은 외부 요청이라 오래 걸린다. 응답은 즉시 돌려주고 백그라운드로 진행.
+      collectOnce()
+        .then((r) => console.log("[globalnews] 수동 수집:", JSON.stringify(r)))
+        .catch((e) => console.error("[globalnews] 수동 수집 오류:", e.message));
+    } catch (e) {
+      console.error("[globalnews] 수동 수집 시작 실패:", e.message);
+    }
+    res.redirect("/admin?board=global&msg=collecting");
+  });
+
   router.get("/solar", requireAdmin, (req, res) => {
     const regions = db.prepare("SELECT * FROM solar_regions ORDER BY sort, code").all();
     res.render("admin-solar", { ...res.locals, title: "햇빛소득마을 관리", regions, statuses: SOLAR_STATUSES, saved: req.query.saved || "" });

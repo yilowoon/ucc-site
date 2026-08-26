@@ -161,6 +161,11 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_newsletter_id ON newsletter(id DESC);
 `);
 
+// posts: 자동 수집 글의 원문 식별자 — 같은 기사를 두 번 올리지 않기 위함
+try { db.exec("ALTER TABLE posts ADD COLUMN source_guid TEXT NOT NULL DEFAULT ''"); } catch (e) {}
+// 수동 작성 글은 source_guid 가 빈 값이므로 부분 인덱스로 충돌을 피한다
+try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_posts_source_guid ON posts(source_guid) WHERE source_guid <> ''"); } catch (e) {}
+
 // members 컬럼 마이그레이션 (이미 있으면 무시)
 try { db.exec("ALTER TABLE members ADD COLUMN member_type TEXT NOT NULL DEFAULT '개인회원'"); } catch (e) {}
 try { db.exec("ALTER TABLE members ADD COLUMN org_name TEXT NOT NULL DEFAULT ''"); } catch (e) {}

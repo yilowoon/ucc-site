@@ -341,4 +341,6 @@ app.listen(PORT, () => {
   console.log(`  · 데이터    ${DATA_DIR}\n`);
   // 뉴스레터 자동 수집 스케줄러 (매일 08:00 / 18:00) — 수집 실패는 서비스에 영향 없음
   try { require("./src/newsletter").startScheduler(); } catch (e) { console.error("[newsletter] 스케줄러 시작 실패:", e.message); }
+  // 지구촌소식 AI기자 자동 수집 (매일 07:00 / 19:00)
+  try { require("./src/globalnews").startScheduler(); } catch (e) { console.error("[globalnews] 스케줄러 시작 실패:", e.message); }
 });

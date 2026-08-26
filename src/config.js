@@ -7,6 +7,12 @@ const BOARDS = {
   press: { key: "press", name: "보도자료", en: "PRESS", desc: "언론 보도와 배포 자료를 모았습니다." },
   business: { key: "business", name: "사업안내", en: "PROGRAMS", desc: "진행 사업과 프로그램을 안내합니다." },
   news: { key: "news", name: "도시공동체본부 활동", en: "UCC NEWS", desc: "본부의 활동 소식과 이미지 자료입니다.", image: true },
+  global: {
+    key: "global",
+    name: "지구촌소식AI기자",
+    en: "GLOBAL NEWS",
+    desc: "도시공동체본부의 미션과 맞닿은 지구촌 소식을 AI기자가 찾아 정리해 전해드립니다.",
+  },
 };
 const BOARD_KEYS = Object.keys(BOARDS);
 // 메인 '주요 전달 소식' 3박스에 쓰는 게시판(공지·보도·사업)

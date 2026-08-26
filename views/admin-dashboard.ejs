@@ -88,8 +88,21 @@
         <a href="/admin?board=<%= k %>" class="<%= filterBoard === k ? 'active' : '' %>"><%= boards[k].name %></a>
       <% }); %>
     </div>
-    <a class="btn btn-primary btn-sm" href="/admin/write?board=<%= filterBoard === 'all' ? 'notice' : filterBoard %>">＋ 새 글 작성</a>
+    <div class="admin-head-actions">
+      <% if (filterBoard === 'global') { %>
+        <form method="post" action="/admin/global/collect" style="display:inline"
+              onsubmit="return confirm('지금 지구촌 소식을 수집할까요? (약 1분 소요)');">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <button type="submit" class="btn btn-neutral btn-sm">🌏 지금 수집</button>
+        </form>
+      <% } %>
+      <a class="btn btn-primary btn-sm" href="/admin/write?board=<%= filterBoard === 'all' ? 'notice' : filterBoard %>">＋ 새 글 작성</a>
+    </div>
   </div>
+
+  <% if (typeof msg !== 'undefined' && msg === 'collecting') { %>
+    <p class="form-alert ok">수집을 시작했습니다. 잠시 후(약 1분) 새로고침하면 반영됩니다.</p>
+  <% } %>
 
   <ul class="admin-list">
     <li class="admin-list-head" aria-hidden="true">

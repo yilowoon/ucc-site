@@ -28,3 +28,7 @@ public/img/hero/Gemini_*.png
 /design_danggen.md
 
 .DS_Store
+
+# 게시 도구 자격증명
+.env.publish
+tools/*.local.*
