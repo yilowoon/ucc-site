@@ -114,8 +114,8 @@ function isoWeek(date) {
   return { year: dt.getUTCFullYear(), week, key: `${dt.getUTCFullYear()}-W${String(week).padStart(2, "0")}` };
 }
 
-/** 요약 발췌(원문 전문 방지) */
-function buildExcerpt(item, maxChars = 500) {
+/** 요약 발췌(원문 전문 방지) — LLM 근거용이라 넉넉히, 단 전문 저장은 피한다 */
+function buildExcerpt(item, maxChars = 1000) {
   const raw = String(item.content || item.summary || "").replace(/\s+/g, " ").trim();
   if (raw.length < 20) return String(item.summary || "").replace(/\s+/g, " ").trim();
   if (raw.length <= maxChars) return raw;
@@ -166,13 +166,13 @@ async function researchSources(theme, { maxSources = 8 } = {}) {
 
 /* --------------------------------------------- 2) Gemini 집필 호출 */
 
-async function geminiJson(prompt, ms = 45000) {
+async function geminiJson(prompt, { ms = 90000, maxTokens = 8192, temperature = 0.5 } = {}) {
   const key = GEMINI_KEY();
   if (!key) return null;
   const url = `${GEMINI_BASE()}/v1beta/models/${GEMINI_TEXT_MODEL()}:generateContent?key=${encodeURIComponent(key)}`;
   const body = {
     contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.4, maxOutputTokens: 4096, responseMimeType: "application/json" },
+    generationConfig: { temperature, maxOutputTokens: maxTokens, responseMimeType: "application/json" },
   };
   const ctrl = new AbortController();
   const to = setTimeout(() => ctrl.abort(), ms);
@@ -195,40 +195,119 @@ async function geminiJson(prompt, ms = 45000) {
   } finally { clearTimeout(to); }
 }
 
-function buildPrompt(theme, sources) {
-  const src = sources.map((s, i) =>
-    `[출처 ${i + 1}] 제목: ${s.title}\n매체: ${s.source || "미상"} / 보도일: ${s.date || "미상"}\n발췌: ${s.excerpt}`
+/** 출처 자료를 프롬프트용 텍스트 블록으로 */
+function sourceBlock(sources) {
+  if (!sources.length) return "(수집 자료가 부족합니다. 주제에 대한 널리 알려진·검증된 배경지식으로 신중히 작성하되, 불확실한 구체 수치·고유명사는 단정하지 마세요.)";
+  return sources.map((s, i) =>
+    `[출처 ${i + 1}] ${s.title}\n  매체: ${s.source || "미상"} / 보도일: ${s.date || "미상"}${s.url ? `\n  링크: ${s.url}` : ""}\n  발췌: ${s.excerpt}`
   ).join("\n\n");
+}
 
+const PERSONA_PROMPT =
+  "당신은 사단법인 도시공동체본부의 수석 연구위원입니다. 도시·지역 사회연대경제 분야에서 박사학위를 지닌 전문가로서, " +
+  "국제 비교연구와 정책분석에 능하며, 공공기관이 발행하는 심층 이슈리포트를 집필합니다.";
+
+const RULES = [
+  "엄격한 원칙:",
+  "- 제공된 [출처] 자료와 널리 알려진 검증된 사실만 사용합니다. 출처에 없는 구체적 수치·인명·기관명·연도를 지어내지 마세요.",
+  "- 불확실한 사실은 단정하지 말고 '~로 알려져 있다', '~로 평가된다' 식으로 신중하게 표현합니다.",
+  "- 과장·홍보성 표현을 피하고, 근거와 인과관계를 명료하게 제시하는 학술적·분석적 문체를 씁니다.",
+  "- 추상적 일반론에 그치지 말고 제도의 작동 방식, 주체, 재원, 성과와 한계를 구체적으로 설명합니다.",
+  "- '참고자료' 목록은 작성하지 마세요(코드가 실제 링크로 자동 추가합니다).",
+].join("\n");
+
+/** 1단계: 보고서 개요(제목·부제·요약 + 심층 소개할 해외 사례 3~4개) */
+function buildOutlinePrompt(theme, sources) {
   return [
-    "당신은 사단법인 도시공동체본부의 리서처 '지구촌소식 AI기자'입니다.",
+    PERSONA_PROMPT,
     `주제: "${theme.title}" — ${theme.focus}`,
-    "아래 [출처] 자료들을 종합해, 해외 사례를 특히 자세히 소개하는 수준 높은 한국어 이슈리포트를 작성하세요.",
+    "아래 [출처] 자료를 검토해, A4 약 10쪽 분량의 심층 이슈리포트를 위한 설계안을 만드세요.",
+    "특히 본문에서 '자세히 소개할 해외 사례'를 국가/제도 단위로 3~4개 선정하세요(가능하면 서로 다른 나라).",
+    RULES,
     "",
-    "엄격한 규칙:",
-    "- 제공된 출처 자료와 널리 알려진 배경 사실만 사용합니다. 출처에 없는 구체적 수치·인명·연도를 지어내지 마세요.",
-    "- 과장 없이 사실 중심으로, 공공기관 발행물다운 차분하고 신뢰감 있는 문체로 씁니다.",
-    "- 해외 사례는 국가/사례별로 소제목을 나눠 배경·작동방식·의미를 구체적으로 설명합니다.",
-    "- '참고자료'는 작성하지 마세요(코드가 실제 링크로 자동 추가합니다).",
-    "",
-    "다음 JSON 스키마로만 답하세요(설명·코드블록 없이 JSON 객체 하나):",
+    "다음 JSON만 출력(설명·코드블록 없이):",
     "{",
-    '  "title": "보고서 제목(30자 내외)",',
+    '  "title": "보고서 제목(35자 내외, 구체적)",',
     '  "subtitle": "한 줄 부제",',
-    '  "summary": "게시글 본문용 개요 3~5문장(핵심 요지)",',
-    '  "sections": [',
-    '    { "heading": "1. 개요", "paragraphs": ["문단", {"lead":"도입문단"}] },',
-    '    { "heading": "2. 배경", "paragraphs": ["문단", {"bullet":"항목"}] },',
-    '    { "heading": "3. 해외 사례", "paragraphs": [{"h3":"국가/사례 소제목"}, "설명 문단"] },',
-    '    { "heading": "4. 시사점", "paragraphs": [{"bullet":"시사점"}] },',
-    '    { "heading": "5. 도시공동체본부의 관점", "paragraphs": ["문단"] }',
-    "  ]",
+    '  "summary": "게시글 본문용 개요 4~6문장(핵심 논지와 결론 요지)",',
+    '  "cases": [ { "country": "국가", "name": "제도/사례명", "angle": "이 사례에서 특히 조명할 점 한 줄" } ]',
     "}",
-    "paragraphs 항목은 문자열 또는 {\"h3\":..}, {\"bullet\":..}, {\"lead\":..}, {\"label\":..,\"text\":..} 중 하나입니다.",
     "",
     "=== 출처 자료 ===",
-    src || "(수집된 자료가 부족합니다. 주제에 대한 일반적·검증된 배경 지식으로 신중히 작성하되 구체 수치는 피하세요.)",
+    sourceBlock(sources),
   ].join("\n");
+}
+
+/** 개요를 받아 절(section) 집필 계획을 만든다 */
+function sectionPlan(outline) {
+  const cases = Array.isArray(outline.cases) ? outline.cases.slice(0, 4) : [];
+  const plan = [
+    { heading: "1. 개요", brief: "보고서 전체의 핵심 논지·문제의식과 결론의 요지를 제시. 왜 지금 이 주제가 중요한지 설득력 있게." },
+    { heading: "2. 문제의식과 구조적 배경", brief: "저성장·양극화·인구감소·돌봄공백 등 구조적 맥락에서 사회연대경제가 부상하는 배경을 이론적·실증적으로 심층 분석." },
+    { heading: "3. 국제 담론과 정책 동향", brief: "UN·ILO·OECD·EU 등 국제사회의 사회연대경제 의제화와 각국 정부 정책의 흐름을, 널리 알려진 사실 위주로 정리." },
+  ];
+  cases.forEach((c, i) => {
+    plan.push({
+      heading: `${4 + i}. 해외 사례 | ${c.country || "해외"} — ${c.name || "사례"}`,
+      brief: `${c.country || ""}의 '${c.name || "사례"}'를 ①역사적 배경 ②제도·거버넌스 구조 ③실제 작동 방식과 재원 ④성과와 한계 ⑤한국에의 함의 순으로 매우 구체적으로. 특히 조명할 점: ${c.angle || "지역경제·공동체에 준 효과"}.`,
+      isCase: true,
+    });
+  });
+  const base = 4 + cases.length;
+  plan.push({ heading: `${base}. 국내 현황과 국제 비교`, brief: "한국 사회연대경제의 현황·제도·규모를 앞의 해외 사례와 비교해 강점과 격차를 분석." });
+  plan.push({ heading: `${base + 1}. 시사점과 정책 제언`, brief: "제도·금융(연대금융)·중간지원·인력양성 등 층위별로 구체적이고 실행가능한 제언을 제시." });
+  plan.push({ heading: `${base + 2}. 도시공동체본부의 전략적 방향`, brief: "본부의 햇빛소득마을(주민참여 재생에너지)·커뮤니티 사업과 연결한 실천 전략을 단계적으로 제안." });
+  plan.push({ heading: `${base + 3}. 결론`, brief: "핵심 논지를 응축하고, 향후 과제와 전망을 제시." });
+  return plan;
+}
+
+/** 2단계: 개별 절을 심층 집필 */
+function buildSectionPrompt(theme, sources, outline, spec, index, total) {
+  return [
+    PERSONA_PROMPT,
+    `[보고서] ${outline.title} — ${outline.subtitle}`,
+    `[집필할 절] ${spec.heading}  (전체 ${total}개 절 중 ${index + 1}번째)`,
+    `[이 절에서 다룰 내용] ${spec.brief}`,
+    "",
+    "요구 수준:",
+    "- 박사급 연구자의 깊이로, 구체적 사실·메커니즘·인과관계·비교를 담아 서술합니다.",
+    `- 이 절 하나의 분량이 최소 1,800자, 가능하면 2,400자 이상이 되도록 충실히 씁니다(A4 약 1~1.5쪽).`,
+    "- 2~3개의 소제목(h3)으로 논리적으로 구조화하고, 핵심 항목은 불릿으로 정리합니다.",
+    spec.isCase
+      ? "- 이 절은 특정 해외 사례의 심층 분석입니다. 배경→제도→작동방식→성과와 한계→한국 함의가 모두 드러나야 합니다."
+      : "- 균형 잡힌 시각으로 반대 논거나 한계도 함께 다룹니다.",
+    RULES,
+    "",
+    "다음 JSON만 출력(설명·코드블록 없이):",
+    '{ "paragraphs": [ "문단", {"h3":"소제목"}, "문단", {"bullet":"항목"}, {"label":"핵심","text":"..."} ] }',
+    "paragraphs 항목은 문자열 또는 {\"h3\":..},{\"bullet\":..},{\"lead\":..},{\"label\":..,\"text\":..} 중 하나입니다. 문단은 길고 밀도 있게 쓰세요.",
+    "",
+    "=== 출처 자료 ===",
+    sourceBlock(sources),
+  ].join("\n");
+}
+
+/** 개요 + 절별 집필을 묶어 완성 보고서 객체를 만든다. 실패 절은 건너뛴다. */
+async function writeFullReport(theme, sources) {
+  const outline = await geminiJson(buildOutlinePrompt(theme, sources), { maxTokens: 2048, temperature: 0.5 });
+  if (!outline || !outline.title) return null;
+
+  const plan = sectionPlan(outline);
+  const sections = [];
+  for (let i = 0; i < plan.length; i++) {
+    const spec = plan[i];
+    let paras = [];
+    for (let attempt = 0; attempt < 2 && paras.length === 0; attempt++) {
+      const r = await geminiJson(buildSectionPrompt(theme, sources, outline, spec, i, plan.length), { maxTokens: 8192, temperature: 0.55 });
+      paras = normParas(r && r.paragraphs);
+      if (paras.length === 0) await sleep(500);
+    }
+    if (paras.length === 0) paras = [{ note: "(이 절은 자료 부족으로 생략되었습니다.)" }];
+    sections.push({ heading: spec.heading, paragraphs: paras });
+    console.log(`[report]  · 절 ${i + 1}/${plan.length} 집필: ${spec.heading} (${paras.length}문단)`);
+    await sleep(400);
+  }
+  return { title: outline.title, subtitle: outline.subtitle || theme.focus, summary: outline.summary || theme.focus, sections };
 }
 
 /** LLM 실패 시: 수집 자료로 만든 기본 다이제스트 리포트 */
@@ -381,11 +460,11 @@ async function collectOnce({ force = false } = {}) {
   }
 
   console.log(`[report] 리포트 작성 시작 — ${wk.key} / ${theme.title}`);
-  const sources = await researchSources(theme);
+  const sources = await researchSources(theme, { maxSources: 12 });
   console.log(`[report] 자료 ${sources.length}건 수집`);
 
-  let report = await geminiJson(buildPrompt(theme, sources));
   let ai = true;
+  let report = await writeFullReport(theme, sources);
   if (!report || !report.sections || !report.sections.length) {
     console.warn("[report] LLM 집필 실패 → 기본 다이제스트로 대체");
     report = fallbackReport(theme, sources);
@@ -397,7 +476,7 @@ async function collectOnce({ force = false } = {}) {
   return { published: true, ai, weekKey: wk.key, theme: theme.key, ...out };
 }
 
-/* ------------------- 스케줄러: 매주 월요일 08:30 (서버 시간) ------- */
+/* ------------------- 스케줄러: 매주 월요일 07:00 (서버 시간) ------- */
 
 function msUntilWeekly(weekday, hour, minute) {
   const now = new Date();
@@ -410,7 +489,7 @@ function msUntilWeekly(weekday, hour, minute) {
 }
 
 function startScheduler() {
-  const WD = 1, H = 8, M = 30; // 월요일 08:30
+  const WD = 1, H = 7, M = 0; // 월요일 07:00
   const run = async () => {
     try { await collectOnce(); } catch (e) { console.error("[report] 주간 발행 오류:", e.message); }
     setTimeout(run, msUntilWeekly(WD, H, M));
