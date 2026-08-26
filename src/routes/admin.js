@@ -456,7 +456,21 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     const pageRows = db.prepare("SELECT path, COUNT(DISTINCT visitor) AS c FROM visits WHERE visitor <> '' GROUP BY path ORDER BY c DESC LIMIT 8").all();
     const devRows = db.prepare("SELECT device, COUNT(DISTINCT visitor) AS c FROM visits WHERE visitor <> '' GROUP BY device").all();
     const since = db.prepare("SELECT MIN(day) AS m FROM visits").get().m;
-    res.render("admin-stats", { ...res.locals, title: "트래픽 통계", summary, daily, weekly, monthly, refRows, pageRows, devRows, since, today });
+
+    // 일별 상세 테이블: 최근 90일, 일별 총 순방문자 + 유입경로별 순방문자
+    const dailyStart = kstDay(89);
+    const totRows = db.prepare(
+      "SELECT day, COUNT(DISTINCT visitor) AS n FROM visits WHERE day >= ? AND visitor <> '' GROUP BY day"
+    ).all(dailyStart);
+    const srcRows = db.prepare(
+      "SELECT day, source, COUNT(DISTINCT visitor) AS n FROM visits WHERE day >= ? AND visitor <> '' GROUP BY day, source"
+    ).all(dailyStart);
+    const dmap = {};
+    totRows.forEach((r) => { dmap[r.day] = { day: r.day, total: r.n, 직접: 0, 검색: 0, 소셜: 0, 기타: 0, 내부: 0 }; });
+    srcRows.forEach((r) => { if (dmap[r.day] && r.source in dmap[r.day]) dmap[r.day][r.source] = r.n; });
+    const dailyTable = Object.values(dmap).sort((a, b) => (a.day < b.day ? 1 : -1)); // 최근순
+
+    res.render("admin-stats", { ...res.locals, title: "트래픽 통계", summary, daily, weekly, monthly, refRows, pageRows, devRows, since, today, dailyTable });
   });
 
   // ---------- 접속기록(IP 로그) ----------

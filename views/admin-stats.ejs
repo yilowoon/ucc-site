@@ -32,6 +32,27 @@
     <div id="trend" class="chart"></div>
   </section>
 
+  <!-- 일별 상세 (총 순방문자 + 유입경로별) -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2>일별 상세 <span class="sec-h-note" style="font-weight:500;color:var(--muted)">최근순 · 유입경로별 순방문자</span></h2>
+      <div class="pager" id="dtPager" style="margin:0"></div>
+    </div>
+    <% if (!dailyTable.length) { %>
+      <p class="post-empty">집계된 데이터가 없습니다.</p>
+    <% } else { %>
+    <div class="member-scroll">
+      <table class="log-table" id="dtTable">
+        <thead><tr><th>날짜</th><th>총 순방문자</th><th>직접</th><th>검색</th><th>소셜</th><th>기타</th><th>내부</th></tr></thead>
+        <tbody id="dtBody"></tbody>
+      </table>
+    </div>
+    <p class="panel-note">※ ‘총 순방문자’는 해당일 고유 방문자(중복 제거) 수입니다. 경로별 수치는 각 경로의 고유 방문자로, 한 방문자가 여러 경로로 방문하면 합계가 총계보다 클 수 있습니다.</p>
+    <% } %>
+  </section>
+
+  <script id="dailyTableData" type="application/json"><%- JSON.stringify(dailyTable) %></script>
+
   <div class="panel-grid">
     <!-- 유입경로 도넛 -->
     <section class="panel">
@@ -131,6 +152,42 @@
     btns.forEach(function(x){x.classList.remove('on');}); b.classList.add('on'); render(b.getAttribute('data-mode'));
   }); });
   render('daily');
+})();
+</script>
+
+<script>
+/* 일별 상세 테이블 — 5개씩 페이지네이션 */
+(function(){
+  var body = document.getElementById('dtBody');
+  var pager = document.getElementById('dtPager');
+  if (!body || !pager) return;
+  var rows = [];
+  try { rows = JSON.parse(document.getElementById('dailyTableData').textContent || '[]'); } catch(e){}
+  var PER = 5, page = 1, pages = Math.max(1, Math.ceil(rows.length / PER));
+  function num(n){ return (n||0).toLocaleString(); }
+  function draw(){
+    var start = (page-1)*PER;
+    var slice = rows.slice(start, start+PER);
+    body.innerHTML = slice.map(function(r){
+      return '<tr>'
+        + '<td class="log-time">'+ r.day +'</td>'
+        + '<td><b>'+ num(r.total) +'</b></td>'
+        + '<td>'+ num(r['직접']) +'</td>'
+        + '<td>'+ num(r['검색']) +'</td>'
+        + '<td>'+ num(r['소셜']) +'</td>'
+        + '<td>'+ num(r['기타']) +'</td>'
+        + '<td>'+ num(r['내부']) +'</td>'
+        + '</tr>';
+    }).join('');
+    pager.innerHTML =
+      '<button type="button" class="btn btn-neutral btn-sm" id="dtPrev"'+(page<=1?' disabled':'')+'>← 이전</button>'
+      + '<span class="pager-info">'+ page +' / '+ pages +'</span>'
+      + '<button type="button" class="btn btn-neutral btn-sm" id="dtNext"'+(page>=pages?' disabled':'')+'>다음 →</button>';
+    var p=document.getElementById('dtPrev'), n=document.getElementById('dtNext');
+    if(p) p.addEventListener('click', function(){ if(page>1){page--; draw();} });
+    if(n) n.addEventListener('click', function(){ if(page<pages){page++; draw();} });
+  }
+  draw();
 })();
 </script>
 <%- include('partials/footer') %>
