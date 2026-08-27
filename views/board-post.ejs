@@ -42,7 +42,7 @@
       </div>
     <% } %>
 
-    <div class="post-content"><%- nl2br(post.content) %></div>
+    <div class="post-content"><%- (typeof nl2brLink === 'function' ? nl2brLink(post.content) : nl2br(post.content)) %></div>
 
     <% if (files.length) { %>
       <div class="post-files">

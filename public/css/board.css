@@ -176,3 +176,79 @@
   .write-grid { grid-template-columns: 1fr; }
   .board-tabs { top: 64px; }
 }
+
+/* ── 지구촌소식브리프: 상단 소개(hero) ── */
+.brief-intro {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px 32px;
+  margin: 22px 0 26px;
+  padding: 30px 32px;
+  border-radius: 18px;
+  color: #f4f1e8;
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgba(205,155,76,0.22) 0%, rgba(205,155,76,0) 42%),
+    linear-gradient(135deg, var(--green-800) 0%, var(--green-600) 100%);
+  box-shadow: 0 14px 34px -18px rgba(14,42,32,0.6);
+}
+.brief-intro::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 5px;
+  background: linear-gradient(180deg, var(--gold-400), var(--gold-600));
+}
+.brief-intro-body { flex: 1 1 460px; min-width: 0; }
+.brief-intro-eyebrow {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--gold-400);
+  margin-bottom: 10px;
+}
+.brief-intro-title {
+  font-size: clamp(1.25rem, 1rem + 1vw, 1.7rem);
+  font-weight: 800;
+  line-height: 1.32;
+  margin: 0 0 12px;
+  color: #fff;
+}
+.brief-intro-lead {
+  font-size: 15px;
+  line-height: 1.9;
+  color: rgba(244,241,232,0.92);
+  margin: 0;
+  word-break: keep-all;
+}
+.brief-intro-lead strong { color: var(--gold-400); font-weight: 700; }
+.brief-intro-meta { flex: 0 0 auto; }
+.brief-intro-badge {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 22px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(220,178,106,0.4);
+  backdrop-filter: blur(2px);
+  text-align: center;
+  white-space: nowrap;
+}
+.brief-intro-badge-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--gold-400);
+}
+.brief-intro-badge-value { font-size: 16px; font-weight: 800; color: #fff; }
+
+@media (max-width: 760px) {
+  .brief-intro { padding: 24px 22px; border-radius: 14px; }
+  .brief-intro-meta { width: 100%; }
+  .brief-intro-badge { width: 100%; flex-direction: row; justify-content: center; gap: 10px; align-items: baseline; }
+}

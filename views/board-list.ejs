@@ -17,6 +17,26 @@
 </nav>
 
 <div class="container board-wrap">
+  <% if (currentBoard === 'global') { %>
+    <section class="brief-intro" aria-label="지구촌소식브리프 소개">
+      <div class="brief-intro-body">
+        <span class="brief-intro-eyebrow">GLOBAL BRIEF · 주간 발간</span>
+        <h2 class="brief-intro-title">세계는 지금, 공동체로 도시를 다시 세운다</h2>
+        <p class="brief-intro-lead">
+          도시의 지속가능한 발전을 위한 공동체의 중요성, 지역 주도·시민 주도의 공동체 회복과
+          지역 발전을 위한 지속적인 혁신 ― 세계는 지금 어디로 어떻게 가고 있으며 어떤 활동을 하고 있는지,
+          그 면모를 살펴보기 위해 주요 소식들을 모아 주간 <strong>Brief</strong> 자료로 발간합니다.
+        </p>
+      </div>
+      <div class="brief-intro-meta">
+        <span class="brief-intro-badge">
+          <span class="brief-intro-badge-label">발간일</span>
+          <span class="brief-intro-badge-value">매주 월요일 오전 7시</span>
+        </span>
+      </div>
+    </section>
+  <% } %>
+
   <div class="board-toolbar">
     <span class="board-count">전체 <strong><%= total %></strong>건<% if (q) { %> · '<%= esc(q) %>' 검색 결과<% } %></span>
     <div class="board-toolbar-right">

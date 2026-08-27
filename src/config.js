@@ -9,9 +9,9 @@ const BOARDS = {
   news: { key: "news", name: "도시공동체본부 활동", en: "UCC NEWS", desc: "본부의 활동 소식과 이미지 자료입니다.", image: true },
   global: {
     key: "global",
-    name: "지구촌소식AI기자",
-    en: "GLOBAL NEWS",
-    desc: "사회연대경제로 전환하는 세계의 흐름과 해외 사례를, 지구촌소식 AI기자가 매주 한 편의 이슈리포트로 정리해 전해드립니다.",
+    name: "지구촌소식브리프",
+    en: "GLOBAL BRIEF",
+    desc: "지역·시민 주도의 공동체 회복과 지속가능한 도시를 위한 세계의 흐름을, 매주 한 편의 브리프로 모아 전해드립니다.",
   },
 };
 const BOARD_KEYS = Object.keys(BOARDS);
@@ -35,6 +35,18 @@ function escapeHtml(s) {
 // 줄바꿈을 <br>로 (먼저 이스케이프)
 function nl2br(s) {
   return escapeHtml(s).replace(/\r\n|\r|\n/g, "<br>");
+}
+
+// 줄바꿈 <br> + http(s) URL 을 새 창 링크로 (먼저 이스케이프하므로 안전)
+function nl2brLink(s) {
+  return escapeHtml(s)
+    .replace(/(https?:\/\/[^\s<]+)/g, (m) => {
+      // 문장부호로 끝나면 링크에서 제외
+      const tail = (m.match(/[.,!?)\]}'"]+$/) || [""])[0];
+      const url = m.slice(0, m.length - tail.length);
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>${tail}`;
+    })
+    .replace(/\r\n|\r|\n/g, "<br>");
 }
 
 // YYYY.MM.DD 형식 (KST)
@@ -66,6 +78,7 @@ module.exports = {
   isBoard,
   escapeHtml,
   nl2br,
+  nl2brLink,
   formatDate,
   formatDateTime,
 };

@@ -1,4 +1,4 @@
-/* 지구촌소식 AI기자 — 주간 '사회연대경제 전환' 이슈리포트 자동 발행
+/* 지구촌소식브리프 — 주간 '사회연대경제 전환' 이슈 브리프 자동 발행
  *
  * 단순 기사 수집이 아니라, 매주 하나의 의미 있는 주제를 정해 관련 자료를 조사하고
  * 그 전체를 한 편의 '수준 높은 보고서'로 종합해 발행한다.
@@ -7,7 +7,7 @@
  *   4) docx 로 세련되게 조판(표지·발행정보·판권) + 요약을 게시글 본문으로
  *   5) 'global' 게시판에 글 등록 + docx 첨부 (완전 자동, 주 1회)
  *
- * 발행: 도시공동체본부 / 집필 초안: 지구촌소식 AI기자.
+ * 발행: 도시공동체본부 / 발간물명: 지구촌소식브리프.
  * 저작권: 원문 전문을 저장하지 않는다. 우리가 쓴 분석·요약 + 출처 링크만 남긴다.
  * 환각 방지: 집필 지침에서 '제공된 출처 자료와 널리 알려진 배경 사실'만 쓰도록 강제하고,
  *   참고자료(링크)는 LLM 이 아니라 실제 수집 목록으로 코드가 직접 붙인다.
@@ -23,7 +23,7 @@ const { fromDaum, fromGoogle } = require("./newsletter");
 const { buildDocx } = require("./docx");
 
 const AUTHOR = "도시공동체본부";        // 발행인(게시글 작성자 표기)
-const PERSONA = "지구촌소식 AI기자";     // 집필 페르소나
+const PERSONA = "지구촌소식브리프";      // 발간물 브랜드
 const BOARD = "global";
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
@@ -31,7 +31,7 @@ const COLOPHON = [
   "사단법인 도시공동체본부  ·  행정안전부 소관 비영리법인",
   "대전광역시 서구 대덕대로242번길 15, 501호-G19",
   "Tel. 1670-9678   ·   E-mail. contact@ucc.or.kr",
-  "본 리포트는 지구촌소식 AI기자가 공개자료를 바탕으로 자동 작성한 것이며, 인용 원문의 저작권은 각 매체에 있습니다.",
+  `본 자료는 도시공동체본부가 공개자료를 바탕으로 주간 정리한 '${PERSONA}'이며, 인용 원문의 저작권은 각 매체에 있습니다.`,
 ];
 
 /* Gemini(Generative Language API) — 텍스트 집필 */
@@ -381,24 +381,51 @@ function makeReportDocx(report, sources, weekKey) {
     subtitle: report.subtitle || "",
     publisher: AUTHOR,
     date: fmtKst(new Date().toISOString()),
-    meta: [`분류  주간 이슈리포트 · 사회연대경제`, `발행호  ${weekKey}  ·  집필 ${PERSONA}`],
+    meta: [`${PERSONA}  ·  주간 이슈 브리프`, `발행  ${AUTHOR}  ·  ${weekKey}`],
     sections,
     colophon: COLOPHON,
   });
 }
 
-/** 게시글 본문(요약본) — 순수 텍스트 */
+/** 보고서에서 '주요 시사점'을 뽑는다(시사점/제언 절의 불릿·문단 우선) */
+function extractImplications(report, max = 5) {
+  const secs = report.sections || [];
+  const pick = secs.find((s) => /시사점|제언|함의/.test(String(s.heading || "")))
+    || secs.find((s) => /결론/.test(String(s.heading || "")));
+  const out = [];
+  const take = (arr) => {
+    for (const p of arr || []) {
+      if (out.length >= max) break;
+      let t = "";
+      if (typeof p === "string") t = p;
+      else if (p && typeof p === "object") t = p.bullet || p.lead || p.text || "";
+      t = String(t).replace(/\s+/g, " ").trim();
+      if (t.length >= 12) out.push(t.length > 160 ? t.slice(0, 159).trim() + "…" : t);
+    }
+  };
+  if (pick) take(pick.paragraphs);
+  // 시사점 절이 비면 각 절 첫 문단에서 보완
+  if (out.length === 0) for (const s of secs) { if (out.length >= max) break; take((s.paragraphs || []).slice(0, 1)); }
+  return out;
+}
+
+/** 게시글 본문(요약본) — 순수 텍스트. 참고자료 URL 은 뷰에서 링크로 렌더된다. */
 function makePostBody(report, sources, weekKey) {
   const lines = [];
-  lines.push(String(report.summary || report.subtitle || "").trim(), "");
-  lines.push("○ 이번 리포트가 다루는 내용");
-  for (const s of report.sections || []) {
-    if (s.heading) lines.push(`· ${String(s.heading).replace(/^\d+\.\s*/, "")}`);
+
+  // 1) 주요 내용 요약
+  const summary = String(report.summary || report.subtitle || "").trim();
+  if (summary) lines.push("○ 주요 내용 요약", summary, "");
+
+  // 2) 주요 시사점
+  const imps = extractImplications(report);
+  if (imps.length) {
+    lines.push("○ 주요 시사점");
+    imps.forEach((t) => lines.push(`- ${t}`));
+    lines.push("");
   }
-  lines.push("");
-  lines.push("○ 전체 보고서");
-  lines.push("표지·발행정보·해외사례 심층 소개를 담은 전체 보고서를 아래 첨부(docx)로 내려받을 수 있습니다.");
-  lines.push("");
+
+  // 3) 참고자료 (URL 은 그대로 두면 뷰가 새 창 링크로 만든다)
   if (sources.length) {
     lines.push("○ 참고자료");
     sources.forEach((s, i) => {
@@ -407,7 +434,12 @@ function makePostBody(report, sources, weekKey) {
     });
     lines.push("");
   }
-  lines.push(`※ 본 리포트는 지구촌소식 AI기자가 공개자료를 바탕으로 자동 작성한 것입니다(발행 ${AUTHOR}, ${weekKey}). 인용 원문의 저작권은 각 매체에 있습니다.`);
+
+  // 4) 전체 보고서 안내 + 고지
+  lines.push("○ 전체 보고서");
+  lines.push("해외사례를 심층 소개한 전체 보고서(A4)는 아래 첨부(docx)로 내려받을 수 있습니다.");
+  lines.push("");
+  lines.push(`※ 본 자료는 도시공동체본부가 공개자료를 바탕으로 주간 정리한 '${PERSONA}'입니다(${weekKey}). 인용 원문의 저작권은 각 매체에 있습니다.`);
   return lines.join("\n");
 }
 
