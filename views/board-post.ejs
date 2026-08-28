@@ -7,13 +7,7 @@
   </div>
 </section>
 
-<nav class="board-tabs" aria-label="게시판 선택">
-  <div class="container board-tabs-inner">
-    <% boardKeys.forEach(function(k){ %>
-      <a href="/board/<%= k %>" class="<%= currentBoard === k ? 'active' : '' %>"><%= boards[k].name %></a>
-    <% }); %>
-  </div>
-</nav>
+<%- include('partials/board-tabs') %>
 
 <div class="container board-wrap">
   <article class="post-view">

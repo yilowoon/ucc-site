@@ -1,0 +1,15 @@
+<%
+  // 알림마당 상단 탭 — 헤더 서브메뉴와 동일한 순서.
+  // 게시판(board) + 데일리뉴스(/newsletter)를 함께 노출한다.
+  var onNewsletter = (typeof path !== 'undefined' && path && path.indexOf('/newsletter') === 0);
+%>
+<nav class="board-tabs" aria-label="알림마당 메뉴">
+  <div class="container board-tabs-inner">
+    <a href="/board/notice" class="<%= currentBoard === 'notice' ? 'active' : '' %>"><%= boards.notice.name %></a>
+    <a href="/board/business" class="<%= currentBoard === 'business' ? 'active' : '' %>"><%= boards.business.name %></a>
+    <a href="/board/press" class="<%= currentBoard === 'press' ? 'active' : '' %>"><%= boards.press.name %></a>
+    <a href="/newsletter" class="<%= onNewsletter ? 'active' : '' %>">데일리뉴스</a>
+    <a href="/board/global" class="<%= currentBoard === 'global' ? 'active' : '' %>"><%= boards.global.name %></a>
+    <a href="/board/news" class="<%= currentBoard === 'news' ? 'active' : '' %>"><%= boards.news.name %></a>
+  </div>
+</nav>
