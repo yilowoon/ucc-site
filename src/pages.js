@@ -252,7 +252,6 @@ const PAGES = {
         <div class="page-card"><h3>개인회원</h3><p>개인 자격으로 가입하여 총회 참여, 교육·행사 우대 등의 권리를 갖습니다.</p><p><a href="/members/individual">자세히 보기 →</a></p></div>
         <div class="page-card"><h3>기업·단체회원</h3><p>기업·기관·단체 자격으로 가입하여 협력사업과 네트워크에 참여합니다.</p><p><a href="/members/corporate">자세히 보기 →</a></p></div>
       </div>
-      <p style="margin-top:22px"><a class="btn btn-primary" href="/signup">회원가입</a></p>
     `,
   },
   individual: {

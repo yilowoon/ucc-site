@@ -11,6 +11,34 @@
   <article class="page-content">
     <%- page.html %>
   </article>
+
+  <% if (typeof regularMembers !== 'undefined') { %>
+    <section class="reg-members">
+      <h2 class="reg-members-title">정회원 명단</h2>
+      <p class="reg-members-desc">회비 납부가 확인된 정회원 명단입니다. <strong><%= regularMembers.length %></strong>명</p>
+      <div class="reg-table-wrap">
+        <table class="reg-table">
+          <thead>
+            <tr><th>이름</th><th>소속</th><th>직급</th><th>관심분야</th><th>가입일</th></tr>
+          </thead>
+          <tbody>
+            <% if (regularMembers.length === 0) { %>
+              <tr><td colspan="5" class="reg-empty">아직 등록된 정회원이 없습니다.</td></tr>
+            <% } %>
+            <% regularMembers.forEach(function(m){ %>
+              <tr>
+                <td class="reg-name"><%= esc(m.name) %></td>
+                <td><%= esc(m.org_name || '-') %></td>
+                <td><%= esc(m.position || '-') %></td>
+                <td><%= esc(m.interest || '-') %></td>
+                <td class="reg-date"><%= fmtDate(m.created_at) %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  <% } %>
 </div>
 
 <%- include('partials/footer') %>

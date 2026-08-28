@@ -168,6 +168,14 @@ module.exports = function siteRoutes({ verifyCsrf }) {
 
   // 함께하는 사람들: 임원진(Board Member) 전용 뷰
   router.get("/members/board", (req, res) => res.render("people", { ...res.locals, title: "함께하는 사람들" }));
+  // 정회원 페이지 — 현재 가입된 정회원 명단(이름·소속·직급·관심분야·가입일)을 함께 노출
+  router.get("/members/regular", (req, res) => {
+    const page = PAGES.regular;
+    const regularMembers = db.prepare(
+      "SELECT name, org_name, position, interest, created_at FROM members WHERE grade = '정회원' ORDER BY created_at DESC, id DESC"
+    ).all();
+    res.render("page", { ...res.locals, title: page.title, page, regularMembers });
+  });
 
   // 배움터/회원 콘텐츠 페이지 (위 특정 라우트 뒤에 배치)
   router.get("/learn/:slug", renderPage("learn"));
@@ -247,16 +255,19 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const email = (req.body.email || "").trim().toLowerCase();
     const phone = (req.body.phone || "").replace(/[^0-9]/g, ""); // 숫자만 저장
     const memberType = MEMBER_TYPES.includes(req.body.member_type) ? req.body.member_type : "개인회원";
-    const orgName = (req.body.org_name || "").trim();
+    // 소속: 미입력 시 '도시공동체본부'로 명기
+    const orgName = (req.body.org_name || "").trim() || "도시공동체본부";
+    const position = (req.body.position || "").trim();
+    const job = (req.body.job || "").trim();
+    const interest = (req.body.interest || "").trim();
     const pw = req.body.password || "";
     const confirm = req.body.confirm || "";
-    const form = { name, email, phone, member_type: memberType, org_name: orgName };
+    const form = { name, email, phone, member_type: memberType, org_name: (req.body.org_name || "").trim(), position, job, interest };
     const fail = (msg) =>
       res.status(400).render("signup", { ...res.locals, title: "회원가입", error: msg, form });
 
     if (!name) return fail("이름을 입력해 주세요.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("유효한 이메일을 입력해 주세요.");
-    if ((memberType === "기업회원" || memberType === "단체회원") && !orgName) return fail("기업·단체회원은 기관·단체명을 입력해 주세요.");
     if (pw.length < 8) return fail("비밀번호는 8자 이상이어야 합니다.");
     if (pw !== confirm) return fail("비밀번호 확인이 일치하지 않습니다.");
 
@@ -264,8 +275,8 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     if (exists) return fail("이미 가입된 이메일입니다.");
 
     const hash = bcrypt.hashSync(pw, 10);
-    db.prepare("INSERT INTO members (name, email, phone, member_type, org_name, password_hash, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
-      .run(name, email, phone, memberType, orgName, hash, new Date().toISOString());
+    db.prepare("INSERT INTO members (name, email, phone, member_type, org_name, position, job, interest, password_hash, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+      .run(name, email, phone, memberType, orgName, position, job, interest, hash, new Date().toISOString());
     res.redirect("/login?joined=1");
   });
 
