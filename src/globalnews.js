@@ -338,7 +338,7 @@ function fallbackReport(theme, sources) {
   return {
     title: theme.title,
     subtitle: theme.focus,
-    summary: `${theme.focus}. 관련 해외 보도 ${sources.length}건을 모아 핵심 흐름과 시사점을 정리했습니다.`,
+    summary: `관련 해외 동향과 사례 ${sources.length}건을 모아 핵심 흐름과 시사점을 정리한 자동 다이제스트입니다.`,
     sections,
   };
 }
@@ -409,25 +409,72 @@ function extractImplications(report, max = 5) {
   return out;
 }
 
-/** 게시글 본문(요약본) — 순수 텍스트. 참고자료 URL 은 뷰에서 링크로 렌더된다. */
+/** [주요내용] — docx 보고서 본문을 요약해 표기한다.
+ *  요약(summary)을 기본으로 하되, 얇으면 각 절의 첫 핵심 문장으로 보강한다. */
+function buildContentSummary(report, subtitle) {
+  const clean = (t) => String(t || "").replace(/\s+/g, " ").trim();
+  // 기사 앞머리 데이트라인·바이라인 제거: "(서울=연합뉴스) 홍길동 기자 = "
+  const stripByline = (t) =>
+    clean(t)
+      .replace(/^\([^)]*\)\s*/, "")
+      .replace(/^[가-힣]{2,5}\s*(기자|특파원|논설위원)\s*[=·]\s*/, "");
+
+  let base = clean(report.summary);
+  if (subtitle && base.startsWith(subtitle)) base = clean(base.slice(subtitle.length).replace(/^[.\s·]+/, ""));
+  const parts = base ? [base] : [];
+  const sub = clean(subtitle);
+
+  if (base.length < 320) {
+    for (const sec of report.sections || []) {
+      if (/참고자료/.test(sec.heading || "")) continue;
+      for (const p of sec.paragraphs || []) {
+        let t = typeof p === "string" ? p : (p && (p.lead || p.text || p.bullet)) || "";
+        t = stripByline(t);
+        if (t.length >= 40) {
+          const sent = (t.match(/^[^.!?。]+[.!?。]/) || [t])[0].trim();
+          const dupSub = sub && (sent.includes(sub) || sub.includes(sent));
+          if (!dupSub && !parts.some((x) => x.includes(sent))) parts.push(sent);
+          break;
+        }
+      }
+      if (parts.join(" ").length >= 700) break;
+    }
+  }
+  let out = parts.join(" ");
+  if (out.length > 800) out = out.slice(0, 799).trim() + "…";
+  return out;
+}
+
+/** 게시글 본문 — 순수 텍스트. 참고자료 URL 은 뷰에서 새 창 링크로 렌더된다. */
 function makePostBody(report, sources, weekKey) {
   const lines = [];
+  const dateStr = fmtKst(new Date().toISOString());
+  const subtitle = String(report.subtitle || report.summary || "").trim();
 
-  // 1) 주요 내용 요약
-  const summary = String(report.summary || report.subtitle || "").trim();
-  if (summary) lines.push("○ 주요 내용 요약", summary, "");
+  // 0) 머리글 — 부제(첫머리글) + 발간 정보
+  if (subtitle) lines.push(subtitle, "");
+  lines.push(`발행  ${AUTHOR}     발행일  ${dateStr}`);
+  lines.push(`${PERSONA}  ·  주간 이슈 브리프`);
+  lines.push(`발행번호  ·  ${weekKey}`);
+  lines.push("");
 
-  // 2) 주요 시사점
+  // 1) 주요내용 — 보고서 내용 요약
+  const content = buildContentSummary(report, subtitle);
+  lines.push("[주요내용]");
+  lines.push(content || subtitle || "자세한 내용은 첨부된 보고서를 확인해 주세요.");
+  lines.push("");
+
+  // 2) 시사점
   const imps = extractImplications(report);
   if (imps.length) {
-    lines.push("○ 주요 시사점");
+    lines.push("[시사점]");
     imps.forEach((t) => lines.push(`- ${t}`));
     lines.push("");
   }
 
   // 3) 참고자료 (URL 은 그대로 두면 뷰가 새 창 링크로 만든다)
   if (sources.length) {
-    lines.push("○ 참고자료");
+    lines.push("[참고자료]");
     sources.forEach((s, i) => {
       lines.push(`${i + 1}. ${s.title} — ${s.source || "미상"}`);
       if (s.url) lines.push(`   ${s.url}`);
@@ -436,7 +483,7 @@ function makePostBody(report, sources, weekKey) {
   }
 
   // 4) 전체 보고서 안내 + 고지
-  lines.push("○ 전체 보고서");
+  lines.push("[전체 보고서]");
   lines.push("해외사례를 심층 소개한 전체 보고서(A4)는 아래 첨부(docx)로 내려받을 수 있습니다.");
   lines.push("");
   lines.push(`※ 본 자료는 도시공동체본부가 공개자료를 바탕으로 주간 정리한 '${PERSONA}'입니다(${weekKey}). 인용 원문의 저작권은 각 매체에 있습니다.`);
