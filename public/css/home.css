@@ -1033,7 +1033,7 @@ a.seg-btn { display: inline-block; text-decoration: none; }
 }
 
 /* ===== 뉴스레터: 게시판형 목록 테이블 ===== */
-.post-list--nl .post-list-head, .post-list--nl .post-row { grid-template-columns: 64px 1fr 150px 112px 104px; }
+.post-list--nl .post-list-head, .post-list--nl .post-row { grid-template-columns: 60px 1fr 140px 104px 100px 60px; }
 .post-list--nl .col-src { color: var(--ink-soft); font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .post-list--nl .col-kw .nl-kw { font-size: .74rem; }
 .post-list--nl .col-date { color: var(--muted); font-size: .86rem; }
@@ -1044,6 +1044,7 @@ a.seg-btn { display: inline-block; text-decoration: none; }
   .post-list--nl .col-kw { grid-area: kw; text-align: right; display: block; }
   .post-list--nl .col-src { grid-area: src; display: inline; }
   .post-list--nl .col-date { grid-area: date; text-align: right; display: inline; }
+  .post-list--nl .col-views { display: none; }
 }
 /* 뉴스레터 상세 */
 .nl-view-tags { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }

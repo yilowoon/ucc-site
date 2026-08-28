@@ -40,6 +40,7 @@
       <span class="col-src">출처</span>
       <span class="col-kw">키워드</span>
       <span class="col-date">등록일</span>
+      <span class="col-views">조회</span>
     </li>
     <% if (!items.length) { %>
       <li class="post-empty">아직 수집된 데일리뉴스가 없습니다. 매일 오전 8시·오후 6시에 자동으로 업데이트됩니다.</li>
@@ -56,6 +57,7 @@
         <span class="col-src"><%= n.source || '-' %></span>
         <span class="col-kw"><span class="nl-kw"><%= n.keyword %></span></span>
         <span class="col-date"><%= fmtDate(n.created_at) %></span>
+        <span class="col-views"><%= n.views || 0 %></span>
       </li>
     <% }); %>
   </ul>

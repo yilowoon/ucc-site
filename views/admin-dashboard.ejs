@@ -66,26 +66,34 @@
 
   <!-- 게시판별 -->
   <h2 class="admin-section-title" id="board-manage">게시판 관리</h2>
+  <% var adminBoardOrder = ['notice','press','business','newsletter','global','news']; %>
   <div class="admin-cards">
-    <% boardKeys.forEach(function(k){ %>
-      <a class="admin-card" href="/admin?board=<%= k %>">
-        <span class="admin-card-name"><%= boards[k].name %></span>
-        <span class="admin-card-num"><%= counts[k] %></span>
-        <span class="admin-card-write" onclick="event.preventDefault();location.href='/admin/write?board=<%= k %>'">＋ 글쓰기</span>
-      </a>
+    <% adminBoardOrder.forEach(function(k){ %>
+      <% if (k === 'newsletter') { %>
+        <a class="admin-card" href="/admin/newsletter">
+          <span class="admin-card-name">데일리뉴스</span>
+          <span class="admin-card-num"><%= stats.newsletter %></span>
+          <span class="admin-card-write" onclick="event.preventDefault();location.href='/admin/newsletter'">관리 →</span>
+        </a>
+      <% } else { %>
+        <a class="admin-card" href="/admin?board=<%= k %>">
+          <span class="admin-card-name"><%= boards[k].name %></span>
+          <span class="admin-card-num"><%= counts[k] %></span>
+          <span class="admin-card-write" onclick="event.preventDefault();location.href='/admin/write?board=<%= k %>'">＋ 글쓰기</span>
+        </a>
+      <% } %>
     <% }); %>
-    <a class="admin-card" href="/admin/newsletter">
-      <span class="admin-card-name">데일리뉴스</span>
-      <span class="admin-card-num"><%= stats.newsletter %></span>
-      <span class="admin-card-write" onclick="event.preventDefault();location.href='/admin/newsletter'">관리 →</span>
-    </a>
   </div>
 
   <div class="admin-toolbar">
     <div class="admin-filter">
       <a href="/admin" class="<%= filterBoard === 'all' ? 'active' : '' %>">전체</a>
-      <% boardKeys.forEach(function(k){ %>
-        <a href="/admin?board=<%= k %>" class="<%= filterBoard === k ? 'active' : '' %>"><%= boards[k].name %></a>
+      <% adminBoardOrder.forEach(function(k){ %>
+        <% if (k === 'newsletter') { %>
+          <a href="/admin/newsletter">데일리뉴스</a>
+        <% } else { %>
+          <a href="/admin?board=<%= k %>" class="<%= filterBoard === k ? 'active' : '' %>"><%= boards[k].name %></a>
+        <% } %>
       <% }); %>
     </div>
     <div class="admin-head-actions">
