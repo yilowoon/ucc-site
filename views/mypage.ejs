@@ -33,7 +33,10 @@
       <div><dt>이름</dt><dd><%= esc(m.name) %></dd></div>
       <div><dt>이메일</dt><dd><%= esc(m.email) %></dd></div>
       <div><dt>연락처</dt><dd><%= esc(m.phone || '-') %></dd></div>
-      <div><dt>기관·단체</dt><dd><%= esc(m.org_name || '-') %></dd></div>
+      <div><dt>소속</dt><dd><%= esc(m.org_name || '-') %></dd></div>
+      <div><dt>직급</dt><dd><%= m.position ? esc(m.position) : '미입력' %></dd></div>
+      <div><dt>하시는 일</dt><dd><%= m.job ? esc(m.job) : '미입력' %></dd></div>
+      <div><dt>관심 분야</dt><dd><%= m.interest ? esc(m.interest) : '미입력' %></dd></div>
       <div><dt>회원 유형</dt><dd><%= esc(m.member_type) %></dd></div>
       <div><dt>회원 등급</dt><dd><%= esc(m.grade || '준회원') %></dd></div>
       <div><dt>회비 납부</dt><dd><%= m.fee_paid ? '납부 완료' : '미납' %></dd></div>

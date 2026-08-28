@@ -342,7 +342,10 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     }
     const name = (req.body.name || "").trim() || m.name;
     const phone = (req.body.phone || "").replace(/[^0-9]/g, ""); // 숫자만 저장
-    const orgName = (req.body.org_name || "").trim();
+    const orgName = (req.body.org_name || "").trim() || "도시공동체본부";
+    const position = (req.body.position || "").trim();
+    const job = (req.body.job || "").trim();
+    const interest = (req.body.interest || "").trim();
     const address = (req.body.address || "").trim();
     const addressDetail = (req.body.address_detail || "").trim();
     const education = (req.body.education || "").trim();
@@ -350,8 +353,8 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const eduLevel = eduLevels.includes(req.body.edu_level) ? req.body.edu_level : "";
     const major = (req.body.major || "").trim();
     const specialty = (req.body.specialty || "").trim();
-    db.prepare("UPDATE members SET name = ?, phone = ?, org_name = ?, address = ?, address_detail = ?, education = ?, edu_level = ?, major = ?, specialty = ? WHERE id = ?")
-      .run(name, phone, orgName, address, addressDetail, education, eduLevel, major, specialty, m.id);
+    db.prepare("UPDATE members SET name = ?, phone = ?, org_name = ?, position = ?, job = ?, interest = ?, address = ?, address_detail = ?, education = ?, edu_level = ?, major = ?, specialty = ? WHERE id = ?")
+      .run(name, phone, orgName, position, job, interest, address, addressDetail, education, eduLevel, major, specialty, m.id);
     req.session.member.name = name;
     const m2 = db.prepare("SELECT * FROM members WHERE id = ?").get(m.id);
     res.render("mypage-edit", { ...res.locals, title: "내 정보 수정", m: m2, error: null, pwError: null, done: "정보가 수정되었습니다." });
