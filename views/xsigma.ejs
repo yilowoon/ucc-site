@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>엑스시그마 플랫폼 · 사단법인 도시공동체본부</title>
+<meta name="description" content="지역의 난제를 외부의 지식과 연결해 현장에서 검증하는 개방형 문제해결 플랫폼. 사단법인 도시공동체본부가 운영합니다.">
+<link rel="icon" type="image/png" href="/img/ucc-symbol.png?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ─────────────────────────────────────────────
+   토큰
+   ───────────────────────────────────────────── */
+:root{
+  --ink:#0D211C;          /* 딥 포레스트 잉크 — 본부 로고 진녹 계열 */
+  --ink-2:#14322A;
+  --paper:#EFF0EA;        /* 쿨한 종이색 */
+  --paper-2:#E4E6DD;
+  --sigma:#16695A;        /* 주 강조 — 시그마 틸그린 */
+  --azure:#2E7FA8;        /* 데이터·외부 축 — 로고 블루 */
+  --signal:#E09242;       /* 신호·확장 축 — 로고 오렌지 */
+  --graphite:#5A6A64;
+  --rule:rgba(13,33,28,.10);
+  --rule-dark:rgba(239,240,234,.14);
+
+  --display:"Gowun Batang", serif;
+  --body:"IBM Plex Sans KR","Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono","IBM Plex Sans KR",monospace;
+
+  --wrap:1180px;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--body);
+  font-weight:400;
+  font-size:16px;
+  line-height:1.78;
+  -webkit-font-smoothing:antialiased;
+  word-break:keep-all;
+}
+img,svg{max-width:100%}
+a{color:inherit}
+
+/* 모눈 배경 — 도시 격자이자 그래프 용지 */
+.grid-bg{
+  background-image:
+    linear-gradient(var(--rule) 1px, transparent 1px),
+    linear-gradient(90deg, var(--rule) 1px, transparent 1px);
+  background-size:52px 52px;
+}
+.grid-bg-dark{
+  background-image:
+    linear-gradient(var(--rule-dark) 1px, transparent 1px),
+    linear-gradient(90deg, var(--rule-dark) 1px, transparent 1px);
+  background-size:52px 52px;
+}
+
+.wrap{width:100%;max-width:var(--wrap);margin:0 auto;padding:0 28px}
+
+/* 공통 타이포 */
+.eyebrow{
+  font-family:var(--mono);
+  font-size:12px;
+  letter-spacing:.07em;
+  text-transform:uppercase;
+  color:var(--sigma);
+  display:flex;align-items:center;gap:12px;
+  margin:0 0 18px;
+}
+.eyebrow::after{content:"";flex:1;height:1px;background:var(--rule)}
+.on-dark .eyebrow{color:var(--signal)}
+.on-dark .eyebrow::after{background:var(--rule-dark)}
+
+h2.sec-title{
+  font-family:var(--display);
+  font-weight:700;
+  font-size:clamp(28px,4.2vw,44px);
+  line-height:1.32;
+  letter-spacing:-.01em;
+  margin:0 0 16px;
+}
+h3.sub{
+  font-family:var(--display);
+  font-weight:700;
+  font-size:20px;
+  line-height:1.5;
+  margin:0 0 10px;
+}
+.lede{
+  font-size:17px;
+  color:var(--graphite);
+  max-width:62ch;
+  margin:0 0 44px;
+}
+.on-dark .lede{color:rgba(239,240,234,.72)}
+
+section{padding:96px 0;position:relative;scroll-margin-top:70px}
+.on-dark{background:var(--ink);color:var(--paper)}
+
+.mono{font-family:var(--mono)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ─────────────────────────────────────────────
+   상단 바
+   ───────────────────────────────────────────── */
+.topbar{
+  position:sticky;top:0;z-index:50;
+  background:rgba(13,33,28,.94);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--rule-dark);
+  color:var(--paper);
+}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:62px;gap:20px}
+.brand{display:flex;align-items:baseline;gap:12px;min-width:0}
+.brand .org{font-size:13px;color:rgba(239,240,234,.6);white-space:nowrap;text-decoration:none}
+.brand .org:hover,.brand .org:focus-visible{color:var(--paper)}
+.brand .plat{font-family:var(--display);font-weight:700;font-size:18px;white-space:nowrap}
+.brand .plat b{color:var(--signal)}
+.topnav{display:flex;gap:26px;font-size:13.5px}
+.topnav a{color:rgba(239,240,234,.72);text-decoration:none;padding:4px 0;border-bottom:1px solid transparent}
+.topnav a:hover,.topnav a:focus-visible{color:var(--paper);border-bottom-color:var(--signal)}
+@media(max-width:860px){.topnav{display:none}}
+
+/* ─────────────────────────────────────────────
+   히어로 — 시그마 눈금자(시그니처)
+   ───────────────────────────────────────────── */
+.hero{background:var(--ink);color:var(--paper);padding:88px 0 0;overflow:hidden}
+.hero-head{max-width:900px}
+.hero-kicker{
+  font-size:12.5px;color:var(--signal);margin:0 0 26px;
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;
+}
+.hero h1{
+  font-family:var(--display);
+  font-weight:700;
+  font-size:clamp(38px,6.4vw,72px);
+  line-height:1.24;
+  letter-spacing:-.02em;
+  margin:0 0 26px;
+}
+.hero h1 em{font-style:normal;color:var(--signal)}
+.hero p.claim{
+  font-size:clamp(16px,2vw,19px);
+  color:rgba(239,240,234,.78);
+  max-width:60ch;margin:0 0 38px;
+}
+.hero-cta{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:56px}
+.btn{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:14px 26px;border-radius:2px;
+  font-size:14.5px;font-weight:600;text-decoration:none;
+  border:1px solid transparent;transition:.18s ease;
+}
+.btn-solid{background:var(--signal);color:#231400}
+.btn-solid:hover{background:#f0a458}
+.btn-ghost{border-color:rgba(239,240,234,.34);color:var(--paper)}
+.btn-ghost:hover{border-color:var(--paper);background:rgba(239,240,234,.07)}
+.btn .arw{font-family:var(--mono);font-size:13px}
+
+/* 눈금자 */
+.ruler-box{border-top:1px solid var(--rule-dark);padding:34px 0 74px}
+.ruler-cap{
+  display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;
+  font-family:var(--mono);font-size:11.5px;letter-spacing:.05em;
+  color:rgba(239,240,234,.45);margin-bottom:6px;
+}
+.ruler svg{width:100%;height:auto;display:block}
+/* 좁은 화면에서는 눈금자를 세로 단계로 바꿔 글자를 읽을 수 있게 한다 */
+.ruler-mobile{display:none;margin:0;padding:0;list-style:none}
+.ruler-mobile li{display:grid;grid-template-columns:56px 1fr;gap:16px;align-items:baseline;padding:16px 0;border-top:1px solid var(--rule-dark)}
+.ruler-mobile .sg{font-family:var(--mono);font-size:20px;color:rgba(239,240,234,.75)}
+.ruler-mobile li:nth-child(2) .sg{color:var(--azure)}
+.ruler-mobile li:nth-child(3) .sg{color:var(--signal);font-size:24px;font-weight:600}
+.ruler-mobile b{display:block;font-size:14.5px;font-weight:600;color:var(--paper)}
+.ruler-mobile span{font-size:13.5px;color:rgba(239,240,234,.55)}
+@media(max-width:720px){
+  .ruler{display:none}
+  .ruler-mobile{display:block}
+}
+.axis-line{stroke:rgba(239,240,234,.28);stroke-width:1.5}
+.seg{stroke-width:3;fill:none;stroke-linecap:round}
+.seg-in{stroke:rgba(239,240,234,.42)}
+.seg-out{stroke:var(--azure)}
+.seg-x{stroke:var(--signal)}
+.tick{stroke:rgba(239,240,234,.3);stroke-width:1}
+.tick-major{stroke:rgba(239,240,234,.65);stroke-width:1.5}
+.lbl{font-family:"IBM Plex Mono",monospace;font-size:15px;fill:rgba(239,240,234,.9)}
+.lbl-sm{font-family:"IBM Plex Sans KR",sans-serif;font-size:12.5px;fill:rgba(239,240,234,.5)}
+.lbl-x{font-family:"IBM Plex Mono",monospace;font-size:26px;font-weight:600;fill:var(--signal)}
+.lbl-azure{fill:var(--azure)}
+
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.anim-draw{stroke-dasharray:1400;stroke-dashoffset:1400;animation:draw 1.6s cubic-bezier(.2,.7,.2,1) forwards}
+.d1{animation-delay:.15s}.d2{animation-delay:.75s}.d3{animation-delay:1.25s}
+.anim-fade{opacity:0;animation:fadein .6s ease forwards}
+.f1{animation-delay:.7s}.f2{animation-delay:1.2s}.f3{animation-delay:1.7s}
+.pulse{animation:pulseo 2.6s ease-in-out 2s infinite}
+@keyframes pulseo{0%,100%{opacity:1}50%{opacity:.45}}
+
+/* ─────────────────────────────────────────────
+   비교 3열
+   ───────────────────────────────────────────── */
+.cmp{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--rule);background:#fff}
+.cmp-col{padding:32px 28px;border-right:1px solid var(--rule)}
+.cmp-col:last-child{border-right:0}
+.cmp-col.is-x{background:var(--ink);color:var(--paper);border-right:0}
+.cmp-tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;color:var(--graphite);margin-bottom:10px}
+.cmp-col.is-x .cmp-tag{color:var(--signal)}
+.cmp-name{font-family:var(--display);font-weight:700;font-size:23px;margin:0 0 4px}
+.cmp-en{font-family:var(--mono);font-size:12px;color:var(--graphite);margin-bottom:20px}
+.cmp-col.is-x .cmp-en{color:rgba(239,240,234,.5)}
+.cmp dl{margin:0;font-size:14.2px}
+.cmp dt{font-family:var(--mono);font-size:11px;letter-spacing:.02em;color:var(--graphite);margin-top:16px}
+.cmp-col.is-x dt{color:rgba(239,240,234,.5)}
+.cmp dd{margin:4px 0 0;line-height:1.68}
+@media(max-width:880px){
+  .cmp{grid-template-columns:1fr}
+  .cmp-col{border-right:0;border-bottom:1px solid var(--rule)}
+}
+
+/* X 의미 4칸 */
+.xmean{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--rule);margin-top:1px}
+.xmean div{background:var(--paper);padding:22px 20px}
+.xmean b{font-family:var(--mono);font-size:13px;color:var(--sigma);display:block;margin-bottom:6px;letter-spacing:.06em}
+.xmean p{margin:0;font-size:13.8px;color:var(--graphite);line-height:1.7}
+@media(max-width:880px){.xmean{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.xmean{grid-template-columns:1fr}}
+
+/* ─────────────────────────────────────────────
+   난제 유형
+   ───────────────────────────────────────────── */
+.topics{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.topic{background:#fff;padding:28px 26px}
+.topic .code{font-family:var(--mono);font-size:11.5px;color:var(--azure);letter-spacing:.12em}
+.topic h4{font-family:var(--display);font-weight:700;font-size:19px;margin:8px 0 8px}
+.topic p{margin:0;font-size:14.2px;color:var(--graphite);line-height:1.72}
+@media(max-width:880px){.topics{grid-template-columns:1fr}}
+
+/* ─────────────────────────────────────────────
+   실행 파이프라인
+   ───────────────────────────────────────────── */
+.pipe{position:relative;margin-top:8px}
+.pipe-rail{
+  position:absolute;left:0;right:0;top:26px;height:2px;
+  background:linear-gradient(90deg,var(--azure) 0%,var(--sigma) 55%,var(--signal) 100%);
+  opacity:.35;
+}
+.pipe-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:18px;position:relative;align-items:stretch}
+.stage{background:transparent;display:flex;flex-direction:column;height:100%}
+.stage .dot{
+  width:14px;height:14px;border-radius:50%;
+  background:var(--paper);border:3px solid var(--sigma);
+  margin:20px 0 22px;position:relative;z-index:2;
+}
+.stage:nth-child(1) .dot,.stage:nth-child(2) .dot{border-color:var(--azure)}
+.stage:nth-child(5) .dot,.stage:nth-child(6) .dot{border-color:var(--signal)}
+.stage .st-no{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--graphite)}
+.stage h4{font-family:var(--display);font-weight:700;font-size:20px;margin:6px 0 4px}
+.stage .st-en{font-family:var(--mono);font-size:11.5px;color:var(--graphite);margin-bottom:12px}
+.stage p{font-size:13.8px;color:var(--graphite);margin:0 0 14px;line-height:1.7}
+.stage .st-meta{border-top:1px solid var(--rule);padding-top:10px;font-size:12.2px;margin-top:auto}
+.stage .st-meta span{display:block;color:var(--graphite)}
+.stage .st-meta b{font-weight:600;color:var(--ink)}
+@media(max-width:1000px){
+  .pipe-grid{grid-template-columns:repeat(2,1fr);gap:28px}
+  .pipe-rail{display:none}
+  .stage{border-left:2px solid var(--rule);padding-left:18px}
+  .stage .dot{margin-top:0}
+}
+@media(max-width:560px){.pipe-grid{grid-template-columns:1fr}}
+
+.pipe-total{
+  display:flex;flex-wrap:wrap;gap:26px;align-items:baseline;
+  margin-top:44px;padding-top:22px;border-top:1px solid var(--rule);
+  font-size:14px;color:var(--graphite);
+}
+.pipe-total strong{font-family:var(--mono);font-size:22px;color:var(--ink);font-weight:600}
+
+/* ─────────────────────────────────────────────
+   3주체
+   ───────────────────────────────────────────── */
+.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.role{border:1px solid var(--rule-dark);padding:30px 26px;background:rgba(239,240,234,.03)}
+.role .rk{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;color:var(--signal);margin-bottom:12px}
+.role h4{font-family:var(--display);font-weight:700;font-size:22px;margin:0 0 4px}
+.role .who{font-size:13px;color:rgba(239,240,234,.55);margin-bottom:18px}
+.role ul{margin:0;padding-left:0;list-style:none;font-size:14px}
+.role li{padding:8px 0;border-top:1px solid var(--rule-dark);color:rgba(239,240,234,.82);line-height:1.65}
+.role li b{color:var(--paper);font-weight:600}
+@media(max-width:880px){.roles{grid-template-columns:1fr}}
+
+/* ─────────────────────────────────────────────
+   운영 · 표 / 가중치
+   ───────────────────────────────────────────── */
+.two{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:start}
+.two > *{min-width:0}
+@media(max-width:940px){.two{grid-template-columns:1fr;gap:44px}}
+
+.tbl-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.tbl{width:100%;border-collapse:collapse;font-size:14px;background:#fff}
+@media(max-width:640px){table.tbl{min-width:520px}}
+table.tbl th,table.tbl td{border:1px solid var(--rule);padding:12px 14px;text-align:left;vertical-align:top;line-height:1.65}
+table.tbl th{
+  background:var(--paper-2);font-weight:600;font-size:12.5px;
+  font-family:var(--mono);letter-spacing:.01em;color:var(--ink);
+}
+table.tbl td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+.weight{margin:0;padding:0;list-style:none}
+.weight li{padding:14px 0;border-bottom:1px solid var(--rule)}
+.weight .wtop{display:flex;justify-content:space-between;align-items:baseline;gap:14px;margin-bottom:8px}
+.weight .wname{font-weight:600;font-size:15px}
+.weight .wval{font-family:var(--mono);font-size:14px;color:var(--sigma)}
+.weight .wbar{height:6px;background:var(--paper-2);border-radius:0;overflow:hidden}
+.weight .wbar i{display:block;height:100%;background:var(--sigma);width:0;transition:width 1.1s cubic-bezier(.2,.7,.2,1)}
+.weight li:nth-child(2) .wbar i{background:var(--azure)}
+.weight li:nth-child(3) .wbar i{background:var(--signal)}
+.weight .wdesc{font-size:13.2px;color:var(--graphite);margin:8px 0 0;line-height:1.65}
+
+.screen-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:28px}
+.screen-steps div{border:1px solid var(--rule);background:#fff;padding:20px 18px}
+.screen-steps .sn{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--graphite)}
+.screen-steps h5{font-family:var(--display);font-weight:700;font-size:17px;margin:6px 0 8px}
+.screen-steps p{margin:0;font-size:13.4px;color:var(--graphite);line-height:1.7}
+@media(max-width:760px){.screen-steps{grid-template-columns:1fr}}
+
+/* 카드 리스트 (보상·권리 / 재원) */
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+.card{border:1px solid var(--rule);background:#fff;padding:28px 26px}
+.card .ck{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;color:var(--sigma);margin-bottom:10px}
+.card h4{font-family:var(--display);font-weight:700;font-size:19px;margin:0 0 10px}
+.card ul{margin:0;padding-left:18px;font-size:14.2px;color:var(--graphite);line-height:1.75}
+.card ul li{margin-bottom:7px}
+.card ul li b{color:var(--ink);font-weight:600}
+@media(max-width:880px){.cards{grid-template-columns:1fr}}
+
+/* 캘린더 */
+.cal{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.cal div{background:#fff;padding:22px 20px}
+.cal .q{font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--azure);margin-bottom:8px}
+.cal h5{font-family:var(--display);font-weight:700;font-size:17px;margin:0 0 8px}
+.cal p{margin:0;font-size:13.4px;color:var(--graphite);line-height:1.7}
+@media(max-width:880px){.cal{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.cal{grid-template-columns:1fr}}
+
+/* 3R 연계 */
+.threer{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:36px}
+.threer div{border-top:2px solid var(--sigma);padding-top:16px}
+.threer div:nth-child(2){border-top-color:var(--azure)}
+.threer div:nth-child(3){border-top-color:var(--signal)}
+.threer b{font-family:var(--mono);font-size:12.5px;letter-spacing:.14em;display:block;margin-bottom:6px}
+.threer h5{font-family:var(--display);font-weight:700;font-size:18px;margin:0 0 8px}
+.threer p{margin:0;font-size:13.6px;color:var(--graphite);line-height:1.7}
+@media(max-width:880px){.threer{grid-template-columns:1fr}}
+
+/* 로드맵 */
+.road{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.road div{border:1px solid var(--rule-dark);padding:26px 22px;background:rgba(239,240,234,.03)}
+.road .ph{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;color:var(--signal)}
+.road h5{font-family:var(--display);font-weight:700;font-size:19px;margin:8px 0 4px}
+.road .per{font-family:var(--mono);font-size:12px;color:rgba(239,240,234,.5);margin-bottom:14px}
+.road ul{margin:0;padding-left:16px;font-size:13.6px;color:rgba(239,240,234,.78);line-height:1.72}
+.road li{margin-bottom:6px}
+@media(max-width:940px){.road{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.road{grid-template-columns:1fr}}
+
+/* CTA */
+.cta{background:var(--sigma);color:#fff;padding:82px 0}
+.cta h2{font-family:var(--display);font-weight:700;font-size:clamp(26px,4vw,40px);margin:0 0 14px;line-height:1.35}
+.cta p{font-size:16.5px;color:rgba(255,255,255,.85);max-width:56ch;margin:0 0 34px}
+.cta-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-bottom:40px}
+.cta-grid a{
+  display:block;text-decoration:none;padding:26px 24px;
+  border:1px solid rgba(255,255,255,.3);transition:.18s ease;
+}
+.cta-grid a:hover,.cta-grid a:focus-visible{background:rgba(255,255,255,.1);border-color:#fff}
+.cta-grid .lab{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;color:rgba(255,255,255,.7)}
+.cta-grid strong{display:block;font-family:var(--display);font-size:21px;margin:8px 0 6px;font-weight:700}
+.cta-grid span{font-size:13.6px;color:rgba(255,255,255,.8);line-height:1.65}
+@media(max-width:760px){.cta-grid{grid-template-columns:1fr}}
+.contact{
+  display:flex;flex-wrap:wrap;gap:12px 40px;
+  padding-top:26px;border-top:1px solid rgba(255,255,255,.25);
+  font-size:14px;color:rgba(255,255,255,.9);
+}
+.contact span{display:flex;gap:10px;align-items:baseline}
+.contact em{font-style:normal;font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:rgba(255,255,255,.6)}
+
+.xfooter{background:var(--ink);color:rgba(239,240,234,.55);padding:44px 0;font-size:13px}
+.xfooter .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:14px}
+.xfooter b{color:var(--paper);font-weight:600}
+.xfooter a{color:rgba(239,240,234,.7);text-decoration:none}
+.xfooter a:hover{color:var(--paper)}
+
+/* 스크롤 등장 */
+.rv{opacity:0;transform:translateY(16px);transition:opacity .7s ease,transform .7s ease}
+.rv.in{opacity:1;transform:none}
+
+:focus-visible{outline:2px solid var(--signal);outline-offset:3px}
+
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .rv{opacity:1;transform:none}
+  .anim-draw{stroke-dashoffset:0}
+  .anim-fade{opacity:1}
+}
+</style>
+</head>
+<body>
+
+<!-- 상단 바 ─────────────────────────────────── -->
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand">
+      <span class="plat"><b>X</b>-SIGMA</span>
+      <a class="org" href="/">← 사단법인 도시공동체본부</a>
+    </div>
+    <nav class="topnav">
+      <a href="#why">플랫폼 정의</a>
+      <a href="#pipeline">실행 체계</a>
+      <a href="#roles">참여 주체</a>
+      <a href="#ops">운영 방법</a>
+      <a href="#join">참여하기</a>
+    </nav>
+  </div>
+</header>
+
+<!-- 히어로 ──────────────────────────────────── -->
+<div class="hero grid-bg-dark">
+  <div class="wrap">
+    <div class="hero-head">
+      <p class="hero-kicker"><span class="mono" style="letter-spacing:.18em">X-SIGMA PLATFORM</span><span style="opacity:.55">엑스시그마 플랫폼</span></p>
+      <h1>지역의 난제를<br>바깥의 지식과 <em>연결</em>합니다.</h1>
+      <p class="claim">
+        엑스시그마는 사단법인 도시공동체본부가 운영하는 <strong>개방형 문제해결 플랫폼</strong>입니다.
+        한 지역이 혼자 풀지 못하는 문제를 공개 과제로 바꾸고, 전국의 연구자·기업·활동가에게 해법을 구한 뒤,
+        리빙랩 현장에서 실제로 작동하는지까지 검증합니다.
+      </p>
+      <div class="hero-cta">
+        <a class="btn btn-solid" href="#join">난제 등록하기 <span class="arw">→</span></a>
+        <a class="btn btn-ghost" href="#pipeline">실행 체계 보기 <span class="arw">↓</span></a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 시그니처: 시그마 눈금자 -->
+  <div class="wrap ruler-box">
+    <div class="ruler-cap">
+      <span>측정의 범위는 어디까지 확장되는가</span>
+      <span>SCALE OF MEASUREMENT</span>
+    </div>
+    <div class="ruler">
+      <svg viewBox="0 0 1200 190" role="img" aria-label="식스시그마는 조직 내부, 나인시그마는 기업 외부, 엑스시그마는 지역과 공동체까지 측정 범위를 확장한다는 것을 보여주는 눈금자">
+        <!-- 기준선 -->
+        <line class="axis-line" x1="40" y1="96" x2="1160" y2="96"/>
+        <!-- 구간 -->
+        <path class="seg seg-in anim-draw d1"  d="M40 96 H520"/>
+        <path class="seg seg-out anim-draw d2" d="M520 96 H820"/>
+        <path class="seg seg-x anim-draw d3"   d="M820 96 H1150"/>
+
+        <!-- 작은 눈금 -->
+        <g>
+          <line class="tick" x1="120" y1="88" x2="120" y2="104"/>
+          <line class="tick" x1="200" y1="88" x2="200" y2="104"/>
+          <line class="tick" x1="280" y1="88" x2="280" y2="104"/>
+          <line class="tick" x1="360" y1="88" x2="360" y2="104"/>
+          <line class="tick" x1="440" y1="88" x2="440" y2="104"/>
+          <line class="tick" x1="620" y1="88" x2="620" y2="104"/>
+          <line class="tick" x1="720" y1="88" x2="720" y2="104"/>
+          <line class="tick" x1="920" y1="88" x2="920" y2="104"/>
+          <line class="tick" x1="1020" y1="88" x2="1020" y2="104"/>
+        </g>
+
+        <!-- 6σ -->
+        <g class="anim-fade f1">
+          <line class="tick-major" x1="520" y1="76" x2="520" y2="116"/>
+          <text class="lbl" x="520" y="62" text-anchor="middle">6σ</text>
+          <text class="lbl-sm" x="520" y="140" text-anchor="middle">식스시그마 · 조직 내부 공정</text>
+          <text class="lbl-sm" x="520" y="160" text-anchor="middle">불량을 줄인다</text>
+        </g>
+
+        <!-- 9σ -->
+        <g class="anim-fade f2">
+          <line class="tick-major" x1="820" y1="76" x2="820" y2="116"/>
+          <text class="lbl lbl-azure" x="820" y="62" text-anchor="middle">9σ</text>
+          <text class="lbl-sm" x="820" y="140" text-anchor="middle">나인시그마 · 기업 외부 기술</text>
+          <text class="lbl-sm" x="820" y="160" text-anchor="middle">해법을 사 온다</text>
+        </g>
+
+        <!-- Xσ -->
+        <g class="anim-fade f3">
+          <line class="tick-major" x1="1150" y1="70" x2="1150" y2="122" stroke="#E09242"/>
+          <text class="lbl-x pulse" x="1150" y="56" text-anchor="middle">Xσ</text>
+          <text class="lbl-sm" x="1150" y="140" text-anchor="end" style="fill:#E09242">엑스시그마 · 지역과 공동체</text>
+          <text class="lbl-sm" x="1150" y="160" text-anchor="end" style="fill:#E09242">현장에서 정착시킨다</text>
+        </g>
+
+      </svg>
+    </div>
+
+    <ul class="ruler-mobile">
+      <li><span class="sg">6σ</span><div><b>식스시그마 · 조직 내부 공정</b><span>불량을 줄인다</span></div></li>
+      <li><span class="sg">9σ</span><div><b>나인시그마 · 기업 외부 기술</b><span>해법을 사 온다</span></div></li>
+      <li><span class="sg">Xσ</span><div><b>엑스시그마 · 지역과 공동체</b><span>현장에서 정착시킨다</span></div></li>
+    </ul>
+  </div>
+</div>
+
+<!-- 1. 왜 X인가 ─────────────────────────────── -->
+<section id="why" class="grid-bg">
+  <div class="wrap">
+    <p class="eyebrow">01 — 플랫폼 정의</p>
+    <h2 class="sec-title">품질을 관리하던 도구를,<br>지역을 살리는 도구로.</h2>
+    <p class="lede">
+      시그마(σ)는 원래 “얼마나 흔들리는가”를 재는 통계 기호입니다.
+      제조업은 이 기호로 불량을 줄였고, 개방형 혁신 기업들은 이 기호를 빌려 외부의 기술을 끌어왔습니다.
+      엑스시그마는 그 계보를 지역 문제로 한 걸음 더 옮깁니다.
+    </p>
+
+    <div class="cmp rv">
+      <div class="cmp-col">
+        <p class="cmp-tag">1986 · MOTOROLA / GE</p>
+        <p class="cmp-name">식스시그마</p>
+        <p class="cmp-en">Six Sigma</p>
+        <dl>
+          <dt>핵심 개념</dt>
+          <dd>내부 프로세스를 개선해 불량률을 최소화하는 통계적 경영 기법</dd>
+          <dt>목표</dt>
+          <dd>100만 번의 기회 중 불량 3.4개(DPMO) 수준의 품질 달성</dd>
+          <dt>해결 방식</dt>
+          <dd>내부 조직과 데이터 중심. DMAIC(정의–측정–분석–개선–관리)로 공정의 산포를 줄이는 폐쇄형</dd>
+          <dt>한계</dt>
+          <dd>가진 자원 안에서만 답을 찾는다</dd>
+        </dl>
+      </div>
+      <div class="cmp-col">
+        <p class="cmp-tag">2000 · USA</p>
+        <p class="cmp-name">나인시그마</p>
+        <p class="cmp-en">NineSigma</p>
+        <dl>
+          <dt>핵심 개념</dt>
+          <dd>외부의 기술과 아이디어를 도입하는 글로벌 개방형 혁신 플랫폼</dd>
+          <dt>목표</dt>
+          <dd>내부적으로 풀기 어려운 기술적 난제의 돌파구 마련</dd>
+          <dt>해결 방식</dt>
+          <dd>전 세계 연구소·대학·스타트업 전문가 네트워크를 통한 크라우드소싱형 매칭</dd>
+          <dt>한계</dt>
+          <dd>기업의 기술 과제가 중심, 지역의 삶은 다루지 않는다</dd>
+        </dl>
+      </div>
+      <div class="cmp-col is-x">
+        <p class="cmp-tag">2026 · 도시공동체본부</p>
+        <p class="cmp-name">엑스시그마</p>
+        <p class="cmp-en">X-Sigma</p>
+        <dl>
+          <dt>핵심 개념</dt>
+          <dd>지역의 난제를 공개 과제로 바꿔 외부 해법과 연결하고, 리빙랩에서 실증까지 책임지는 개방형 문제해결 플랫폼</dd>
+          <dt>목표</dt>
+          <dd>제안이 아니라 <b>정착</b>. 현장에 남아 계속 작동하는 해법을 만든다</dd>
+          <dt>해결 방식</dt>
+          <dd>지자체·주민이 문제를 내고, 전국 솔버가 답을 내고, 본부가 실증·표준화·확산을 운영</dd>
+          <dt>차이</dt>
+          <dd>매칭에서 끝나지 않고 <b>현장 검증과 타 지역 이식</b>까지 이어진다</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="xmean rv">
+      <div><b>eXternal</b><p>바깥의 지식. 지역 안에 없는 역량을 밖에서 데려옵니다.</p></div>
+      <div><b>eXperiment</b><p>실험. 서류 심사로 끝내지 않고 리빙랩에서 직접 돌려봅니다.</p></div>
+      <div><b>eXpand</b><p>확장. 한 곳에서 통한 해법을 다른 지역으로 옮겨 심습니다.</p></div>
+      <div><b>eX (미지수)</b><p>정답이 정해지지 않은 문제. 그래서 열어 두고 묻습니다.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. 다루는 난제 ──────────────────────────── -->
+<section class="grid-bg" style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">02 — 다루는 난제</p>
+    <h2 class="sec-title">플랫폼에 올라오는 문제들</h2>
+    <p class="lede">
+      기술만으로도, 예산만으로도 풀리지 않아 여러 해 방치된 문제를 우선 받습니다.
+      아래 여섯 갈래가 정규 공모의 기본 트랙입니다.
+    </p>
+    <div class="topics rv">
+      <div class="topic">
+        <span class="code">TRACK A</span>
+        <h4>인구감소와 정주 기반</h4>
+        <p>빈집과 유휴시설, 생활 인프라 공백, 청년·이주민 정착 지원 설계.</p>
+      </div>
+      <div class="topic">
+        <span class="code">TRACK B</span>
+        <h4>공동체 관계망 회복</h4>
+        <p>고립가구 발굴, 주민 갈등 조정, 돌봄 품앗이, 마을 단위 신뢰 자본 재건.</p>
+      </div>
+      <div class="topic">
+        <span class="code">TRACK C</span>
+        <h4>지역 순환경제</h4>
+        <p>역외 유출을 줄이는 소비·조달 구조, 사회적경제 조직의 판로와 자립 모델.</p>
+      </div>
+      <div class="topic">
+        <span class="code">TRACK D</span>
+        <h4>기후 대응과 도시 환경</h4>
+        <p>에너지 전환 실험, 도시숲과 그늘, 폭염·한파 취약지역 대응 시설.</p>
+      </div>
+      <div class="topic">
+        <span class="code">TRACK E</span>
+        <h4>거버넌스와 행정 혁신</h4>
+        <p>민관 협력 구조 설계, 주민참여예산 운영, 지역 계획 수립 방법론.</p>
+      </div>
+      <div class="topic">
+        <span class="code">TRACK F</span>
+        <h4>기업 ESG의 지역 연계</h4>
+        <p>기업의 사회공헌·ESG 과제를 지역 수요와 연결하는 공동 프로젝트.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. 실행 체계 ───────────────────────────── -->
+<section id="pipeline" class="grid-bg" style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">03 — 실행 체계</p>
+    <h2 class="sec-title">여섯 단계로 움직입니다</h2>
+    <p class="lede">
+      난제가 접수되어 현장에 정착하기까지의 표준 공정입니다.
+      각 단계마다 <b>기간·산출물·책임 주체</b>가 정해져 있어, 어느 단계에서 멈췄는지 항상 확인할 수 있습니다.
+    </p>
+
+    <div class="pipe rv">
+      <div class="pipe-rail" aria-hidden="true"></div>
+      <div class="pipe-grid">
+
+        <div class="stage">
+          <div class="dot"></div>
+          <p class="st-no">STEP 01</p>
+          <h4>발굴</h4>
+          <p class="st-en">Discover</p>
+          <p>지자체·기업·주민조직이 겪는 문제를 듣고 접수합니다. 현장 방문과 인터뷰로 “진짜 문제”가 무엇인지 먼저 확인합니다.</p>
+          <div class="st-meta">
+            <span>기간 <b>2주</b></span>
+            <span>산출물 <b>난제 접수서</b></span>
+            <span>책임 <b>플랫폼 운영국</b></span>
+          </div>
+        </div>
+
+        <div class="stage">
+          <div class="dot"></div>
+          <p class="st-no">STEP 02</p>
+          <h4>정의</h4>
+          <p class="st-en">Define</p>
+          <p>문제를 외부인이 이해할 수 있는 과제기술서(X-Brief)로 바꿉니다. 해결 요건, 제약 조건, 성공 기준을 숫자로 못박습니다.</p>
+          <div class="st-meta">
+            <span>기간 <b>3주</b></span>
+            <span>산출물 <b>X-Brief</b></span>
+            <span>책임 <b>도시혁신연구소</b></span>
+          </div>
+        </div>
+
+        <div class="stage">
+          <div class="dot"></div>
+          <p class="st-no">STEP 03</p>
+          <h4>공모</h4>
+          <p class="st-en">Broadcast</p>
+          <p>과제를 공개하고 솔버 풀·협력대학·미디어 채널로 동시에 알립니다. 누구나 제안서를 낼 수 있습니다.</p>
+          <div class="st-meta">
+            <span>기간 <b>4주</b></span>
+            <span>산출물 <b>제안 접수 목록</b></span>
+            <span>책임 <b>컨설팅&amp;네트워크센터</b></span>
+          </div>
+        </div>
+
+        <div class="stage">
+          <div class="dot"></div>
+          <p class="st-no">STEP 04</p>
+          <h4>심사</h4>
+          <p class="st-en">Match</p>
+          <p>3단계 스크리닝을 거쳐 X-보드가 최종 매칭을 확정합니다. 필요하면 둘 이상의 솔버를 컨소시엄으로 묶습니다.</p>
+          <div class="st-meta">
+            <span>기간 <b>3주</b></span>
+            <span>산출물 <b>매칭 확정서</b></span>
+            <span>책임 <b>X-보드 평가위원회</b></span>
+          </div>
+        </div>
+
+        <div class="stage">
+          <div class="dot"></div>
+          <p class="st-no">STEP 05</p>
+          <h4>실증</h4>
+          <p class="st-en">Prove</p>
+          <p>리빙랩 현장에 해법을 투입해 실제로 작동하는지 확인합니다. 주민이 함께 쓰고 평가하는 것이 조건입니다.</p>
+          <div class="st-meta">
+            <span>기간 <b>3~6개월</b></span>
+            <span>산출물 <b>실증 결과보고서</b></span>
+            <span>책임 <b>리빙랩 운영단</b></span>
+          </div>
+        </div>
+
+        <div class="stage">
+          <div class="dot"></div>
+          <p class="st-no">STEP 06</p>
+          <h4>확산</h4>
+          <p class="st-en">Scale</p>
+          <p>통한 해법은 표준 모델로 정리해 다른 지역에 이식하고, 제도 개선이 필요하면 정책으로 제안합니다.</p>
+          <div class="st-meta">
+            <span>기간 <b>상시</b></span>
+            <span>산출물 <b>표준모델 · 정책제안서</b></span>
+            <span>책임 <b>도시혁신연구소</b></span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="pipe-total">
+      <span><strong>12주</strong> &nbsp;접수부터 매칭 확정까지</span>
+      <span><strong>3~6개월</strong> &nbsp;리빙랩 실증 기간</span>
+      <span><strong>4회</strong> &nbsp;연간 정기 공모 (상시 접수 트랙 별도)</span>
+    </div>
+  </div>
+</section>
+
+<!-- 4. 참여 주체 ───────────────────────────── -->
+<section id="roles" class="on-dark grid-bg-dark">
+  <div class="wrap">
+    <p class="eyebrow">04 — 참여 주체</p>
+    <h2 class="sec-title">세 자리가 있습니다</h2>
+    <p class="lede">
+      문제를 내는 자리, 답을 내는 자리, 그 사이를 이어 주는 자리.
+      한 조직이 두 자리를 겸할 수도 있습니다.
+    </p>
+    <div class="roles rv">
+      <div class="role">
+        <p class="rk">SEEKER</p>
+        <h4>난제 제시자</h4>
+        <p class="who">기초·광역 지자체 · 공공기관 · 기업 · 주민조직 · 사회적경제 조직</p>
+        <ul>
+          <li><b>하는 일</b> — 문제를 제출하고, 실증 현장과 행정 협조를 엽니다.</li>
+          <li><b>부담</b> — 과제 등록비와 실증 분담금(공공·기업에 한함)</li>
+          <li><b>얻는 것</b> — 검증된 해법, 실증 데이터, 후속 사업 설계 근거</li>
+          <li><b>참여 조건</b> — 실증 장소와 담당자 1인 이상 지정</li>
+        </ul>
+      </div>
+      <div class="role">
+        <p class="rk">SOLVER</p>
+        <h4>해결자</h4>
+        <p class="who">대학·연구소 · 스타트업 · 전문기업 · 활동가 · 개인 전문가</p>
+        <ul>
+          <li><b>하는 일</b> — 제안서를 내고, 채택되면 실증을 직접 수행합니다.</li>
+          <li><b>등급</b> — 등록 솔버 / 인증 솔버 / 전담 솔버 3단계</li>
+          <li><b>얻는 것</b> — 채택 보상금, 실증비, 실적 인증서, 후속 우선협상권</li>
+          <li><b>참여 조건</b> — 솔버 등록 후 자격 검증 (전담 솔버는 실증 이력 2건 이상)</li>
+        </ul>
+      </div>
+      <div class="role">
+        <p class="rk">ENABLER</p>
+        <h4>조력자</h4>
+        <p class="who">본부 전문가 풀 · 자문위원회 · 협력대학 · 미디어 · 후원기업</p>
+        <ul>
+          <li><b>하는 일</b> — 과제 정의를 돕고, 심사에 참여하고, 결과를 알립니다.</li>
+          <li><b>구성</b> — 학계 · 산업 · 공공 · 법률 4개 트랙</li>
+          <li><b>얻는 것</b> — 연구 소재, 산학 연계, 사회공헌 실적</li>
+          <li><b>참여 조건</b> — 본부 위촉 또는 협약 체결</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. 운영 방법 ───────────────────────────── -->
+<section id="ops" class="grid-bg">
+  <div class="wrap">
+    <p class="eyebrow">05 — 운영 방법</p>
+    <h2 class="sec-title">누가, 무엇을 기준으로 결정하는가</h2>
+    <p class="lede">
+      개방형 플랫폼에서 가장 흔한 실패는 “좋은 제안이 왔는데 아무도 결정하지 못하는 것”입니다.
+      엑스시그마는 결정 권한과 평가 기준을 미리 공개합니다.
+    </p>
+
+    <div class="two">
+      <div>
+        <h3 class="sub">운영 조직과 권한</h3>
+        <div class="tbl-scroll"><table class="tbl rv">
+          <thead>
+            <tr><th>기구</th><th>구성</th><th>결정하는 것</th><th class="n">주기</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>플랫폼 운영국</b></td>
+              <td>본부 사무처 소속 전담 인력</td>
+              <td>접수·일정·계약·정산 등 집행 전반</td>
+              <td class="n">상시</td>
+            </tr>
+            <tr>
+              <td><b>X-보드 평가위원회</b></td>
+              <td>회차별 7인 (학계·산업·공공·법률)</td>
+              <td>매칭 확정, 보상금 등급, 중단 여부</td>
+              <td class="n">공모 회차마다</td>
+            </tr>
+            <tr>
+              <td><b>리빙랩 운영단</b></td>
+              <td>현장 코디네이터 + 주민 참여단</td>
+              <td>실증 설계와 현장 판단, 중간 점검</td>
+              <td class="n">월 1회</td>
+            </tr>
+            <tr>
+              <td><b>본부 이사회</b></td>
+              <td>본부 이사진</td>
+              <td>연간 운영계획, 재원 배분, 규정 개정</td>
+              <td class="n">분기 1회</td>
+            </tr>
+          </tbody>
+        </table></div>
+
+        <h3 class="sub" style="margin-top:44px">심사 3단계</h3>
+        <div class="screen-steps rv">
+          <div>
+            <p class="sn">SCREEN 1</p>
+            <h5>형식 확인</h5>
+            <p>제출 요건과 자격을 운영국이 확인합니다. 결격 사유만 걸러내는 단계입니다.</p>
+          </div>
+          <div>
+            <p class="sn">SCREEN 2</p>
+            <h5>기술 검토</h5>
+            <p>해당 분야 전문가 2인이 실현 가능성과 방법의 타당성을 따로 봅니다.</p>
+          </div>
+          <div>
+            <p class="sn">SCREEN 3</p>
+            <h5>현장 적합성</h5>
+            <p>난제 제시자와 주민 참여단이 “우리 동네에서 될 일인가”를 직접 평가합니다.</p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="sub">평가 기준과 배점</h3>
+        <p style="font-size:14px;color:var(--graphite);margin:0 0 18px">
+          기술 우수성만으로 뽑지 않습니다. 본부의 3R 원칙(회복·지역·혁신)을 배점에 그대로 반영합니다.
+        </p>
+        <ul class="weight rv">
+          <li>
+            <div class="wtop"><span class="wname">지역 적합성</span><span class="wval" data-w="25">25점</span></div>
+            <div class="wbar"><i data-fill="25"></i></div>
+            <p class="wdesc">그 지역의 조건·규모·행정 여건에서 실제로 굴러갈 수 있는가.</p>
+          </li>
+          <li>
+            <div class="wtop"><span class="wname">실행 가능성</span><span class="wval" data-w="25">25점</span></div>
+            <div class="wbar"><i data-fill="25"></i></div>
+            <p class="wdesc">6개월 안에 눈에 보이는 결과를 낼 수 있는 계획과 팀인가.</p>
+          </li>
+          <li>
+            <div class="wtop"><span class="wname">회복탄력성 기여</span><span class="wval" data-w="20">20점</span></div>
+            <div class="wbar"><i data-fill="20"></i></div>
+            <p class="wdesc">사람 사이의 관계와 지역의 자립 역량을 얼마나 키우는가.</p>
+          </li>
+          <li>
+            <div class="wtop"><span class="wname">확산 가능성</span><span class="wval" data-w="15">15점</span></div>
+            <div class="wbar"><i data-fill="15"></i></div>
+            <p class="wdesc">다른 지역으로 옮겨 심을 수 있게 정리될 수 있는가.</p>
+          </li>
+          <li>
+            <div class="wtop"><span class="wname">비용 효율</span><span class="wval" data-w="15">15점</span></div>
+            <div class="wbar"><i data-fill="15"></i></div>
+            <p class="wdesc">지역이 감당할 수 있는 비용으로 유지될 수 있는가.</p>
+          </li>
+        </ul>
+        <p style="font-size:13px;color:var(--graphite);margin-top:16px">
+          총 100점. 70점 미만은 채택하지 않으며, 심사 결과와 총평은 모든 제안자에게 회신합니다.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. 보상 · 권리 · 재원 ──────────────────── -->
+<section class="grid-bg" style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">06 — 보상 · 권리 · 재원</p>
+    <h2 class="sec-title">누가 무엇을 갖는지 먼저 정합니다</h2>
+    <p class="lede">
+      개방형 플랫폼의 신뢰는 결국 “내 아이디어가 어떻게 되는가”에 달려 있습니다.
+      제안 전에 확인할 수 있도록 원칙을 공개합니다.
+    </p>
+    <div class="cards rv">
+      <div class="card">
+        <p class="ck">REWARD</p>
+        <h4>보상 체계</h4>
+        <ul>
+          <li><b>채택 보상금</b> — 매칭 확정 시 지급. 과제 난이도에 따라 3개 등급으로 구분합니다.</li>
+          <li><b>실증비</b> — 실증에 드는 인건비·재료비·현장비를 별도 지원합니다.</li>
+          <li><b>성과 보상</b> — 실증 목표를 달성하면 추가 지급합니다.</li>
+          <li><b>후속 우선협상권</b> — 같은 과제의 확대 사업에서 우선 협상 자격을 갖습니다.</li>
+          <li><b>실적 인증</b> — 본부 명의의 실증 실적 인증서를 발급합니다.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="ck">RIGHTS</p>
+        <h4>지식재산과 비밀유지</h4>
+        <ul>
+          <li><b>원천기술</b> — 솔버가 이미 가지고 있던 기술은 솔버에게 그대로 귀속됩니다.</li>
+          <li><b>공동 산출물</b> — 실증 과정에서 새로 만들어진 결과물은 공동 소유를 원칙으로 합니다.</li>
+          <li><b>지역 사용권</b> — 난제 제시자는 해당 지역에 한해 비독점 사용권을 갖습니다.</li>
+          <li><b>공개 범위</b> — 표준 모델로 정리되는 부분과 비공개 유지 부분을 계약서에 명시합니다.</li>
+          <li><b>비밀유지</b> — 심사위원과 열람자는 예외 없이 비밀유지 서약 후 자료를 봅니다.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="ck">FUNDING</p>
+        <h4>재원 구조</h4>
+        <ul>
+          <li><b>과제 등록비</b> — 공공·기업 난제 제시자가 부담합니다. 주민조직은 면제 트랙을 둡니다.</li>
+          <li><b>실증 위탁금</b> — 지자체·기업이 위탁하는 실증 사업 운영비.</li>
+          <li><b>공모사업 수탁</b> — 중앙부처·광역단위 지역혁신 사업 참여를 통한 재원.</li>
+          <li><b>회원 회비·후원</b> — 본부 회원기업 연회비와 개인·기업 후원금.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="ck">OPEN DATA</p>
+        <h4>기록과 공개</h4>
+        <ul>
+          <li><b>과제 이력</b> — 접수부터 종료까지 각 단계 통과 여부를 플랫폼에 기록합니다.</li>
+          <li><b>실증 보고서</b> — 비공개 협의 부분을 제외하고 요약본을 공개합니다.</li>
+          <li><b>실패 기록</b> — 통하지 않은 시도도 남깁니다. 다음 지역이 같은 실수를 피하도록.</li>
+          <li><b>연간 운영보고</b> — 접수·채택·실증·정착 건수를 연 1회 공개합니다.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 7. 캘린더 · 성과관리 ───────────────────── -->
+<section class="grid-bg" style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">07 — 연간 운영</p>
+    <h2 class="sec-title">한 해가 이렇게 돌아갑니다</h2>
+    <p class="lede">정기 공모는 분기마다 한 번씩 열립니다. 긴급한 지역 현안은 상시 접수 트랙으로 따로 받습니다.</p>
+    <div class="cal rv">
+      <div>
+        <p class="q">1분기</p>
+        <h5>연간 과제 설정</h5>
+        <p>지역 수요 조사, 중점 트랙 확정, 1차 공모 개시, 솔버 풀 정기 모집.</p>
+      </div>
+      <div>
+        <p class="q">2분기</p>
+        <h5>1차 실증 착수</h5>
+        <p>1차 매칭 확정과 현장 착수, 2차 공모 개시, 중간 점검 체계 가동.</p>
+      </div>
+      <div>
+        <p class="q">3분기</p>
+        <h5>확산 준비</h5>
+        <p>1차 실증 결과 정리, 3차 공모, 타 지역 이식 후보 발굴, 정책 제안 초안.</p>
+      </div>
+      <div>
+        <p class="q">4분기</p>
+        <h5>성과 공유</h5>
+        <p>연간 성과공유회 개최, 4차 공모, 운영보고서 공개, 차년도 계획 수립.</p>
+      </div>
+    </div>
+
+    <div class="two" style="margin-top:64px">
+      <div>
+        <h3 class="sub">성과 지표</h3>
+        <p style="font-size:14px;color:var(--graphite);margin:0 0 18px">
+          제안이 몇 건 들어왔는가보다, 몇 건이 <b>현장에 남았는가</b>를 중심 지표로 봅니다.
+        </p>
+        <div class="tbl-scroll"><table class="tbl rv">
+          <thead><tr><th>지표</th><th>측정 방법</th><th class="n">주기</th></tr></thead>
+          <tbody>
+            <tr><td>난제 접수 건수</td><td>정기·상시 트랙 합산</td><td class="n">분기</td></tr>
+            <tr><td>공모 전환율</td><td>접수 난제 중 X-Brief로 확정된 비율</td><td class="n">분기</td></tr>
+            <tr><td>제안 참여 솔버 수</td><td>과제당 평균 제안 건수</td><td class="n">회차</td></tr>
+            <tr><td>실증 착수율</td><td>매칭 확정 중 실제 착수한 비율</td><td class="n">반기</td></tr>
+            <tr><td><b>현장 정착률</b></td><td>실증 종료 6개월 후에도 운영 중인 비율</td><td class="n">연간</td></tr>
+            <tr><td>이식 건수</td><td>타 지역으로 옮겨 적용된 표준 모델 수</td><td class="n">연간</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div>
+        <h3 class="sub">3R 원칙과의 연결</h3>
+        <p style="font-size:14px;color:var(--graphite);margin:0 0 8px">
+          엑스시그마는 별도의 사업이 아니라, 본부가 세운 3R 운동을 실제로 굴리는 엔진입니다.
+        </p>
+        <div class="threer">
+          <div>
+            <b>RESILIENCE</b>
+            <h5>회복</h5>
+            <p>실증에 주민 참여를 의무화해, 문제를 푸는 과정 자체가 관계망을 다시 잇도록 설계합니다.</p>
+          </div>
+          <div>
+            <b>REGION</b>
+            <h5>지역</h5>
+            <p>문제 정의 권한을 지역에 둡니다. 무엇이 문제인지는 바깥이 아니라 지역이 정합니다.</p>
+          </div>
+          <div>
+            <b>RENOVATION</b>
+            <h5>혁신</h5>
+            <p>통한 해법을 표준 모델과 정책 제안으로 정리해, 한 번의 성공이 제도로 이어지게 합니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8. 로드맵 ──────────────────────────────── -->
+<section class="on-dark grid-bg-dark">
+  <div class="wrap">
+    <p class="eyebrow">08 — 도입 로드맵</p>
+    <h2 class="sec-title">한 곳에서 시작해 전국으로</h2>
+    <p class="lede">
+      처음부터 크게 열지 않습니다. 한 지역에서 공정을 검증한 뒤 회차를 늘리고, 그다음에 표준으로 만듭니다.
+    </p>
+    <div class="road rv">
+      <div>
+        <p class="ph">PHASE 1</p>
+        <h5>설계와 시범</h5>
+        <p class="per">0–6개월</p>
+        <ul>
+          <li>운영 규정·계약 서식 제정</li>
+          <li>시범 지자체 1곳 협약</li>
+          <li>시범 난제 2~3건 처리</li>
+          <li>솔버 풀 1차 모집</li>
+        </ul>
+      </div>
+      <div>
+        <p class="ph">PHASE 2</p>
+        <h5>정규 공모</h5>
+        <p class="per">6–18개월</p>
+        <ul>
+          <li>분기 정기 공모 개시</li>
+          <li>리빙랩 거점 확대</li>
+          <li>X-보드 상설 운영</li>
+          <li>온라인 접수·심사 시스템 구축</li>
+        </ul>
+      </div>
+      <div>
+        <p class="ph">PHASE 3</p>
+        <h5>표준화</h5>
+        <p class="per">18–36개월</p>
+        <ul>
+          <li>표준 모델 라이브러리 공개</li>
+          <li>광역 단위 협력체계 연계</li>
+          <li>연례 성과공유 포럼 정례화</li>
+          <li>정책 제안 채택 추진</li>
+        </ul>
+      </div>
+      <div>
+        <p class="ph">PHASE 4</p>
+        <h5>국제 연계</h5>
+        <p class="per">3–5년</p>
+        <ul>
+          <li>해외 파트너 공동 과제</li>
+          <li>국제 심포지엄 정례화</li>
+          <li>아시아 지역혁신 네트워크 참여</li>
+          <li>국가 표준 제안</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 9. 참여하기 ───────────────────────────── -->
+<section id="join" class="cta">
+  <div class="wrap">
+    <h2>풀리지 않는 문제가 있다면,<br>혼자 두지 마십시오.</h2>
+    <p>문제를 가진 쪽도, 해법을 가진 쪽도 같은 창구로 들어옵니다. 접수 후 2주 안에 담당자가 연락드립니다.</p>
+    <div class="cta-grid">
+      <a href="mailto:contact@ucc.or.kr?subject=%5B%EC%97%91%EC%8A%A4%EC%8B%9C%EA%B7%B8%EB%A7%88%5D%20%EB%82%9C%EC%A0%9C%20%EB%93%B1%EB%A1%9D%20%EB%AC%B8%EC%9D%98">
+        <span class="lab">FOR SEEKERS</span>
+        <strong>난제 등록하기 →</strong>
+        <span>지역 현안과 원하는 결과를 간단히 적어 보내 주시면, 담당자가 과제화 상담을 진행합니다.</span>
+      </a>
+      <a href="mailto:contact@ucc.or.kr?subject=%5B%EC%97%91%EC%8A%A4%EC%8B%9C%EA%B7%B8%EB%A7%88%5D%20%EC%86%94%EB%B2%84%20%EB%93%B1%EB%A1%9D%20%EC%8B%A0%EC%B2%AD">
+        <span class="lab">FOR SOLVERS</span>
+        <strong>솔버 등록하기 →</strong>
+        <span>전문 분야와 이력을 등록하면 관련 과제가 공고될 때 먼저 안내받습니다.</span>
+      </a>
+    </div>
+    <div class="contact">
+      <span><em>대표전화</em> 1670-9678</span>
+      <span><em>플랫폼 문의</em> contact@ucc.or.kr</span>
+      <span><em>웹사이트</em> <a href="https://ucc.or.kr" target="_blank" rel="noopener" style="color:inherit">ucc.or.kr</a></span>
+      <span><em>운영</em> 사단법인 도시공동체본부 · 행정안전부 소관</span>
+    </div>
+  </div>
+</section>
+
+<footer class="xfooter">
+  <div class="wrap">
+    <span><b>엑스시그마 플랫폼</b> — <a href="/">사단법인 도시공동체본부</a> 운영</span>
+    <span class="mono">X-SIGMA · OPEN PROBLEM-SOLVING PLATFORM</span>
+  </div>
+</footer>
+
+<script>
+// 스크롤 등장 + 배점 막대 채우기
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var targets = document.querySelectorAll('.rv');
+
+  function fillBars(root){
+    root.querySelectorAll('.wbar i').forEach(function(bar){
+      var pct = parseInt(bar.getAttribute('data-fill'), 10) || 0;
+      // 30점을 100% 폭으로 잡아, 최고 배점도 여백을 남기며 차이가 드러나게 한다
+      bar.style.width = Math.round(pct / 30 * 100) + '%';
+    });
+  }
+
+  if (reduce || !('IntersectionObserver' in window)) {
+    targets.forEach(function(el){ el.classList.add('in'); fillBars(el); });
+    return;
+  }
+
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('in');
+      fillBars(entry.target);
+      io.unobserve(entry.target);
+    });
+  }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+
+  targets.forEach(function(el){ io.observe(el); });
+})();
+</script>
+</body>
+</html>

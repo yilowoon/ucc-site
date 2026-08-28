@@ -47,6 +47,8 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   router.get("/projects/forum", (req, res) => res.render("forum", { ...res.locals, title: "두잉새롬마당" }));
   router.get("/projects/community", (req, res) => res.render("community", { ...res.locals, title: "커뮤니티모임" }));
   router.get("/projects/convergence", (req, res) => res.render("convergence", { ...res.locals, title: "문화예술과학융합" }));
+  // 엑스시그마 플랫폼 — 독립 레이아웃(자체 head·스타일) 페이지
+  router.get("/projects/xsigma", (req, res) => res.render("xsigma", { ...res.locals, title: "엑스시그마 플랫폼" }));
 
   // ---------- 알림마당: 뉴스레터 (사회적경제 등 키워드 뉴스 큐레이션) ----------
   router.get("/newsletter", (req, res) => {
