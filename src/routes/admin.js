@@ -122,9 +122,19 @@ module.exports = function adminRoutes({ verifyCsrf }) {
 
   // ---------- 대시보드 ----------
   router.get("/", requireAdmin, (req, res) => {
-    const board = cfg.isBoard(req.query.board) ? req.query.board : "all";
+    // 데일리뉴스(newsletter)는 게시판이 아니지만, 같은 하단 섹션에서 목록을 보여주기 위해
+    // 특수 필터값으로 허용한다.
+    const board = req.query.board === "newsletter"
+      ? "newsletter"
+      : (cfg.isBoard(req.query.board) ? req.query.board : "all");
     let rows;
-    if (board === "all") {
+    if (board === "newsletter") {
+      // 뉴스레터 행을 posts 목록과 같은 형태로 매핑(_nl 플래그로 템플릿에서 분기)
+      rows = db
+        .prepare("SELECT id, title, views, created_at FROM newsletter ORDER BY id DESC LIMIT 100")
+        .all()
+        .map((n) => ({ id: n.id, board: "newsletter", title: n.title, created_at: n.created_at, views: n.views || 0, attach_count: 0, pinned: 0, _nl: true }));
+    } else if (board === "all") {
       rows = db
         .prepare(
           `SELECT p.*, (SELECT COUNT(*) FROM attachments a WHERE a.post_id = p.id) AS attach_count
@@ -615,10 +625,12 @@ module.exports = function adminRoutes({ verifyCsrf }) {
       collectOnce().then((r) => console.log("[newsletter] 수동 수집:", JSON.stringify(r)))
         .catch((e) => console.error("[newsletter] 수동 수집 오류:", e.message));
     } catch (e) { /* 무시 */ }
+    if (req.body.from === "admin") return res.redirect("/admin?board=newsletter&msg=collecting");
     res.redirect("/admin/newsletter?msg=collecting");
   });
   router.post("/newsletter/:id/delete", requireAdmin, verifyCsrf, (req, res) => {
     db.prepare("DELETE FROM newsletter WHERE id = ?").run(parseInt(req.params.id, 10));
+    if (req.body.from === "admin") return res.redirect("/admin?board=newsletter");
     res.redirect("/admin/newsletter" + (req.body.page ? "?page=" + encodeURIComponent(req.body.page) : ""));
   });
 

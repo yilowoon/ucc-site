@@ -70,10 +70,10 @@
   <div class="admin-cards">
     <% adminBoardOrder.forEach(function(k){ %>
       <% if (k === 'newsletter') { %>
-        <a class="admin-card" href="/admin/newsletter">
+        <a class="admin-card" href="/admin?board=newsletter">
           <span class="admin-card-name">데일리뉴스</span>
           <span class="admin-card-num"><%= stats.newsletter %></span>
-          <span class="admin-card-write" onclick="event.preventDefault();location.href='/admin/newsletter'">관리 →</span>
+          <span class="admin-card-write" onclick="event.preventDefault();location.href='/admin?board=newsletter'">목록 →</span>
         </a>
       <% } else { %>
         <a class="admin-card" href="/admin?board=<%= k %>">
@@ -90,7 +90,7 @@
       <a href="/admin" class="<%= filterBoard === 'all' ? 'active' : '' %>">전체</a>
       <% adminBoardOrder.forEach(function(k){ %>
         <% if (k === 'newsletter') { %>
-          <a href="/admin/newsletter">데일리뉴스</a>
+          <a href="/admin?board=newsletter" class="<%= filterBoard === 'newsletter' ? 'active' : '' %>">데일리뉴스</a>
         <% } else { %>
           <a href="/admin?board=<%= k %>" class="<%= filterBoard === k ? 'active' : '' %>"><%= boards[k].name %></a>
         <% } %>
@@ -104,12 +104,25 @@
           <button type="submit" class="btn btn-neutral btn-sm">📄 지금 리포트 발행</button>
         </form>
       <% } %>
-      <a class="btn btn-primary btn-sm" href="/admin/write?board=<%= filterBoard === 'all' ? 'notice' : filterBoard %>">＋ 새 글 작성</a>
+      <% if (filterBoard === 'newsletter') { %>
+        <form method="post" action="/admin/newsletter/collect" style="display:inline"
+              onsubmit="return confirm('지금 데일리뉴스를 수집할까요? (약 1분 소요)');">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <input type="hidden" name="from" value="admin" />
+          <button type="submit" class="btn btn-neutral btn-sm">📰 지금 수집</button>
+        </form>
+      <% } else { %>
+        <a class="btn btn-primary btn-sm" href="/admin/write?board=<%= filterBoard === 'all' ? 'notice' : filterBoard %>">＋ 새 글 작성</a>
+      <% } %>
     </div>
   </div>
 
   <% if (typeof msg !== 'undefined' && msg === 'collecting') { %>
-    <p class="form-alert ok">리포트 발행을 시작했습니다. 자료 조사·심층 집필로 3~6분 뒤 새로고침하면 반영됩니다.</p>
+    <% if (filterBoard === 'newsletter') { %>
+      <p class="form-alert ok">데일리뉴스 수집을 시작했습니다. 약 1분 뒤 새로고침하면 반영됩니다.</p>
+    <% } else { %>
+      <p class="form-alert ok">리포트 발행을 시작했습니다. 자료 조사·심층 집필로 3~6분 뒤 새로고침하면 반영됩니다.</p>
+    <% } %>
   <% } %>
 
   <ul class="admin-list">
@@ -123,20 +136,32 @@
     <% if (posts.length === 0) { %><li class="post-empty">게시물이 없습니다.</li><% } %>
     <% posts.forEach(function(p){ %>
       <li class="admin-row">
-        <span class="col-board"><span class="board-tag"><%= boards[p.board] ? boards[p.board].name : p.board %></span></span>
+        <span class="col-board"><span class="board-tag"><%= p._nl ? '데일리뉴스' : (boards[p.board] ? boards[p.board].name : p.board) %></span></span>
         <span class="col-title">
           <% if (p.pinned) { %><span class="badge-pin">공지</span><% } %>
-          <a href="/board/<%= p.board %>/<%= p.id %>"><%= esc(p.title) %></a>
+          <% if (p._nl) { %>
+            <a href="/newsletter/<%= p.id %>" target="_blank" rel="noopener"><%= esc(p.title) %></a>
+          <% } else { %>
+            <a href="/board/<%= p.board %>/<%= p.id %>"><%= esc(p.title) %></a>
+          <% } %>
           <% if (p.attach_count > 0) { %><span class="attach-flag">📎<%= p.attach_count %></span><% } %>
         </span>
         <span class="col-date"><%= fmtDate(p.created_at) %></span>
         <span class="col-views"><%= p.views %></span>
         <span class="col-act">
-          <a href="/admin/edit/<%= p.id %>" class="linkbtn">수정</a>
-          <form action="/admin/delete/<%= p.id %>" method="post" onsubmit="return confirm('삭제하시겠습니까?');">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-            <button type="submit" class="linkbtn linkbtn-danger">삭제</button>
-          </form>
+          <% if (p._nl) { %>
+            <form action="/admin/newsletter/<%= p.id %>/delete" method="post" onsubmit="return confirm('이 데일리뉴스를 삭제하시겠습니까?');">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <input type="hidden" name="from" value="admin" />
+              <button type="submit" class="linkbtn linkbtn-danger">삭제</button>
+            </form>
+          <% } else { %>
+            <a href="/admin/edit/<%= p.id %>" class="linkbtn">수정</a>
+            <form action="/admin/delete/<%= p.id %>" method="post" onsubmit="return confirm('삭제하시겠습니까?');">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button type="submit" class="linkbtn linkbtn-danger">삭제</button>
+            </form>
+          <% } %>
         </span>
       </li>
     <% }); %>
