@@ -23,10 +23,8 @@
         <div class="field"><label for="name">이름</label><input type="text" id="name" name="name" value="<%= esc(m.name) %>" autocomplete="name" required /></div>
         <div class="field"><label for="phone">연락처 <span class="field-hint">숫자만 입력</span></label><input type="tel" id="phone" name="phone" value="<%= esc(m.phone || '') %>" autocomplete="off" inputmode="numeric" pattern="[0-9]{9,11}" maxlength="11" placeholder="숫자만 입력 (예: 01012345678)" oninput="this.value=this.value.replace(/[^0-9]/g,'')" /></div>
         <div class="field"><label for="org_name">소속 <span class="field-hint">소속기관이 없으면 '도시공동체본부'</span></label><input type="text" id="org_name" name="org_name" value="<%= esc(m.org_name || '') %>" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="소속기관·단체명 (없으면 도시공동체본부)" /></div>
-        <div class="write-grid">
-          <div class="field"><label for="position">직급 <span class="field-hint">선택</span></label><input type="text" id="position" name="position" value="<%= esc(m.position || '') %>" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="예: 대표, 팀장, 연구원" /></div>
-          <div class="field"><label for="job">하시는 일 <span class="field-hint">선택</span></label><input type="text" id="job" name="job" value="<%= esc(m.job || '') %>" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="담당 업무·활동" /></div>
-        </div>
+        <div class="field"><label for="position">직급 <span class="field-hint">선택</span></label><input type="text" id="position" name="position" value="<%= esc(m.position || '') %>" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="예: 대표, 팀장, 연구원" /></div>
+        <div class="field"><label for="job">하시는 일 <span class="field-hint">선택</span></label><input type="text" id="job" name="job" value="<%= esc(m.job || '') %>" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="담당 업무·활동" /></div>
         <div class="field"><label for="interest">관심 분야 <span class="field-hint">선택</span></label><input type="text" id="interest" name="interest" value="<%= esc(m.interest || '') %>" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="예: 사회적경제, 도시재생, 협동조합" /></div>
         <div class="field">
           <label for="address">주소</label>
