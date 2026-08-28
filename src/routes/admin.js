@@ -149,6 +149,7 @@ module.exports = function adminRoutes({ verifyCsrf }) {
       contactsTotal: db.prepare("SELECT COUNT(*) AS n FROM contacts").get().n,
       members: db.prepare("SELECT COUNT(*) AS n FROM members").get().n,
       applications: db.prepare("SELECT COUNT(*) AS n FROM edu_applications").get().n,
+      newsletter: db.prepare("SELECT COUNT(*) AS n FROM newsletter").get().n,
     };
     res.render("admin-dashboard", {
       ...res.locals,

@@ -32,11 +32,6 @@
       <span class="hub-name">보안 모니터링</span>
       <span class="hub-meta">의심 접속·대응</span>
     </a>
-    <a class="hub-card" href="/admin/newsletter">
-      <span class="hub-ico">📰</span>
-      <span class="hub-name">데일리뉴스 관리</span>
-      <span class="hub-meta">자동 수집·관리</span>
-    </a>
     <a class="hub-card" href="/admin/contacts">
       <span class="hub-ico">✉️</span>
       <span class="hub-name">문의 관리</span>
@@ -79,6 +74,11 @@
         <span class="admin-card-write" onclick="event.preventDefault();location.href='/admin/write?board=<%= k %>'">＋ 글쓰기</span>
       </a>
     <% }); %>
+    <a class="admin-card" href="/admin/newsletter">
+      <span class="admin-card-name">데일리뉴스</span>
+      <span class="admin-card-num"><%= stats.newsletter %></span>
+      <span class="admin-card-write" onclick="event.preventDefault();location.href='/admin/newsletter'">관리 →</span>
+    </a>
   </div>
 
   <div class="admin-toolbar">
