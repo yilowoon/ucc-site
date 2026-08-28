@@ -14,7 +14,11 @@
       <div class="field">
         <label for="board">게시판</label>
         <select id="board" name="board">
-          <% boardKeys.forEach(function(k){ %>
+          <%
+            // 상단 탭과 동일한 순서. 데일리뉴스는 자동 수집 전용이라 제외한다.
+            var writeOrder = ['notice','press','business','global','news'].filter(function(k){ return boards[k]; });
+            boardKeys.forEach(function(k){ if (writeOrder.indexOf(k) === -1) writeOrder.push(k); });
+            writeOrder.forEach(function(k){ %>
             <option value="<%= k %>" <%= board === k ? 'selected' : '' %>><%= boards[k].name %></option>
           <% }); %>
         </select>
