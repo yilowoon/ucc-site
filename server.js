@@ -7,6 +7,26 @@ const crypto = require("crypto");
 const express = require("express");
 const session = require("express-session");
 
+// .env 로더(무의존): 프로젝트 루트에 .env 가 있으면 process.env 에 채운다.
+// 이미 설정된 실제 환경변수는 덮어쓰지 않는다(export/pm2 env 우선).
+(function loadDotEnv() {
+  try {
+    const p = path.join(__dirname, ".env");
+    if (!fs.existsSync(p)) return;
+    for (const line of fs.readFileSync(p, "utf8").split(/\r?\n/)) {
+      const s = line.trim();
+      if (!s || s[0] === "#") continue;
+      const i = s.indexOf("=");
+      if (i < 1) continue;
+      const k = s.slice(0, i).trim();
+      let v = s.slice(i + 1).trim();
+      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1);
+      if (!(k in process.env)) process.env[k] = v;
+    }
+    console.log("[env] .env 로드됨");
+  } catch (e) { /* 무시 */ }
+})();
+
 const { db, DATA_DIR, UPLOAD_DIR } = require("./src/db");
 const cfg = require("./src/config");
 const boardRoutes = require("./src/routes/board");
