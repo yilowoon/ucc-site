@@ -6,7 +6,22 @@ const bcrypt = require("bcryptjs");
 const { db } = require("../db");
 const cfg = require("../config");
 const { PAGES } = require("../pages");
+const chatkb = require("../chatkb"); // 소개 챗봇: 지식베이스 + Gemini 응답
 const KOREA_SIDO = require("../korea-sido.json"); // 전국 시·도 경계 지오메트리
+
+// 챗봇 rate limit(IP당 5분 25건) — 남용·비용 방지
+const chatHits = new Map();
+function chatClientIp(req) {
+  const xf = (req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+  return xf || req.ip || (req.socket && req.socket.remoteAddress) || "";
+}
+function chatAllowed(ip) {
+  const now = Date.now(), win = 5 * 60 * 1000, max = 25;
+  const arr = (chatHits.get(ip) || []).filter((t) => now - t < win);
+  if (arr.length >= max) { chatHits.set(ip, arr); return false; }
+  arr.push(now); chatHits.set(ip, arr);
+  return true;
+}
 
 // 메인 '데일리뉴스' 리드: 본문에서 완결된 문장(2문장 이상, 5줄가량) 추출
 function homeLead(content, summary) {
@@ -31,6 +46,26 @@ function homeLead(content, summary) {
 
 module.exports = function siteRoutes({ verifyCsrf }) {
   const router = express.Router();
+
+  // ---------- 소개 챗봇 API ----------
+  router.get("/api/chat/config", (req, res) => {
+    res.json({ greeting: chatkb.GREETING, suggestions: chatkb.SUGGESTIONS });
+  });
+  router.post("/api/chat", async (req, res) => {
+    try {
+      const message = String(req.body.message || "").trim().slice(0, 1000);
+      if (!message) return res.status(400).json({ error: "메시지를 입력해 주세요." });
+      if (!chatAllowed(chatClientIp(req))) {
+        return res.status(429).json({ reply: "요청이 많아 잠시 후 다시 시도해 주세요." });
+      }
+      let history = [];
+      try { const h = JSON.parse(req.body.history || "[]"); if (Array.isArray(h)) history = h; } catch (e) {}
+      const { reply } = await chatkb.answer(message, history);
+      res.json({ reply });
+    } catch (e) {
+      res.json({ reply: "죄송합니다. 지금은 답변이 어렵습니다. 1670-9678 또는 contact@ucc.or.kr 로 문의해 주세요." });
+    }
+  });
 
   // ---------- 소개/약관 콘텐츠 페이지 ----------
   function renderPage(group) {
