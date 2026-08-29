@@ -19,14 +19,26 @@
   /* 결제 모달 */
   .su-modal{position:fixed;inset:0;z-index:9999;background:rgba(13,33,28,.55);display:none;align-items:center;justify-content:center;padding:20px}
   .su-modal.open{display:flex}
-  .su-modal-card{background:#fff;border-radius:18px;max-width:400px;width:100%;padding:26px 24px;box-shadow:0 24px 60px -18px rgba(14,42,32,.5)}
-  .su-modal-card h3{margin:0 0 4px;font-size:1.2rem;color:var(--green-800)}
-  .su-modal-card .sub{color:var(--muted);font-size:.86rem;margin:0 0 16px}
-  .su-pay-line{display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line);font-size:.95rem}
+  .su-modal-card{position:relative;background:#fff;border-radius:16px;max-width:420px;width:100%;padding:22px 22px;box-shadow:0 24px 60px -18px rgba(14,42,32,.5)}
+  .su-modal-card h3{margin:0 0 12px;font-size:1.15rem;color:var(--green-800)}
+  .su-x{position:absolute;top:12px;right:14px;border:none;background:none;font-size:22px;line-height:1;color:var(--muted);cursor:pointer}
+  .su-x:hover{color:var(--ink)}
+  .su-pay-sum{display:flex;justify-content:space-between;align-items:baseline;background:var(--paper-warm);border-radius:10px;padding:10px 14px;margin:0 0 14px;font-size:.92rem}
+  .su-pay-sum b{color:var(--green-800);font-size:1.25rem;font-weight:800}
+  .su-tabs{display:flex;gap:6px;margin-bottom:14px}
+  .su-tab{flex:1;padding:9px 6px;border:1px solid var(--line);background:#fff;border-radius:9px;font-size:.88rem;font-weight:700;color:var(--muted);cursor:pointer}
+  .su-tab.active{background:linear-gradient(150deg,var(--green-800),var(--green-900));color:#fff;border-color:var(--green-800)}
+  .su-warn{background:#fff6e6;border:1px solid var(--gold-500);border-radius:9px;padding:10px 12px;font-size:.85rem;color:#7a5a1a;margin:0 0 12px;line-height:1.6}
+  .su-warn b{color:#a9761f}
+  .su-acct{border:1px solid var(--line);border-radius:9px;padding:8px 14px;font-size:.9rem;margin-bottom:12px}
+  .su-acct>div{display:flex;align-items:center;gap:8px;padding:5px 0}
+  .su-acct>div span{color:var(--muted);width:42px;flex-shrink:0;font-size:.8rem}
+  .su-acct b{color:var(--ink);font-weight:700;letter-spacing:.01em}
+  .su-copy{margin-left:auto;border:1px solid var(--line);background:var(--paper-warm);border-radius:6px;font-size:.72rem;padding:3px 9px;cursor:pointer;color:var(--green-800)}
+  .su-acct-img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:9px;margin-bottom:14px}
+  .su-pay-line{display:flex;justify-content:space-between;padding:10px 0;font-size:.95rem}
   .su-pay-line.total{border-top:2px solid var(--green-800);font-weight:800;color:var(--green-800);font-size:1.1rem}
-  .su-pay-note{font-size:.82rem;color:var(--muted);background:var(--paper-alt);border-radius:8px;padding:10px 12px;margin:14px 0}
-  .su-modal-actions{display:flex;gap:10px;margin-top:8px}
-  .su-modal-actions .btn{flex:1}
+  .su-pay-note{font-size:.82rem;color:var(--muted);background:var(--paper-alt);border-radius:8px;padding:10px 12px;margin:6px 0 14px;line-height:1.6}
   .su-spin{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;animation:suSpin .7s linear infinite;vertical-align:-3px;margin-right:6px}
   @keyframes suSpin{to{transform:rotate(360deg)}}
   .btn-lg{padding:15px 30px;font-size:1rem}
@@ -47,6 +59,7 @@
       <form method="post" action="/signup" class="admin-form-fields" id="suForm" autocomplete="off">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <input type="hidden" name="paid" id="suPaid" value="0" />
+        <input type="hidden" name="pay_method" id="suPayMethod" value="" />
 
         <div class="field">
           <label for="member_type">회원 유형</label>
@@ -94,17 +107,35 @@
   </div>
 </div>
 
-<!-- 결제 모달 (데모) -->
-<div class="su-modal" id="suModal" role="dialog" aria-modal="true" aria-label="회비 결제">
+<!-- 결제 모달 (무통장 / PG) -->
+<div class="su-modal" id="suModal" role="dialog" aria-modal="true" aria-label="회비 납부">
   <div class="su-modal-card">
-    <h3>회비 결제</h3>
-    <p class="sub" id="suPayType">개인회원</p>
-    <div class="su-pay-line"><span>회원 유형</span><span id="suPayType2">개인회원</span></div>
-    <div class="su-pay-line total"><span>결제 금액</span><span id="suPayAmt">10,000원</span></div>
-    <p class="su-pay-note">※ 현재는 <b>데모 결제</b>입니다. 실제로 청구되지 않으며, 결제 시스템(PG) 연동 시 이 창에서 카드·간편결제로 실제 납부가 진행됩니다.</p>
-    <div class="su-modal-actions">
-      <button type="button" class="btn btn-ghost" id="suPayCancel">취소</button>
-      <button type="button" class="btn btn-primary" id="suPayNow">결제하기</button>
+    <button type="button" class="su-x" id="suPayCancel" aria-label="닫기">&times;</button>
+    <h3>회비 납부</h3>
+    <div class="su-pay-sum"><span id="suPayType2">개인회원</span><b id="suPayAmt">10,000원</b></div>
+
+    <div class="su-tabs">
+      <button type="button" class="su-tab active" data-m="bank">무통장 입금</button>
+      <button type="button" class="su-tab" data-m="toss">카드·간편결제</button>
+    </div>
+
+    <!-- 무통장 입금 -->
+    <div class="su-pane" id="paneBank">
+      <p class="su-warn">회원가입 후 <b>1주일 이내</b>에 회비가 납부되어야 정상 처리됩니다.</p>
+      <div class="su-acct">
+        <div><span>은행</span> 하나은행</div>
+        <div><span>계좌</span> <b>602-910286-92405</b><button type="button" class="su-copy" data-copy="602-910286-92405">복사</button></div>
+        <div><span>예금주</span> 사단법인 도시공동체본부</div>
+      </div>
+      <img class="su-acct-img" src="/img/account-copy.jpg" alt="사단법인 도시공동체본부 법인 계좌 사본" loading="lazy" />
+      <button type="button" class="btn btn-primary btn-block" id="suBankDone">무통장 입금으로 신청 완료</button>
+    </div>
+
+    <!-- 카드·간편결제 (PG) -->
+    <div class="su-pane" id="paneToss" hidden>
+      <div class="su-pay-line total"><span>결제 금액</span><span id="suPayAmt2">10,000원</span></div>
+      <p class="su-pay-note">※ 현재는 <b>데모 결제</b>입니다. 실제 청구되지 않으며, 토스페이먼츠 등 PG 연동 시 이 창에서 카드·간편결제로 실제 납부가 진행됩니다.</p>
+      <button type="button" class="btn btn-primary btn-block" id="suPayNow">결제하기</button>
     </div>
   </div>
 </div>
@@ -148,13 +179,25 @@
 
   // 결제 모달
   var modal = document.getElementById('suModal');
-  var payType = document.getElementById('suPayType'), payType2 = document.getElementById('suPayType2'), payAmt = document.getElementById('suPayAmt');
+  var payType2 = document.getElementById('suPayType2'), payAmt = document.getElementById('suPayAmt'), payAmt2 = document.getElementById('suPayAmt2');
   var payNow = document.getElementById('suPayNow'), payCancel = document.getElementById('suPayCancel');
+  var bankDone = document.getElementById('suBankDone');
+  var methodInput = document.getElementById('suPayMethod');
+  var tabs = modal.querySelectorAll('.su-tab');
+  var paneBank = document.getElementById('paneBank'), paneToss = document.getElementById('paneToss');
+
+  function selectMethod(m){
+    tabs.forEach(function(t){ t.classList.toggle('active', t.dataset.m === m); });
+    paneBank.hidden = (m !== 'bank');
+    paneToss.hidden = (m !== 'toss');
+  }
+  tabs.forEach(function(t){ t.addEventListener('click', function(){ selectMethod(t.dataset.m); }); });
 
   function openModal(){
     var type = sel.value, fee = currentFee();
-    payType.textContent = type; payType2.textContent = type; payAmt.textContent = won(fee);
+    payType2.textContent = type; payAmt.textContent = won(fee); payAmt2.textContent = won(fee);
     payNow.disabled = false; payNow.innerHTML = '결제하기';
+    selectMethod('bank');
     modal.classList.add('open');
   }
   function closeModal(){ modal.classList.remove('open'); }
@@ -165,16 +208,29 @@
     if (!form.reportValidity()) return;               // 필수 필드 검증
     if (form.password.value !== form.confirm.value){ alert('비밀번호 확인이 일치하지 않습니다.'); form.confirm.focus(); return; }
     if (!feeChk.checked){ alert('회비 납부(또는 무료 안내)에 동의해 주세요.'); feeChk.focus(); return; }
-    if (currentFee() > 0){ openModal(); }             // 유료 → 결제창
-    else { paidInput.value = '0'; form.submit(); }     // 무료(단체) → 바로 등록
+    if (currentFee() > 0){ openModal(); }             // 유료 → 결제 수단 선택창
+    else { methodInput.value = 'free'; paidInput.value = '0'; form.submit(); } // 무료(단체) → 바로 등록
   });
 
-  // 데모 결제: 실제 PG 연동 시 이 부분에서 결제 요청/검증을 수행하면 됩니다.
+  // 계좌번호 복사
+  modal.addEventListener('click', function(e){
+    var b = e.target.closest('.su-copy'); if(!b) return;
+    var v = b.dataset.copy;
+    if (navigator.clipboard) navigator.clipboard.writeText(v).then(function(){ b.textContent='복사됨'; setTimeout(function(){b.textContent='복사';},1200); });
+  });
+
+  // 무통장 입금으로 신청 완료 → 미납 상태로 등록(관리자 입금 확인 후 처리)
+  bankDone.addEventListener('click', function(){
+    methodInput.value = 'bank'; paidInput.value = '0';
+    form.submit();
+  });
+
+  // 카드·간편결제(데모): 실제 PG 연동 시 이 부분에서 결제 요청/검증을 수행하면 됩니다.
   payNow.addEventListener('click', function(){
     payNow.disabled = true;
     payNow.innerHTML = '<span class="su-spin"></span>결제 처리 중…';
     setTimeout(function(){
-      paidInput.value = '1';   // 결제 완료 표시
+      methodInput.value = 'toss'; paidInput.value = '1';   // 결제 완료 표시
       form.submit();
     }, 1200);
   });
