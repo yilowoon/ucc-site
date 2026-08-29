@@ -1,0 +1,76 @@
+<%- include('partials/header') %>
+
+<style>
+  .contact-tabs{display:flex;gap:8px;margin:0 0 22px}
+  .contact-tabs a{flex:1;text-align:center;padding:11px 10px;border:1px solid var(--line);border-radius:12px;background:var(--paper-warm);color:var(--ink-soft);font-weight:700;font-size:14.5px;text-decoration:none}
+  .contact-tabs a.active{background:linear-gradient(150deg,var(--green-800),var(--green-900));color:#fff;border-color:var(--green-800)}
+  .contact-hp{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
+  .cf-cap-in{max-width:160px}
+</style>
+
+<section class="page-banner page-banner--sm">
+  <div class="container">
+    <span class="page-banner-en">CONTACT</span>
+    <h1 class="page-banner-title">문의하기</h1>
+  </div>
+</section>
+
+<div class="container page-wrap" style="max-width:640px">
+  <div class="contact-tabs">
+    <a href="/contact" class="<%= mode === 'send' ? 'active' : '' %>">문의 보내기</a>
+    <a href="/contact?mode=check" class="<%= mode === 'check' ? 'active' : '' %>">문의 확인하기</a>
+  </div>
+
+  <% if (error) { %><p class="form-alert err"><%= error %></p><% } %>
+
+  <% if (mode === 'send') { %>
+    <form method="post" action="/contact/send" class="admin-form-fields" autocomplete="off">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <div class="contact-hp" aria-hidden="true"><label>이 항목은 비워두세요<input type="text" name="website" tabindex="-1" autocomplete="off" /></label></div>
+
+      <% if (member) { %>
+        <p class="form-alert ok"><strong><%= esc(member.name) %></strong> 님(회원)으로 작성됩니다. 답변은 ‘내 문의 내역’에서 확인하실 수 있습니다.</p>
+        <input type="hidden" name="name" value="<%= esc(member.name) %>" />
+        <input type="hidden" name="email" value="<%= esc(member.email) %>" />
+      <% } else { %>
+        <div class="write-grid">
+          <div class="field"><label for="c-name">이름 / 기관</label><input type="text" id="c-name" name="name" value="<%= esc(form.name || '') %>" required /></div>
+          <div class="field"><label for="c-email">이메일</label><input type="email" id="c-email" name="email" value="<%= esc(form.email || '') %>" required /></div>
+        </div>
+      <% } %>
+
+      <div class="field"><label for="c-phone">연락처 <span class="field-hint">선택</span></label><input type="tel" id="c-phone" name="phone" value="<%= esc(form.phone || '') %>" inputmode="numeric" /></div>
+      <div class="field">
+        <label for="c-topic">문의 유형</label>
+        <select id="c-topic" name="topic">
+          <% topics.forEach(function(t){ %><option value="<%= t %>" <%= form.topic === t ? 'selected' : '' %>><%= t %></option><% }); %>
+        </select>
+      </div>
+      <div class="field"><label for="c-msg">문의 내용</label><textarea id="c-msg" name="message" rows="5" required><%= esc(form.message || '') %></textarea></div>
+
+      <% if (!member) { %>
+        <div class="write-grid">
+          <div class="field"><label for="c-pin">확인용 PIN <span class="field-hint">숫자 4자리</span></label><input type="password" id="c-pin" name="pin" inputmode="numeric" pattern="\d{4}" maxlength="4" placeholder="숫자 4자리" autocomplete="off" oninput="this.value=this.value.replace(/[^0-9]/g,'')" required /></div>
+          <div class="field"><label for="c-pin2">PIN 확인</label><input type="password" id="c-pin2" name="pin2" inputmode="numeric" pattern="\d{4}" maxlength="4" autocomplete="off" oninput="this.value=this.value.replace(/[^0-9]/g,'')" required /></div>
+        </div>
+        <p class="form-note">※ 나중에 <b>이메일 + PIN</b>으로 ‘문의 확인하기’에서 답변을 조회합니다. PIN을 꼭 기억해 주세요.</p>
+      <% } %>
+
+      <div class="field"><label for="c-cap">로봇이 아님을 확인 <span class="field-hint"><%= cap.a %> + <%= cap.b %> = ?</span></label><input class="cf-cap-in" type="text" id="c-cap" name="captcha" inputmode="numeric" autocomplete="off" placeholder="정답 숫자" required /></div>
+
+      <button type="submit" class="btn btn-primary btn-block">문의 보내기</button>
+    </form>
+  <% } else { %>
+    <form method="post" action="/contact/check" class="admin-form-fields" autocomplete="off">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <p class="form-note">문의 시 입력한 <b>이메일</b>과 <b>4자리 PIN</b>으로 로그인해 내 문의와 답변을 확인합니다.</p>
+      <div class="field"><label for="v-email">이메일</label><input type="email" id="v-email" name="email" value="<%= esc(form.email || '') %>" required /></div>
+      <div class="field"><label for="v-pin">PIN <span class="field-hint">숫자 4자리</span></label><input type="password" id="v-pin" name="pin" inputmode="numeric" pattern="\d{4}" maxlength="4" autocomplete="off" oninput="this.value=this.value.replace(/[^0-9]/g,'')" required /></div>
+      <div class="field"><label for="v-cap">로봇이 아님을 확인 <span class="field-hint"><%= cap.a %> + <%= cap.b %> = ?</span></label><input class="cf-cap-in" type="text" id="v-cap" name="captcha" inputmode="numeric" autocomplete="off" placeholder="정답 숫자" required /></div>
+      <button type="submit" class="btn btn-primary btn-block">문의 확인하기</button>
+      <% if (member) { %><p class="admin-auth-hint">회원이시면 <a href="/contact/my">내 문의 내역</a>에서 바로 확인됩니다.</p><% } %>
+    </form>
+  <% } %>
+</div>
+
+<%- include('partials/footer') %>

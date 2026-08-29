@@ -1,4 +1,12 @@
 <%- include('partials/header') %>
+<style>
+  .ct-tag{display:inline-block;font-size:11px;font-weight:700;border-radius:20px;padding:2px 8px;background:var(--paper-alt);color:var(--green-800)}
+  .ct-reply-form{margin-top:12px}
+  .ct-reply-form textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:inherit;font-size:13.5px;resize:vertical;min-height:52px}
+  .ct-reply-form textarea:focus{outline:none;border-color:var(--green-600)}
+  .ct-reply-actions{display:flex;align-items:center;gap:12px;margin-top:8px}
+  .ct-replied{font-size:12px;color:var(--muted)}
+</style>
 <div class="container admin-wrap">
   <div class="admin-head">
     <div>
@@ -37,7 +45,17 @@
             <strong><%= esc(c.name) %></strong>
             · <a href="mailto:<%= esc(c.email) %>"><%= esc(c.email) %></a>
             <% if (c.phone) { %> · <%= esc(c.phone) %><% } %>
+            <% if (c.member_id) { %> · <span class="ct-tag">회원</span><% } else if (c.pw_hash) { %> · <span class="ct-tag">PIN 조회</span><% } %>
           </p>
+          <form class="ct-reply-form" method="post" action="/admin/contacts/<%= c.id %>/reply">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input type="hidden" name="back" value="<%= filter === 'all' ? '' : filter %>" />
+            <textarea name="reply" rows="2" placeholder="답변을 작성해 저장하면 문의자가 ‘문의 확인하기’에서 볼 수 있습니다."><%= esc(c.reply || '') %></textarea>
+            <div class="ct-reply-actions">
+              <% if (c.replied_at) { %><span class="ct-replied">답변 등록 <%= fmtDateTime(c.replied_at) %></span><% } %>
+              <button type="submit" class="btn btn-primary btn-sm" style="margin-left:auto">답변 저장</button>
+            </div>
+          </form>
         </div>
         <div class="ct-actions">
           <form method="post" action="/admin/contacts/<%= c.id %>/status">

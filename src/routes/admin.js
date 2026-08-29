@@ -366,6 +366,18 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     db.prepare("DELETE FROM contacts WHERE id = ?").run(parseInt(req.params.id, 10));
     res.redirect("/admin/contacts");
   });
+  // 답변 작성 — 저장 시 상태를 '완료'로 (빈 답변이면 답변 삭제)
+  router.post("/contacts/:id/reply", requireAdmin, verifyCsrf, (req, res) => {
+    const reply = (req.body.reply || "").trim().slice(0, 5000);
+    const id = parseInt(req.params.id, 10);
+    if (reply) {
+      db.prepare("UPDATE contacts SET reply = ?, replied_at = ?, status = '완료' WHERE id = ?")
+        .run(reply, new Date().toISOString(), id);
+    } else {
+      db.prepare("UPDATE contacts SET reply = '', replied_at = '' WHERE id = ?").run(id);
+    }
+    res.redirect("/admin/contacts" + (CONTACT_STATUS.includes(req.body.back) ? "?status=" + encodeURIComponent(req.body.back) : ""));
+  });
 
   // ---------- 회원 관리 ----------
   const MEMBER_COLS = "id, name, email, phone, member_type, org_name, grade, fee_paid, confirmed_at, created_at";

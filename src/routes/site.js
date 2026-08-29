@@ -279,6 +279,110 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     res.json({ ok: true });
   });
 
+  // ---------- 문의(Contact): 보내기 / 확인하기 (임시 로그인) ----------
+  const CONTACT_TOPICS = ["협력·파트너십", "컨설팅·진단", "교육 프로그램", "회원 가입", "기타"];
+
+  // 로봇 방지: 세션 저장형 산수 캡차(1회용)
+  function newCaptcha(req) {
+    const a = 1 + Math.floor(Math.random() * 8);
+    const b = 1 + Math.floor(Math.random() * 8);
+    req.session.cap = a + b;
+    return { a, b };
+  }
+  function capOk(req, ans) {
+    const v = parseInt(String(ans || "").trim(), 10);
+    const ok = req.session.cap != null && v === req.session.cap;
+    req.session.cap = null;
+    return ok;
+  }
+  function sessMember(req) {
+    if (!req.session.member) return null;
+    return db.prepare("SELECT id, name, email FROM members WHERE id = ?").get(req.session.member.id) || null;
+  }
+  function contactIdentity(req) {
+    const m = sessMember(req);
+    if (m) return { kind: "member", id: m.id, name: m.name, email: m.email };
+    if (req.session.contact && req.session.contact.email) return { kind: "guest", email: req.session.contact.email };
+    return null;
+  }
+
+  router.get("/contact", (req, res) => {
+    const mode = req.query.mode === "check" ? "check" : "send";
+    res.render("contact", {
+      ...res.locals, title: "문의하기", mode, cap: newCaptcha(req),
+      member: sessMember(req), topics: CONTACT_TOPICS, error: null, form: {},
+    });
+  });
+
+  router.post("/contact/send", verifyCsrf, (req, res) => {
+    const member = sessMember(req);
+    const back = (error, form) => res.status(400).render("contact", {
+      ...res.locals, title: "문의하기", mode: "send", cap: newCaptcha(req),
+      member, topics: CONTACT_TOPICS, error, form: form || {},
+    });
+    if ((req.body.website || "").trim()) return res.redirect("/contact/my"); // 허니팟
+    if (!capOk(req, req.body.captcha)) return back("로봇 방지 계산의 답이 올바르지 않습니다.", req.body);
+
+    const name = member ? member.name : (req.body.name || "").trim();
+    const email = member ? member.email : (req.body.email || "").trim().toLowerCase();
+    const phone = (req.body.phone || "").trim();
+    const topic = CONTACT_TOPICS.includes(req.body.topic) ? req.body.topic : "기타";
+    const message = (req.body.message || "").trim();
+    if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !message)
+      return back("이름·유효한 이메일·문의 내용을 정확히 입력해 주세요.", req.body);
+    if (name.length > 100 || message.length > 5000) return back("입력 길이가 너무 깁니다.", req.body);
+
+    let pwHash = "";
+    if (!member) {
+      const pin = (req.body.pin || "").trim(), pin2 = (req.body.pin2 || "").trim();
+      if (!/^\d{4}$/.test(pin)) return back("확인용 PIN을 숫자 4자리로 입력해 주세요.", req.body);
+      if (pin !== pin2) return back("PIN 확인이 일치하지 않습니다.", req.body);
+      const prev = db.prepare("SELECT pw_hash FROM contacts WHERE email = ? AND pw_hash <> '' ORDER BY id DESC LIMIT 1").get(email);
+      if (prev) {
+        if (!bcrypt.compareSync(pin, prev.pw_hash))
+          return back("이 이메일로 이미 등록된 PIN과 다릅니다. 기존 PIN을 입력하거나 ‘문의 확인하기’를 이용해 주세요.", req.body);
+        pwHash = prev.pw_hash;
+      } else {
+        pwHash = bcrypt.hashSync(pin, 10);
+      }
+    }
+    const now = new Date().toISOString();
+    db.prepare("INSERT INTO contacts (name, email, phone, topic, message, status, created_at, pw_hash, member_id) VALUES (?, ?, ?, ?, ?, '신규', ?, ?, ?)")
+      .run(name, email, phone, topic, message, now, pwHash, member ? member.id : 0);
+    req.session.contact = { email }; // 임시 로그인 부여
+    return res.redirect("/contact/my?sent=1");
+  });
+
+  router.post("/contact/check", verifyCsrf, (req, res) => {
+    const back = (error) => res.status(400).render("contact", {
+      ...res.locals, title: "문의하기", mode: "check", cap: newCaptcha(req),
+      member: null, topics: CONTACT_TOPICS, error, form: { email: (req.body.email || "").trim() },
+    });
+    if (!capOk(req, req.body.captcha)) return back("로봇 방지 계산의 답이 올바르지 않습니다.");
+    const email = (req.body.email || "").trim().toLowerCase();
+    const pin = (req.body.pin || "").trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^\d{4}$/.test(pin))
+      return back("이메일과 4자리 PIN을 정확히 입력해 주세요.");
+    const row = db.prepare("SELECT pw_hash FROM contacts WHERE email = ? AND pw_hash <> '' ORDER BY id DESC LIMIT 1").get(email);
+    if (!row || !bcrypt.compareSync(pin, row.pw_hash)) return back("이메일 또는 PIN이 일치하지 않습니다.");
+    req.session.contact = { email };
+    return res.redirect("/contact/my");
+  });
+
+  router.get("/contact/my", (req, res) => {
+    const id = contactIdentity(req);
+    if (!id) return res.redirect("/contact?mode=check");
+    const rows = id.kind === "member"
+      ? db.prepare("SELECT * FROM contacts WHERE member_id = ? OR email = ? ORDER BY id DESC").all(id.id, id.email)
+      : db.prepare("SELECT * FROM contacts WHERE email = ? ORDER BY id DESC").all(id.email);
+    res.render("contact-my", { ...res.locals, title: "내 문의 내역", identity: id, rows, sent: req.query.sent === "1" });
+  });
+
+  router.post("/contact/logout", verifyCsrf, (req, res) => {
+    delete req.session.contact;
+    res.redirect("/contact");
+  });
+
   // ---------- 회원가입 ----------
   // 회원 유형(개인/기업/단체) — 가입 시 등급은 항상 '준회원', 관리자 승인 시 '정회원'
   const MEMBER_TYPES = ["개인회원", "기업회원", "단체회원"];

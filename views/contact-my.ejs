@@ -1,0 +1,80 @@
+<%- include('partials/header') %>
+
+<style>
+  .cmy-top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:0 0 18px}
+  .cmy-who{font-size:14.5px;color:var(--ink-soft)}
+  .cmy-who b{color:var(--green-800)}
+  .cmy-actions{display:flex;gap:8px}
+  .contact-item{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:18px 20px;margin-bottom:14px}
+  .ci-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .ci-topic{font-weight:800;color:var(--green-800)}
+  .ci-status{font-size:11.5px;font-weight:700;border-radius:20px;padding:3px 10px}
+  .ci-status.s-new{background:#fde7e2;color:#b53a2e}
+  .ci-status.s-doing{background:#fff3d9;color:#8a6d2f}
+  .ci-status.s-done{background:#e3f2e8;color:#2d6a4f}
+  .ci-date{font-size:12.5px;color:var(--muted);margin-left:auto}
+  .ci-msg{font-size:14px;color:var(--ink-soft);line-height:1.7;white-space:normal}
+  .ci-reply{margin-top:12px;border-left:3px solid var(--gold-500);background:var(--paper-warm);border-radius:0 10px 10px 0;padding:12px 14px}
+  .ci-reply-h{font-size:12.5px;font-weight:800;color:var(--gold-600);margin-bottom:6px;display:flex;gap:10px;align-items:baseline}
+  .ci-reply-h span{font-weight:500;color:var(--muted);font-size:11.5px}
+  .ci-reply-body{font-size:14px;color:var(--ink);line-height:1.7}
+  .ci-pending{margin-top:10px;font-size:13px;color:var(--muted)}
+</style>
+
+<section class="page-banner page-banner--sm">
+  <div class="container">
+    <span class="page-banner-en">MY INQUIRIES</span>
+    <h1 class="page-banner-title">내 문의 내역</h1>
+  </div>
+</section>
+
+<div class="container page-wrap" style="max-width:760px">
+  <div class="cmy-top">
+    <div class="cmy-who">
+      <% if (identity.kind === 'member') { %>
+        <b><%= esc(identity.name) %></b> 님 (회원) · <%= esc(identity.email) %>
+      <% } else { %>
+        <b><%= esc(identity.email) %></b> 님의 문의 내역
+      <% } %>
+    </div>
+    <div class="cmy-actions">
+      <a class="btn btn-primary btn-sm" href="/contact">＋ 새 문의</a>
+      <% if (identity.kind === 'member') { %>
+        <a class="btn btn-ghost-dark btn-sm" href="/mypage">마이페이지</a>
+      <% } else { %>
+        <form action="/contact/logout" method="post" style="display:inline">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <button type="submit" class="btn btn-ghost-dark btn-sm">로그아웃</button>
+        </form>
+      <% } %>
+    </div>
+  </div>
+
+  <% if (sent) { %><p class="form-alert ok">문의가 정상 접수되었습니다. 담당자가 확인 후 답변드리겠습니다.</p><% } %>
+
+  <% if (!rows.length) { %>
+    <p class="post-empty" style="padding:40px 0;text-align:center;color:var(--muted)">접수된 문의가 없습니다.</p>
+  <% } %>
+
+  <% rows.forEach(function(c){
+       var sc = c.status === '완료' ? 's-done' : (c.status === '확인' ? 's-doing' : 's-new'); %>
+    <article class="contact-item">
+      <div class="ci-head">
+        <span class="ci-topic"><%= esc(c.topic || '문의') %></span>
+        <span class="ci-status <%= sc %>"><%= esc(c.status || '신규') %></span>
+        <span class="ci-date"><%= fmtDateTime(c.created_at) %></span>
+      </div>
+      <div class="ci-msg"><%- nl2br(c.message) %></div>
+      <% if (c.reply) { %>
+        <div class="ci-reply">
+          <div class="ci-reply-h">답변 <span><%= c.replied_at ? fmtDateTime(c.replied_at) : '' %></span></div>
+          <div class="ci-reply-body"><%- nl2br(c.reply) %></div>
+        </div>
+      <% } else { %>
+        <p class="ci-pending">아직 답변이 등록되지 않았습니다. 담당자 확인 후 이곳에 답변이 표시됩니다.</p>
+      <% } %>
+    </article>
+  <% }); %>
+</div>
+
+<%- include('partials/footer') %>

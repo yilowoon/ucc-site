@@ -1055,3 +1055,9 @@ a.seg-btn { display: inline-block; text-decoration: none; }
 .nl-view-origin { margin: 26px 0 6px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .nl-view-origin-note { font-size: .82rem; color: var(--muted); }
 .nl-img-note { font-size: .8rem; color: var(--muted); margin: 2px 0 0; }
+
+/* 홈 문의 CTA (문의 보내기/확인하기 버튼) */
+.contact-cta{background:var(--paper-warm);border:1px solid var(--line);border-radius:var(--radius-lg);padding:clamp(22px,3vw,30px)}
+.contact-cta-lead{font-size:.98rem;color:var(--ink-soft);margin:0 0 18px;line-height:1.7}
+.contact-cta-btns{display:flex;flex-direction:column;gap:10px}
+.contact-cta-note{font-size:.85rem;color:var(--muted);margin:16px 0 0;line-height:1.6}
