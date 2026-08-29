@@ -51,6 +51,15 @@
   .email-check{font-size:.82rem;margin:6px 0 0;min-height:1.1em}
   .email-check.ok{color:var(--green-700)}
   .email-check.err{color:#b53a2e}
+  /* 이메일 인증 */
+  .email-verify{margin-top:10px}
+  .code-row{display:flex;gap:8px;margin-top:8px}
+  .code-row input{flex:1;letter-spacing:4px;font-weight:700;text-align:center}
+  .code-row input[readonly]{background:#e3f2e8;color:var(--green-800);border-color:var(--green-600)}
+  .code-row .btn{flex-shrink:0}
+  .verify-msg{font-size:.82rem;margin:8px 0 0;min-height:1em}
+  .verify-msg.ok{color:var(--green-700);font-weight:600}
+  .verify-msg.err{color:#b53a2e}
   /* 비밀번호 두 필드 크기 통일(.su-card 는 기본 write-grid가 3열이라 지정) */
   .su-card .write-grid{grid-template-columns:1fr 1fr;gap:16px;align-items:end}
   @media(max-width:560px){.su-card .write-grid{grid-template-columns:1fr}}
@@ -104,6 +113,15 @@
           </div>
           <input type="hidden" id="email" name="email" value="<%= esc(form.email || '') %>" />
           <p class="email-check" id="emailCheck" role="status" aria-live="polite"></p>
+
+          <div class="email-verify" id="emailVerify" hidden>
+            <button type="button" class="btn btn-neutral btn-sm" id="btnSendCode">인증코드 받기</button>
+            <div class="code-row" id="codeRow" hidden>
+              <input type="text" id="email_code" name="email_code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="메일로 받은 6자리 코드" oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
+              <button type="button" class="btn btn-primary btn-sm" id="btnVerifyCode">확인</button>
+            </div>
+            <p class="verify-msg" id="verifyMsg" role="status" aria-live="polite"></p>
+          </div>
         </div>
         <div class="field"><label for="phone">연락처 <span class="field-hint">숫자만 입력</span></label><input type="tel" id="phone" name="phone" value="<%= esc(form.phone || '') %>" inputmode="numeric" pattern="[0-9]{9,11}" maxlength="11" placeholder="숫자만 입력 (예: 01012345678)" oninput="this.value=this.value.replace(/[^0-9]/g,'')" /></div>
         <div class="write-grid">
@@ -203,27 +221,48 @@
   sel.addEventListener('change', refresh);
   refresh();
 
-  // 이메일: 아이디 + 도메인 결합 & 중복 확인
+  // 이메일: 아이디 + 도메인 결합 · 중복 확인 · 인증
+  var VERIFIED_EMAIL = <%- JSON.stringify(typeof verifiedEmail !== 'undefined' ? (verifiedEmail || '') : '') %>;
   var eid = document.getElementById('email_id'), edom = document.getElementById('email_domain'),
       esel = document.getElementById('email_domain_sel'), ehid = document.getElementById('email'),
       echk = document.getElementById('emailCheck');
-  var emailOk = false, chkTimer = null;
+  var emailVerify = document.getElementById('emailVerify'), codeRow = document.getElementById('codeRow'),
+      codeInput = document.getElementById('email_code'), verifyMsg = document.getElementById('verifyMsg'),
+      btnSend = document.getElementById('btnSendCode'), btnVerify = document.getElementById('btnVerifyCode');
+  var emailOk = false, verified = false, chkTimer = null;
   var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+  function resetVerify(){
+    verified = false;
+    emailVerify.hidden = true; codeRow.hidden = true;
+    codeInput.value = ''; codeInput.readOnly = false;
+    verifyMsg.textContent = ''; verifyMsg.className = 'verify-msg';
+    btnSend.hidden = false; btnSend.disabled = false; btnSend.textContent = '인증코드 받기';
+    btnVerify.disabled = false;
+  }
+  function lockVerified(){
+    verified = true; emailOk = true;
+    emailVerify.hidden = false;
+    codeInput.readOnly = true; btnVerify.disabled = true;
+    btnSend.disabled = true; btnSend.textContent = '인증 완료';
+    verifyMsg.textContent = '이메일이 인증되었습니다.'; verifyMsg.className = 'verify-msg ok';
+  }
+
   function checkEmail(){
-    emailOk = false;
     var v = ehid.value.trim();
+    if (verified && v === VERIFIED_EMAIL) return;   // 이미 인증된 이메일
+    emailOk = false;
     echk.textContent = ''; echk.className = 'email-check';
-    if (!emailRe.test(v)) return;
+    if (!emailRe.test(v)) { emailVerify.hidden = true; return; }
     clearTimeout(chkTimer);
     echk.textContent = '확인 중…';
     chkTimer = setTimeout(function(){
       fetch('/api/check-email?email=' + encodeURIComponent(v))
         .then(function(r){ return r.json(); })
         .then(function(d){
-          if (ehid.value.trim() !== v) return;                 // 그 사이 값이 바뀌면 무시
-          if (d.available){ emailOk = true; echk.textContent = '사용 가능한 이메일입니다.'; echk.className = 'email-check ok'; }
-          else { emailOk = false; echk.textContent = '이미 가입된 이메일입니다. 로그인을 이용해 주세요.'; echk.className = 'email-check err'; }
+          if (ehid.value.trim() !== v) return;
+          if (d.available){ emailOk = true; echk.textContent = '사용 가능한 이메일입니다. 아래에서 이메일 인증을 진행해 주세요.'; echk.className = 'email-check ok'; emailVerify.hidden = false; }
+          else { emailOk = false; echk.textContent = '이미 가입된 이메일입니다. 로그인을 이용해 주세요.'; echk.className = 'email-check err'; emailVerify.hidden = true; }
         })
         .catch(function(){ echk.textContent = ''; });
     }, 400);
@@ -231,6 +270,7 @@
   function syncEmail(){
     var id = eid.value.trim().replace(/@/g,''), dom = edom.value.trim();
     ehid.value = (id && dom) ? (id + '@' + dom) : '';
+    resetVerify();          // 이메일이 바뀌면 인증 초기화
     checkEmail();
   }
   esel.addEventListener('change', function(){
@@ -240,14 +280,46 @@
   });
   eid.addEventListener('input', syncEmail);
   edom.addEventListener('input', syncEmail);
-  // 서버 검증 오류로 되돌아온 경우 기존 이메일을 분리해 채운다
+
+  // 인증코드 받기
+  btnSend.addEventListener('click', function(){
+    if (!emailRe.test(ehid.value.trim())){ verifyMsg.textContent = '이메일을 먼저 정확히 입력해 주세요.'; verifyMsg.className = 'verify-msg err'; return; }
+    btnSend.disabled = true; btnSend.textContent = '전송 중…';
+    fetch('/api/send-code', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:new URLSearchParams({ email: ehid.value.trim() }).toString() })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        btnSend.disabled = false; btnSend.textContent = '코드 재전송';
+        if (!d.ok){ verifyMsg.textContent = d.error || '코드 발송에 실패했습니다.'; verifyMsg.className = 'verify-msg err'; return; }
+        codeRow.hidden = false; codeInput.focus();
+        verifyMsg.textContent = '인증 코드를 메일로 보냈습니다. 10분 이내에 입력해 주세요.' + (d.devCode ? ' [테스트 코드: ' + d.devCode + ']' : '');
+        verifyMsg.className = 'verify-msg';
+      })
+      .catch(function(){ btnSend.disabled = false; btnSend.textContent = '인증코드 받기'; verifyMsg.textContent = '발송 오류. 잠시 후 다시 시도해 주세요.'; verifyMsg.className = 'verify-msg err'; });
+  });
+
+  // 코드 확인
+  btnVerify.addEventListener('click', function(){
+    var code = codeInput.value.trim();
+    if (code.length !== 6){ verifyMsg.textContent = '6자리 코드를 입력해 주세요.'; verifyMsg.className = 'verify-msg err'; return; }
+    btnVerify.disabled = true;
+    fetch('/api/verify-code', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:new URLSearchParams({ email: ehid.value.trim(), code: code }).toString() })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (d.ok){ lockVerified(); alert('성공적으로 인증되었습니다.'); }
+        else { btnVerify.disabled = false; verifyMsg.textContent = d.error || '코드를 다시 확인하세요.'; verifyMsg.className = 'verify-msg err'; }
+      })
+      .catch(function(){ btnVerify.disabled = false; verifyMsg.textContent = '인증 오류. 잠시 후 다시 시도해 주세요.'; verifyMsg.className = 'verify-msg err'; });
+  });
+
+  // 초기화: 서버 검증 오류로 되돌아온 경우
   (function initEmail(){
     var v = ehid.value.trim();
     if (v && v.indexOf('@') > 0){
       var p = v.split('@'); eid.value = p[0]; edom.value = p[1];
       var opt = Array.prototype.filter.call(esel.options, function(o){ return o.value === p[1]; })[0];
       esel.value = opt ? p[1] : ''; edom.readOnly = !!opt;
-      checkEmail();
+      if (VERIFIED_EMAIL && v === VERIFIED_EMAIL){ codeInput.value = '******'; lockVerified(); }
+      else checkEmail();
     }
   })();
 
@@ -282,6 +354,7 @@
     if (!form.reportValidity()) return;               // 필수 필드 검증
     if (!emailRe.test(ehid.value.trim())){ alert('이메일 아이디와 도메인을 정확히 입력해 주세요.'); eid.focus(); return; }
     if (!emailOk){ alert('이메일 중복 확인이 필요합니다. 이미 가입된 이메일이면 로그인해 주세요.'); eid.focus(); checkEmail(); return; }
+    if (!verified){ alert('이메일 인증을 완료해 주세요. ‘인증코드 받기’ 후 메일로 받은 6자리 코드를 입력해 인증하시면 됩니다.'); return; }
     if (form.password.value !== form.confirm.value){ alert('비밀번호 확인이 일치하지 않습니다.'); form.confirm.focus(); return; }
     if (!feeChk.checked){ alert('회비 납부(또는 무료 안내)에 동의해 주세요.'); feeChk.focus(); return; }
     if (currentFee() > 0){ openModal(); }             // 유료 → 결제 수단 선택창

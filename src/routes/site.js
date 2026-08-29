@@ -7,6 +7,8 @@ const { db } = require("../db");
 const cfg = require("../config");
 const { PAGES } = require("../pages");
 const chatkb = require("../chatkb"); // 소개 챗봇: 지식베이스 + Gemini 응답
+const mailer = require("../mailer"); // 이메일 인증 코드 발송
+const IS_PROD = process.env.NODE_ENV === "production";
 const KOREA_SIDO = require("../korea-sido.json"); // 전국 시·도 경계 지오메트리
 
 // 챗봇 rate limit(IP당 5분 25건) — 남용·비용 방지
@@ -395,7 +397,7 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   // 신청 폼 페이지(별도)
   router.get("/signup/apply", (req, res) => {
     if (req.session.member) return res.redirect("/");
-    res.render("signup-form", { ...res.locals, title: "회원가입 신청", error: null, form: {}, types: MEMBER_TYPES, fees: MEMBER_FEE });
+    res.render("signup-form", { ...res.locals, title: "회원가입 신청", error: null, form: {}, types: MEMBER_TYPES, fees: MEMBER_FEE, verifiedEmail: req.session.emailVerified || "" });
   });
   // 이메일 중복 확인(실시간)
   router.get("/api/check-email", (req, res) => {
@@ -403,6 +405,54 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.json({ available: false, invalid: true });
     const exists = db.prepare("SELECT 1 FROM members WHERE email = ?").get(email);
     res.json({ available: !exists });
+  });
+
+  // 이메일 인증 코드 발송(세션당 10분 5회 제한)
+  function sendCodeAllowed(req) {
+    const now = Date.now(), win = 10 * 60 * 1000, max = 5;
+    const arr = (req.session.codeHits || []).filter((t) => now - t < win);
+    if (arr.length >= max) { req.session.codeHits = arr; return false; }
+    arr.push(now); req.session.codeHits = arr; return true;
+  }
+  router.post("/api/send-code", async (req, res) => {
+    const email = (req.body.email || "").trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.json({ ok: false, error: "이메일을 정확히 입력해 주세요." });
+    if (db.prepare("SELECT 1 FROM members WHERE email = ?").get(email)) return res.json({ ok: false, error: "이미 가입된 이메일입니다." });
+    if (!sendCodeAllowed(req)) return res.json({ ok: false, error: "요청이 많습니다. 잠시 후 다시 시도해 주세요." });
+
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    req.session.emailCode = { email, code, expires: Date.now() + 10 * 60 * 1000, attempts: 0 };
+    delete req.session.emailVerified;
+
+    const subject = "[사단법인 도시공동체본부] 회원가입 이메일 인증 코드";
+    const text = `회원가입 이메일 인증 코드: ${code}\n\n인증 코드는 10분간 유효합니다. 본인이 요청하지 않았다면 이 메일을 무시해 주세요.`;
+    const html = '<div style="font-family:sans-serif;max-width:460px;margin:0 auto;border:1px solid #e4e2da;border-radius:12px;overflow:hidden">'
+      + '<div style="background:#123a2e;color:#fff;padding:16px 20px;font-weight:700">사단법인 도시공동체본부 · 이메일 인증</div>'
+      + '<div style="padding:22px 20px;color:#16211c">회원가입을 위한 인증 코드입니다. 아래 6자리 코드를 입력해 주세요.'
+      + '<div style="font-size:30px;font-weight:800;letter-spacing:8px;color:#123a2e;background:#f8f6f0;border-radius:10px;text-align:center;padding:16px;margin:16px 0">' + code + '</div>'
+      + '<p style="font-size:13px;color:#6b766f;margin:0">인증 코드는 10분간 유효합니다. 본인이 요청하지 않았다면 이 메일을 무시해 주세요.</p></div></div>';
+
+    const r = await mailer.sendMail(email, subject, text, html);
+    if (!r.sent) {
+      if (IS_PROD) return res.json({ ok: false, error: "메일 발송이 설정되지 않았습니다. 사무처(1670-9678)로 문의해 주세요." });
+      return res.json({ ok: true, sent: false, devCode: code }); // 개발: 화면에서 확인
+    }
+    res.json({ ok: true, sent: true });
+  });
+
+  // 인증 코드 검증
+  router.post("/api/verify-code", (req, res) => {
+    const email = (req.body.email || "").trim().toLowerCase();
+    const code = (req.body.code || "").trim();
+    const rec = req.session.emailCode;
+    if (!rec || rec.email !== email) return res.json({ ok: false, error: "먼저 인증 코드를 받아 주세요." });
+    if (Date.now() > rec.expires) { delete req.session.emailCode; return res.json({ ok: false, error: "코드가 만료되었습니다. 다시 받아 주세요." }); }
+    rec.attempts = (rec.attempts || 0) + 1;
+    if (rec.attempts > 10) { delete req.session.emailCode; return res.json({ ok: false, error: "시도 횟수를 초과했습니다. 코드를 다시 받아 주세요." }); }
+    if (code !== rec.code) return res.json({ ok: false, error: "코드를 다시 확인하세요." });
+    req.session.emailVerified = email;
+    delete req.session.emailCode;
+    res.json({ ok: true });
   });
 
   router.post("/signup", verifyCsrf, (req, res) => {
@@ -419,10 +469,11 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const confirm = req.body.confirm || "";
     const form = { name, email, phone, member_type: memberType, org_name: (req.body.org_name || "").trim(), position, job, interest };
     const fail = (msg) =>
-      res.status(400).render("signup-form", { ...res.locals, title: "회원가입 신청", error: msg, form, types: MEMBER_TYPES, fees: MEMBER_FEE });
+      res.status(400).render("signup-form", { ...res.locals, title: "회원가입 신청", error: msg, form, types: MEMBER_TYPES, fees: MEMBER_FEE, verifiedEmail: req.session.emailVerified || "" });
 
     if (!name) return fail("이름을 입력해 주세요.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("유효한 이메일을 입력해 주세요.");
+    if (req.session.emailVerified !== email) return fail("이메일 인증을 완료해 주셔야 가입할 수 있습니다.");
     if (pw.length < 8) return fail("비밀번호는 8자 이상이어야 합니다.");
     if (pw !== confirm) return fail("비밀번호 확인이 일치하지 않습니다.");
     // 유료 회원은 회비 납부 동의 필요
@@ -437,6 +488,7 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const hash = bcrypt.hashSync(pw, 10);
     db.prepare("INSERT INTO members (name, email, phone, member_type, org_name, position, job, interest, password_hash, fee_paid, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
       .run(name, email, phone, memberType, orgName, position, job, interest, hash, feePaid, new Date().toISOString());
+    delete req.session.emailVerified;
     res.redirect("/login?joined=1");
   });
 
