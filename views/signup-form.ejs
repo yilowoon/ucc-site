@@ -297,12 +297,31 @@
     return true;
   }
   function onIdInput(){ splitIdIfEmail(); syncEmail(); }
+  // 도메인칸에 전체 이메일이 들어오면(자동완성 등) @ 뒤 도메인만 남김
+  function cleanDomIfEmail(){
+    var raw = edom.value;
+    var at = raw.lastIndexOf('@');
+    if (at < 0) return false;           // 일반 입력은 그대로
+    var domp = raw.slice(at + 1).replace(/@/g, '').trim();
+    edom.value = domp;
+    var opt = Array.prototype.filter.call(esel.options, function(o){ return o.value === domp; })[0];
+    if (opt){ esel.value = domp; edom.readOnly = true; }
+    else { esel.value = ''; edom.readOnly = false; }
+    return true;
+  }
+  function onDomInput(){ cleanDomIfEmail(); syncEmail(); }
   eid.addEventListener('input', onIdInput);
   eid.addEventListener('change', onIdInput);   // 자동완성(change) 대비
-  edom.addEventListener('input', syncEmail);
-  // 페이지 로드 후 지연 자동완성 대비: 아이디칸에 @ 가 채워지면 분리
+  edom.addEventListener('input', onDomInput);
+  edom.addEventListener('change', onDomInput);
+  // 페이지 로드 후 지연 자동완성 대비: 아이디/도메인칸에 @ 가 채워지면 정리
   [250, 700, 1500].forEach(function(ms){
-    setTimeout(function(){ if (eid.value.indexOf('@') >= 0){ onIdInput(); } }, ms);
+    setTimeout(function(){
+      var changed = false;
+      if (eid.value.indexOf('@') >= 0){ splitIdIfEmail(); changed = true; }
+      if (edom.value.indexOf('@') >= 0){ cleanDomIfEmail(); changed = true; }
+      if (changed) syncEmail();
+    }, ms);
   });
 
   // 인증코드 받기
