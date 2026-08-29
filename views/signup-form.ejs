@@ -73,10 +73,8 @@
         <div class="field"><label for="name">이름 <span class="field-hint">기업/단체는 담당자명</span></label><input type="text" id="name" name="name" value="<%= esc(form.name || '') %>" autocomplete="name" required /></div>
 
         <div class="field"><label for="org_name">소속 <span class="field-hint">소속기관이 없으면 '도시공동체본부'라고 입력</span></label><input type="text" id="org_name" name="org_name" value="<%= esc(form.org_name || '') %>" placeholder="소속기관·단체명 (없으면 도시공동체본부)" /></div>
-        <div class="write-grid">
-          <div class="field"><label for="position">직급</label><input type="text" id="position" name="position" value="<%= esc(form.position || '') %>" placeholder="예: 대표, 팀장, 연구원" /></div>
-          <div class="field"><label for="job">하시는 일</label><input type="text" id="job" name="job" value="<%= esc(form.job || '') %>" placeholder="담당 업무·활동" /></div>
-        </div>
+        <div class="field"><label for="position">직급</label><input type="text" id="position" name="position" value="<%= esc(form.position || '') %>" placeholder="예: 대표, 팀장, 연구원" /></div>
+        <div class="field"><label for="job">하시는 일</label><input type="text" id="job" name="job" value="<%= esc(form.job || '') %>" placeholder="담당 업무·활동" /></div>
         <div class="field"><label for="interest">관심 분야</label><input type="text" id="interest" name="interest" value="<%= esc(form.interest || '') %>" placeholder="예: 사회적경제, 도시재생, 협동조합" /></div>
         <div class="field"><label for="email">이메일</label><input type="email" id="email" name="email" value="<%= esc(form.email || '') %>" autocomplete="email" required /></div>
         <div class="field"><label for="phone">연락처 <span class="field-hint">숫자만 입력</span></label><input type="tel" id="phone" name="phone" value="<%= esc(form.phone || '') %>" inputmode="numeric" pattern="[0-9]{9,11}" maxlength="11" placeholder="숫자만 입력 (예: 01012345678)" oninput="this.value=this.value.replace(/[^0-9]/g,'')" /></div>
