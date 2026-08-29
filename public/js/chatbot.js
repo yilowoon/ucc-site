@@ -74,7 +74,7 @@
     '<div class="ucc-head"><span class="dot"></span><div><b>도시공동체본부 안내</b><small>AI 도우미 · 소개 안내</small></div><button class="x" aria-label="닫기">&times;</button></div>'
     + '<div class="ucc-msgs" id="uccMsgs"></div>'
     + '<div class="ucc-in"><textarea id="uccInput" rows="1" placeholder="궁금한 점을 입력하세요…" aria-label="메시지 입력"></textarea><button id="uccSend" aria-label="보내기">➤</button></div>'
-    + '<div class="ucc-note">AI가 공개된 본부 소개 정보를 바탕으로 답합니다. 정확한 확인은 1670-9678로 문의해 주세요.</div>';
+    + '<div class="ucc-note">AI가 공개된 본부 소개 정보를 바탕으로 답합니다. 더 자세한 안내는 <a href="/contact">문의 보내기</a>를 이용해 주세요.</div>';
 
   document.body.appendChild(btn);
   document.body.appendChild(panel);
@@ -88,11 +88,16 @@
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
   function linkify(s) {
-    // 이메일·전화·URL을 링크로
-    return esc(s)
-      .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>')
-      .replace(/([\w.+-]+@[\w-]+\.[\w.-]+)/g, '<a href="mailto:$1">$1</a>')
-      .replace(/\n/g, "<br>");
+    s = esc(s);
+    // 마크다운 링크 [텍스트](/경로 또는 http…) → 앵커 (내부 경로는 같은 탭, 외부는 새 탭)
+    s = s.replace(/\[([^\]]+)\]\((\/[^\s)]+|https?:\/\/[^\s)]+)\)/g, function (_, t, u) {
+      var ext = /^https?:/.test(u);
+      return '<a href="' + u + '"' + (ext ? ' target="_blank" rel="noopener"' : "") + ">" + t + "</a>";
+    });
+    // 남은 URL(따옴표 안 제외)·이메일
+    s = s.replace(/(^|[^"\w>])((https?:\/\/)[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
+    s = s.replace(/([\w.+-]+@[\w-]+\.[\w.-]+)/g, '<a href="mailto:$1">$1</a>');
+    return s.replace(/\n/g, "<br>");
   }
   function scrollBottom() { msgs.scrollTop = msgs.scrollHeight; }
 
