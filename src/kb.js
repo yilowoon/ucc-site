@@ -39,13 +39,17 @@ function decodeEntities(s) {
 }
 function stripEjs(s) { return String(s).replace(/<%[\s\S]*?%>/g, " "); }
 function stripHtml(s) {
-  return decodeEntities(
-    String(s)
-      .replace(/<style[\s\S]*?<\/style>/gi, " ")
-      .replace(/<script[\s\S]*?<\/script>/gi, " ")
-      .replace(/<svg[\s\S]*?<\/svg>/gi, " ")
-      .replace(/<[^>]+>/g, " ")
-  ).replace(/\s+/g, " ").trim();
+  let x = String(s)
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<svg[\s\S]*?<\/svg>/gi, " ")
+    .replace(/<span class="[^"]*-en"[^>]*>[\s\S]*?<\/span>/gi, " ") // 영문 라벨(section-en 등) 제거
+    .replace(/<\/h[1-6]>/gi, ": ")                                  // 소제목 → 내용과 한 문장으로
+    .replace(/<\/(p|li|div|figcaption|dd|dt|td|th)>/gi, ". ")        // 블록 끝 → 문장 경계
+    .replace(/<br\s*\/?>/gi, ". ")
+    .replace(/<[^>]+>/g, " ");
+  x = decodeEntities(x).replace(/\s+/g, " ").replace(/(\s*\.){2,}/g, ".").replace(/\s+\./g, ".").trim();
+  return x;
 }
 function readView(name) {
   try { return fs.readFileSync(path.join(VIEWS, name), "utf8"); } catch (e) { return ""; }
@@ -58,7 +62,7 @@ function clip(s, n) {
   return (p > n * 0.5 ? cut.slice(0, p + 1) : cut).trim() + " …";
 }
 
-/* people.ejs → 이사진·자문위원·상임대표 텍스트 */
+/* people.ejs → 이사장·상임대표·이사·자문위원을 1인 1문장으로 */
 function peopleText() {
   const src = readView("people.ejs");
   if (!src) return "";
@@ -66,20 +70,20 @@ function peopleText() {
     const m = src.match(new RegExp("const\\s+" + marker + "\\s*=\\s*\\[([\\s\\S]*?)\\];"));
     if (!m) return [];
     const objs = m[1].match(/\{[^{}]*name:\s*"[^"]+"[^{}]*\}/g) || [];
-    return objs.map((o) => {
-      const n = (o.match(/name:\s*"([^"]+)"/) || [])[1];
-      const sp = (o.match(/specialty:\s*"([^"]*)"/) || [])[1] || "";
-      const pos = (o.match(/pos:\s*"([^"]*)"/) || [])[1] || "";
-      return n ? n + (sp ? `(${sp})` : pos ? `(${pos})` : "") : "";
-    }).filter(Boolean);
+    return objs.map((o) => ({
+      name: (o.match(/name:\s*"([^"]+)"/) || [])[1] || "",
+      spec: (o.match(/specialty:\s*"([^"]*)"/) || [])[1] || (o.match(/pos:\s*"([^"]*)"/) || [])[1] || "",
+    })).filter((x) => x.name);
   };
   const dirs = grab("directors");
   const advs = grab("advisors");
-  const execText = stripHtml(stripEjs(src)); // 상임대표 등 정적 텍스트(이사진 배열은 EJS라 제거됨)
+  const execName = (src.match(/exec-name[^>]*>\s*([^<]+?)\s*</) || [])[1] || "";
+  const execRole = (src.match(/exec-role[^>]*>\s*([^<]+?)\s*</) || [])[1] || "상임대표";
+
   const lines = ["[사람들]"];
-  if (execText) lines.push(clip(execText, 700));
-  if (dirs.length) lines.push("이사: " + dirs.join(", ") + ".");
-  if (advs.length) lines.push("자문위원: " + advs.join(", ") + ".");
+  if (execName) lines.push(`${execRole}는 ${execName}입니다.`);
+  for (const d of dirs) lines.push(`${d.name} 이사${d.spec ? `는 ${d.spec} 분야를 맡고 있습니다` : "님입니다"}.`);
+  for (const a of advs) lines.push(`${a.name} 자문위원${a.spec ? `는 ${a.spec} 분야입니다` : "님입니다"}.`);
   return lines.join("\n");
 }
 
