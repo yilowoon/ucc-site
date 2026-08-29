@@ -1061,3 +1061,11 @@ a.seg-btn { display: inline-block; text-decoration: none; }
 .contact-cta-lead{font-size:.98rem;color:var(--ink-soft);margin:0 0 18px;line-height:1.7}
 .contact-cta-btns{display:flex;flex-direction:column;gap:10px}
 .contact-cta-note{font-size:.85rem;color:var(--muted);margin:16px 0 0;line-height:1.6}
+
+/* 회원가입 안내 CTA */
+.ms-apply-cta{text-align:center;background:var(--paper-warm);border:1px solid var(--line);border-radius:var(--radius-lg);padding:clamp(30px,5vw,48px)}
+.ms-apply-cta h2{color:var(--green-800);margin:0 0 10px}
+.ms-apply-cta p{color:var(--ink-soft);max-width:520px;margin:0 auto 22px}
+.ms-apply-login{margin-top:16px;font-size:.9rem;color:var(--muted)}
+.ms-apply-login a{color:var(--green-700);font-weight:600}
+.btn-lg{padding:15px 30px;font-size:1rem}

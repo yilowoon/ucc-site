@@ -1,0 +1,184 @@
+<%- include('partials/header') %>
+
+<style>
+  .su-grid{display:grid;grid-template-columns:1fr 330px;gap:32px;align-items:start;max-width:960px;margin:0 auto}
+  @media(max-width:820px){.su-grid{grid-template-columns:1fr}}
+  .su-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius-lg);padding:clamp(22px,3vw,32px)}
+  /* 오른쪽 실시간 안내 박스 */
+  .su-aside{position:sticky;top:90px}
+  .su-info{border:1px solid var(--gold-500);background:var(--paper-warm);border-radius:var(--radius);padding:20px 22px}
+  .su-info h3{font-size:1rem;color:var(--gold-600);margin:0 0 10px;display:flex;align-items:center;gap:8px}
+  .su-info .amt{font-family:var(--mono,inherit);font-size:1.5rem;font-weight:800;color:var(--green-800);margin:2px 0 8px}
+  .su-info .msg{font-size:.92rem;color:var(--ink-soft);line-height:1.7}
+  .su-info .free{color:var(--green-700);font-weight:600}
+  /* 회비 납부 동의 */
+  .su-fee-row{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);background:var(--paper-warm);border-radius:12px;padding:14px 16px;margin:6px 0 4px}
+  .su-fee-row input{margin-top:3px;width:18px;height:18px;accent-color:var(--green-700)}
+  .su-fee-row label{font-size:.95rem;color:var(--ink);line-height:1.6;cursor:pointer}
+  .su-fee-row.is-free{border-color:var(--green-600)}
+  /* 결제 모달 */
+  .su-modal{position:fixed;inset:0;z-index:9999;background:rgba(13,33,28,.55);display:none;align-items:center;justify-content:center;padding:20px}
+  .su-modal.open{display:flex}
+  .su-modal-card{background:#fff;border-radius:18px;max-width:400px;width:100%;padding:26px 24px;box-shadow:0 24px 60px -18px rgba(14,42,32,.5)}
+  .su-modal-card h3{margin:0 0 4px;font-size:1.2rem;color:var(--green-800)}
+  .su-modal-card .sub{color:var(--muted);font-size:.86rem;margin:0 0 16px}
+  .su-pay-line{display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line);font-size:.95rem}
+  .su-pay-line.total{border-top:2px solid var(--green-800);font-weight:800;color:var(--green-800);font-size:1.1rem}
+  .su-pay-note{font-size:.82rem;color:var(--muted);background:var(--paper-alt);border-radius:8px;padding:10px 12px;margin:14px 0}
+  .su-modal-actions{display:flex;gap:10px;margin-top:8px}
+  .su-modal-actions .btn{flex:1}
+  .su-spin{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;animation:suSpin .7s linear infinite;vertical-align:-3px;margin-right:6px}
+  @keyframes suSpin{to{transform:rotate(360deg)}}
+  .btn-lg{padding:15px 30px;font-size:1rem}
+</style>
+
+<section class="page-banner page-banner--sm">
+  <div class="container">
+    <span class="page-banner-en">MEMBERSHIP · APPLY</span>
+    <h1 class="page-banner-title">회원가입 신청</h1>
+  </div>
+</section>
+
+<div class="container page-wrap">
+  <div class="su-grid">
+    <!-- 폼 -->
+    <div class="su-card">
+      <% if (error) { %><p class="form-alert err"><%= error %></p><% } %>
+      <form method="post" action="/signup" class="admin-form-fields" id="suForm" autocomplete="off">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <input type="hidden" name="paid" id="suPaid" value="0" />
+
+        <div class="field">
+          <label for="member_type">회원 유형</label>
+          <select id="member_type" name="member_type">
+            <% types.forEach(function(t){ %>
+              <option value="<%= t %>" <%= (form.member_type === t) ? 'selected' : '' %>><%= t %></option>
+            <% }); %>
+          </select>
+        </div>
+
+        <div class="field"><label for="name">이름 <span class="field-hint">기업/단체는 담당자명</span></label><input type="text" id="name" name="name" value="<%= esc(form.name || '') %>" autocomplete="name" required /></div>
+
+        <div class="field"><label for="org_name">소속 <span class="field-hint">소속기관이 없으면 '도시공동체본부'라고 입력</span></label><input type="text" id="org_name" name="org_name" value="<%= esc(form.org_name || '') %>" placeholder="소속기관·단체명 (없으면 도시공동체본부)" /></div>
+        <div class="write-grid">
+          <div class="field"><label for="position">직급</label><input type="text" id="position" name="position" value="<%= esc(form.position || '') %>" placeholder="예: 대표, 팀장, 연구원" /></div>
+          <div class="field"><label for="job">하시는 일</label><input type="text" id="job" name="job" value="<%= esc(form.job || '') %>" placeholder="담당 업무·활동" /></div>
+        </div>
+        <div class="field"><label for="interest">관심 분야</label><input type="text" id="interest" name="interest" value="<%= esc(form.interest || '') %>" placeholder="예: 사회적경제, 도시재생, 협동조합" /></div>
+        <div class="field"><label for="email">이메일</label><input type="email" id="email" name="email" value="<%= esc(form.email || '') %>" autocomplete="email" required /></div>
+        <div class="field"><label for="phone">연락처 <span class="field-hint">숫자만 입력</span></label><input type="tel" id="phone" name="phone" value="<%= esc(form.phone || '') %>" inputmode="numeric" pattern="[0-9]{9,11}" maxlength="11" placeholder="숫자만 입력 (예: 01012345678)" oninput="this.value=this.value.replace(/[^0-9]/g,'')" /></div>
+        <div class="write-grid">
+          <div class="field"><label for="password">비밀번호 <span class="field-hint">8자 이상</span></label><input type="password" id="password" name="password" autocomplete="new-password" required minlength="8" /></div>
+          <div class="field"><label for="confirm">비밀번호 확인</label><input type="password" id="confirm" name="confirm" autocomplete="new-password" required minlength="8" /></div>
+        </div>
+
+        <!-- 회비 납부 동의 -->
+        <div class="su-fee-row" id="suFeeRow">
+          <input type="checkbox" id="fee_agree" name="fee_agree" value="1" />
+          <label for="fee_agree" id="suFeeLabel">회비 납부에 동의합니다.</label>
+        </div>
+
+        <button type="button" class="btn btn-primary btn-block btn-lg" id="suRegister">회원 등록</button>
+        <p class="admin-auth-hint">이미 회원이신가요? <a href="/login">로그인</a></p>
+      </form>
+    </div>
+
+    <!-- 오른쪽 실시간 안내 -->
+    <aside class="su-aside">
+      <div class="su-info">
+        <h3>💳 회비 안내</h3>
+        <div class="amt" id="suAmt">연 10,000원</div>
+        <p class="msg" id="suMsg"></p>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- 결제 모달 (데모) -->
+<div class="su-modal" id="suModal" role="dialog" aria-modal="true" aria-label="회비 결제">
+  <div class="su-modal-card">
+    <h3>회비 결제</h3>
+    <p class="sub" id="suPayType">개인회원</p>
+    <div class="su-pay-line"><span>회원 유형</span><span id="suPayType2">개인회원</span></div>
+    <div class="su-pay-line total"><span>결제 금액</span><span id="suPayAmt">10,000원</span></div>
+    <p class="su-pay-note">※ 현재는 <b>데모 결제</b>입니다. 실제로 청구되지 않으며, 결제 시스템(PG) 연동 시 이 창에서 카드·간편결제로 실제 납부가 진행됩니다.</p>
+    <div class="su-modal-actions">
+      <button type="button" class="btn btn-ghost" id="suPayCancel">취소</button>
+      <button type="button" class="btn btn-primary" id="suPayNow">결제하기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var FEES = <%- JSON.stringify(fees) %>;
+  var MSG = {
+    "개인회원": "개인회원 회비는 연 1만원입니다. 납부하시겠습니까? 아래 납부 동의에 체크해주시기 바랍니다.",
+    "기업회원": "기업회원 회비는 연 30만원입니다. 납부하시겠습니까? 아래 납부 동의에 체크해주시기 바랍니다.",
+    "단체회원": "단체회원의 회비는 현재(2026년) 규정상 무료로 운영하고 있습니다."
+  };
+  var form = document.getElementById('suForm');
+  var sel = document.getElementById('member_type');
+  var amtEl = document.getElementById('suAmt'), msgEl = document.getElementById('suMsg');
+  var feeRow = document.getElementById('suFeeRow'), feeChk = document.getElementById('fee_agree'), feeLabel = document.getElementById('suFeeLabel');
+  var paidInput = document.getElementById('suPaid');
+  var won = function(n){ return n.toLocaleString('ko-KR') + '원'; };
+
+  function currentFee(){ return FEES[sel.value] || 0; }
+
+  function refresh(){
+    var type = sel.value, fee = currentFee();
+    msgEl.innerHTML = MSG[type] || '';
+    if (fee > 0){
+      amtEl.textContent = '연 ' + won(fee);
+      feeRow.classList.remove('is-free');
+      feeLabel.textContent = type + ' 회비(연 ' + won(fee) + ') 납부에 동의합니다.';
+      feeChk.parentElement.style.display = '';
+      feeChk.disabled = false;
+    } else {
+      amtEl.textContent = '무료';
+      feeRow.classList.add('is-free');
+      feeLabel.textContent = '단체회원은 현재 무료입니다. 위 안내에 동의합니다.';
+      feeChk.disabled = false;
+    }
+    paidInput.value = '0';
+  }
+  sel.addEventListener('change', refresh);
+  refresh();
+
+  // 결제 모달
+  var modal = document.getElementById('suModal');
+  var payType = document.getElementById('suPayType'), payType2 = document.getElementById('suPayType2'), payAmt = document.getElementById('suPayAmt');
+  var payNow = document.getElementById('suPayNow'), payCancel = document.getElementById('suPayCancel');
+
+  function openModal(){
+    var type = sel.value, fee = currentFee();
+    payType.textContent = type; payType2.textContent = type; payAmt.textContent = won(fee);
+    payNow.disabled = false; payNow.innerHTML = '결제하기';
+    modal.classList.add('open');
+  }
+  function closeModal(){ modal.classList.remove('open'); }
+  payCancel.addEventListener('click', closeModal);
+  modal.addEventListener('click', function(e){ if(e.target===modal) closeModal(); });
+
+  document.getElementById('suRegister').addEventListener('click', function(){
+    if (!form.reportValidity()) return;               // 필수 필드 검증
+    if (form.password.value !== form.confirm.value){ alert('비밀번호 확인이 일치하지 않습니다.'); form.confirm.focus(); return; }
+    if (!feeChk.checked){ alert('회비 납부(또는 무료 안내)에 동의해 주세요.'); feeChk.focus(); return; }
+    if (currentFee() > 0){ openModal(); }             // 유료 → 결제창
+    else { paidInput.value = '0'; form.submit(); }     // 무료(단체) → 바로 등록
+  });
+
+  // 데모 결제: 실제 PG 연동 시 이 부분에서 결제 요청/검증을 수행하면 됩니다.
+  payNow.addEventListener('click', function(){
+    payNow.disabled = true;
+    payNow.innerHTML = '<span class="su-spin"></span>결제 처리 중…';
+    setTimeout(function(){
+      paidInput.value = '1';   // 결제 완료 표시
+      form.submit();
+    }, 1200);
+  });
+})();
+</script>
+
+<%- include('partials/footer') %>

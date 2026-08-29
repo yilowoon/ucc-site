@@ -386,9 +386,16 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   // ---------- 회원가입 ----------
   // 회원 유형(개인/기업/단체) — 가입 시 등급은 항상 '준회원', 관리자 승인 시 '정회원'
   const MEMBER_TYPES = ["개인회원", "기업회원", "단체회원"];
+  const MEMBER_FEE = { "개인회원": 10000, "기업회원": 300000, "단체회원": 0 };
+  // 안내 페이지(소개만)
   router.get("/signup", (req, res) => {
     if (req.session.member) return res.redirect("/");
-    res.render("signup", { ...res.locals, title: "회원가입", error: null, form: {} });
+    res.render("signup", { ...res.locals, title: "회원가입 안내" });
+  });
+  // 신청 폼 페이지(별도)
+  router.get("/signup/apply", (req, res) => {
+    if (req.session.member) return res.redirect("/");
+    res.render("signup-form", { ...res.locals, title: "회원가입 신청", error: null, form: {}, types: MEMBER_TYPES, fees: MEMBER_FEE });
   });
 
   router.post("/signup", verifyCsrf, (req, res) => {
@@ -405,19 +412,24 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const confirm = req.body.confirm || "";
     const form = { name, email, phone, member_type: memberType, org_name: (req.body.org_name || "").trim(), position, job, interest };
     const fail = (msg) =>
-      res.status(400).render("signup", { ...res.locals, title: "회원가입", error: msg, form });
+      res.status(400).render("signup-form", { ...res.locals, title: "회원가입 신청", error: msg, form, types: MEMBER_TYPES, fees: MEMBER_FEE });
 
     if (!name) return fail("이름을 입력해 주세요.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("유효한 이메일을 입력해 주세요.");
     if (pw.length < 8) return fail("비밀번호는 8자 이상이어야 합니다.");
     if (pw !== confirm) return fail("비밀번호 확인이 일치하지 않습니다.");
+    // 유료 회원은 회비 납부 동의 필요
+    const fee = MEMBER_FEE[memberType] || 0;
+    if (fee > 0 && !req.body.fee_agree) return fail("회비 납부에 동의해 주셔야 신청이 완료됩니다.");
 
     const exists = db.prepare("SELECT id FROM members WHERE email = ?").get(email);
     if (exists) return fail("이미 가입된 이메일입니다.");
 
+    // 데모 결제: 유료 회원이 결제완료(paid=1)면 회비 납부로 기록. 실제 청구는 없음(추후 PG 연동).
+    const feePaid = (fee > 0 && req.body.paid === "1") ? 1 : 0;
     const hash = bcrypt.hashSync(pw, 10);
-    db.prepare("INSERT INTO members (name, email, phone, member_type, org_name, position, job, interest, password_hash, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-      .run(name, email, phone, memberType, orgName, position, job, interest, hash, new Date().toISOString());
+    db.prepare("INSERT INTO members (name, email, phone, member_type, org_name, position, job, interest, password_hash, fee_paid, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+      .run(name, email, phone, memberType, orgName, position, job, interest, hash, feePaid, new Date().toISOString());
     res.redirect("/login?joined=1");
   });
 
