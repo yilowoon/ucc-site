@@ -43,11 +43,13 @@
   @keyframes suSpin{to{transform:rotate(360deg)}}
   .btn-lg{padding:15px 30px;font-size:1rem}
   /* 이메일 분리 입력 */
-  .email-row{display:grid;grid-template-columns:1fr auto 1fr 132px;gap:8px;align-items:center}
-  .email-row .email-at{color:var(--muted);text-align:center;font-weight:600}
-  .email-row input,.email-row select{width:100%}
-  .email-row input[readonly]{background:var(--paper-alt);color:var(--ink-soft)}
-  @media(max-width:560px){.email-row{grid-template-columns:1fr auto 1fr}.email-row select{grid-column:1 / -1}}
+  .email-box{display:block}
+  .email-idin{width:100%}
+  .email-domrow{display:grid;grid-template-columns:auto 1fr 132px;gap:8px;align-items:center;margin-top:8px}
+  .email-domrow .email-at{color:var(--muted);text-align:center;font-weight:600}
+  .email-domrow input,.email-domrow select{width:100%}
+  .email-domrow input[readonly]{background:var(--paper-alt);color:var(--ink-soft)}
+  @media(max-width:560px){.email-domrow{grid-template-columns:auto 1fr}.email-domrow select{grid-column:1 / -1}}
   .email-check{font-size:.82rem;margin:6px 0 0;min-height:1.1em}
   .email-check.ok{color:var(--green-700)}
   .email-check.err{color:#b53a2e}
@@ -99,17 +101,19 @@
         <div class="field"><label for="interest">관심 분야</label><input type="text" id="interest" name="interest" value="<%= esc(form.interest || '') %>" placeholder="예: 사회적경제, 도시재생, 협동조합" /></div>
         <div class="field">
           <label for="email_id">이메일</label>
-          <div class="email-row">
-            <input type="text" id="email_id" placeholder="아이디" autocomplete="off" spellcheck="false" />
-            <span class="email-at">@</span>
-            <input type="text" id="email_domain" placeholder="직접입력" autocomplete="off" spellcheck="false" />
-            <select id="email_domain_sel" aria-label="이메일 도메인 선택">
-              <option value="daum.net">daum.net</option>
-              <option value="hotmail.com">hotmail.com</option>
-              <option value="gmail.com">gmail.com</option>
-              <option value="naver.com">naver.com</option>
-              <option value="" selected>직접입력</option>
-            </select>
+          <div class="email-box">
+            <input type="text" id="email_id" class="email-idin" placeholder="이메일 아이디" autocomplete="off" spellcheck="false" />
+            <div class="email-domrow">
+              <span class="email-at">@</span>
+              <input type="text" id="email_domain" placeholder="도메인 (직접입력 시)" autocomplete="off" spellcheck="false" />
+              <select id="email_domain_sel" aria-label="이메일 도메인 선택">
+                <option value="daum.net">daum.net</option>
+                <option value="hotmail.com">hotmail.com</option>
+                <option value="gmail.com">gmail.com</option>
+                <option value="naver.com">naver.com</option>
+                <option value="" selected>직접입력</option>
+              </select>
+            </div>
           </div>
           <input type="hidden" id="email" name="email" value="<%= esc(form.email || '') %>" />
           <p class="email-check" id="emailCheck" role="status" aria-live="polite"></p>
@@ -278,8 +282,28 @@
     else { edom.readOnly = false; edom.value = ''; edom.focus(); }
     syncEmail();
   });
-  eid.addEventListener('input', syncEmail);
+  // 아이디칸에 전체 이메일(id@domain)이 들어오면(자동완성 등) 아이디/도메인으로 자동 분리
+  function splitIdIfEmail(){
+    var raw = eid.value;
+    var at = raw.indexOf('@');
+    if (at < 0) return false;
+    eid.value = raw.slice(0, at).trim();
+    var domp = raw.slice(at + 1).replace(/@/g, '').trim();
+    if (domp){
+      var opt = Array.prototype.filter.call(esel.options, function(o){ return o.value === domp; })[0];
+      if (opt){ esel.value = domp; edom.value = domp; edom.readOnly = true; }
+      else { esel.value = ''; edom.value = domp; edom.readOnly = false; }
+    }
+    return true;
+  }
+  function onIdInput(){ splitIdIfEmail(); syncEmail(); }
+  eid.addEventListener('input', onIdInput);
+  eid.addEventListener('change', onIdInput);   // 자동완성(change) 대비
   edom.addEventListener('input', syncEmail);
+  // 페이지 로드 후 지연 자동완성 대비: 아이디칸에 @ 가 채워지면 분리
+  [250, 700, 1500].forEach(function(ms){
+    setTimeout(function(){ if (eid.value.indexOf('@') >= 0){ onIdInput(); } }, ms);
+  });
 
   // 인증코드 받기
   btnSend.addEventListener('click', function(){
