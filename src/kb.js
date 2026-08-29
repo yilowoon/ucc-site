@@ -79,8 +79,12 @@ function peopleText() {
   const advs = grab("advisors");
   const execName = (src.match(/exec-name[^>]*>\s*([^<]+?)\s*</) || [])[1] || "";
   const execRole = (src.match(/exec-role[^>]*>\s*([^<]+?)\s*</) || [])[1] || "상임대표";
+  // 이사장: 인사말(PAGES.greeting)에서 추출
+  const greet = (PAGES.greeting && PAGES.greeting.html) || "";
+  const chair = greet.match(/이사장\s*<strong>\s*([^<]+?)\s*<\/strong>\s*([가-힣]*)/);
 
   const lines = ["[사람들]"];
+  if (chair) lines.push(`도시공동체본부의 이사장은 ${chair[1].trim()}${chair[2] ? " " + chair[2].trim() : ""}입니다.`);
   if (execName) lines.push(`${execRole}는 ${execName}입니다.`);
   for (const d of dirs) lines.push(`${d.name} 이사${d.spec ? `는 ${d.spec} 분야를 맡고 있습니다` : "님입니다"}.`);
   for (const a of advs) lines.push(`${a.name} 자문위원${a.spec ? `는 ${a.spec} 분야입니다` : "님입니다"}.`);

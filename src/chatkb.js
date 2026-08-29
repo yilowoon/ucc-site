@@ -59,47 +59,55 @@ function cleanSentence(s) {
   return s.replace(/^[A-Z][A-Za-z&·\-\s]*?(?=[가-힣])/, "").replace(/\s+/g, " ").trim();
 }
 
-// 질문 키워드가 든 문장들만 골라 간결한 답변으로 요약(사람 답변처럼)
-function summarize(text, toks, maxLen) {
+// 경어체 강도: ~습니다/~입니다 > ~다/~요 > 명사형(~음/임/함)
+function politeBonus(s) {
+  const t = s.trim().replace(/[.。!?…\s]+$/, "");
+  if (/(니다)$/.test(t)) return 4;
+  if (/(다|요)$/.test(t)) return 2;
+  if (/(음|임|함|죠|까)$/.test(t)) return 1;
+  return 0;
+}
+
+// 한 청크에서 질문에 맞는 문장을 골라 요약 + 품질점수 반환
+function pickFromChunk(text, toks, maxLen) {
   const parts = String(text).replace(/\s+/g, " ").split(/(?<=[.?!。])\s+/).map((s) => s.trim()).filter((s) => s.length >= 6);
   const scored = [];
   parts.forEach((s, i) => {
     const low = s.normalize("NFC").toLowerCase();
-    let sc = 0;
-    for (const t of toks) { let idx = 0; while ((idx = low.indexOf(t, idx)) !== -1) { sc++; idx += t.length; } }
-    if (sc > 0) scored.push({ s, i, sc });
+    let hit = 0;
+    for (const t of toks) { let idx = 0; while ((idx = low.indexOf(t, idx)) !== -1) { hit++; idx += t.length; } }
+    if (hit > 0) scored.push({ s, i, sc: hit + politeBonus(s) });
   });
-  if (!scored.length) return "";
+  if (!scored.length) return { text: "", score: 0 };
   scored.sort((a, b) => b.sc - a.sc || a.i - b.i);
+  const top = scored[0].sc;
+  const minKeep = Math.max(2, top - 1); // 약한(관련 낮은/조각) 문장 제외
   const pick = [];
   let len = 0;
   for (const x of scored) {
-    if (pick.length && len + x.s.length > (maxLen || 320)) break;
+    if (pick.length && (x.sc < minKeep || len + x.s.length > (maxLen || 320))) break;
     pick.push(x); len += x.s.length;
     if (pick.length >= 3) break;
   }
   pick.sort((a, b) => a.i - b.i);
-  return pick.map((x) => cleanSentence(x.s)).filter(Boolean).join(" ").trim();
+  const out = pick.map((x) => cleanSentence(x.s)).filter(Boolean).join(" ").trim();
+  return { text: out, score: top };
 }
 
 function localAnswer(message) {
   const toks = tokenize(message);
   if (!toks.length) return null;
   const chunks = kb.getChunks();
-  let best = null, bestScore = 0;
+  let best = "", bestScore = 0;
   for (const c of chunks) {
-    let score = 0;
-    for (const t of toks) {
-      let idx = 0, cnt = 0;
-      while ((idx = c.key.indexOf(t, idx)) !== -1) { cnt++; idx += t.length; }
-      score += cnt + (c.titleKey.indexOf(t) !== -1 ? 3 : 0);
-    }
-    if (score > bestScore) { bestScore = score; best = c; }
+    const res = pickFromChunk(c.text, toks, 320);
+    if (!res.text) continue;
+    let q = res.score;
+    for (const t of toks) if (c.titleKey.indexOf(t) !== -1) q += 1; // 제목 매칭 보너스
+    if (q > bestScore) { bestScore = q; best = res.text; }
   }
-  if (!best || bestScore === 0) return null;
-  const summary = summarize(best.text, toks, 320);
-  if (!summary) return null;
-  return summary + "\n\n" + CLOSING;
+  if (!best) return null;
+  return best + "\n\n" + CLOSING;
 }
 
 /* -------------------------------------------------- Gemini 응답 */
