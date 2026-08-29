@@ -42,6 +42,18 @@
   .su-spin{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;animation:suSpin .7s linear infinite;vertical-align:-3px;margin-right:6px}
   @keyframes suSpin{to{transform:rotate(360deg)}}
   .btn-lg{padding:15px 30px;font-size:1rem}
+  /* 이메일 분리 입력 */
+  .email-row{display:grid;grid-template-columns:1fr auto 1fr 132px;gap:8px;align-items:center}
+  .email-row .email-at{color:var(--muted);text-align:center;font-weight:600}
+  .email-row input,.email-row select{width:100%}
+  .email-row input[readonly]{background:var(--paper-alt);color:var(--ink-soft)}
+  @media(max-width:560px){.email-row{grid-template-columns:1fr auto 1fr}.email-row select{grid-column:1 / -1}}
+  .email-check{font-size:.82rem;margin:6px 0 0;min-height:1.1em}
+  .email-check.ok{color:var(--green-700)}
+  .email-check.err{color:#b53a2e}
+  /* 비밀번호 두 필드 크기 통일(.su-card 는 기본 write-grid가 3열이라 지정) */
+  .su-card .write-grid{grid-template-columns:1fr 1fr;gap:16px;align-items:end}
+  @media(max-width:560px){.su-card .write-grid{grid-template-columns:1fr}}
 </style>
 
 <section class="page-banner page-banner--sm">
@@ -76,7 +88,23 @@
         <div class="field"><label for="position">직급</label><input type="text" id="position" name="position" value="<%= esc(form.position || '') %>" placeholder="예: 대표, 팀장, 연구원" /></div>
         <div class="field"><label for="job">하시는 일</label><input type="text" id="job" name="job" value="<%= esc(form.job || '') %>" placeholder="담당 업무·활동" /></div>
         <div class="field"><label for="interest">관심 분야</label><input type="text" id="interest" name="interest" value="<%= esc(form.interest || '') %>" placeholder="예: 사회적경제, 도시재생, 협동조합" /></div>
-        <div class="field"><label for="email">이메일</label><input type="email" id="email" name="email" value="<%= esc(form.email || '') %>" autocomplete="email" required /></div>
+        <div class="field">
+          <label for="email_id">이메일</label>
+          <div class="email-row">
+            <input type="text" id="email_id" placeholder="아이디" autocomplete="off" spellcheck="false" />
+            <span class="email-at">@</span>
+            <input type="text" id="email_domain" placeholder="직접입력" autocomplete="off" spellcheck="false" />
+            <select id="email_domain_sel" aria-label="이메일 도메인 선택">
+              <option value="daum.net">daum.net</option>
+              <option value="hotmail.com">hotmail.com</option>
+              <option value="gmail.com">gmail.com</option>
+              <option value="naver.com">naver.com</option>
+              <option value="" selected>직접입력</option>
+            </select>
+          </div>
+          <input type="hidden" id="email" name="email" value="<%= esc(form.email || '') %>" />
+          <p class="email-check" id="emailCheck" role="status" aria-live="polite"></p>
+        </div>
         <div class="field"><label for="phone">연락처 <span class="field-hint">숫자만 입력</span></label><input type="tel" id="phone" name="phone" value="<%= esc(form.phone || '') %>" inputmode="numeric" pattern="[0-9]{9,11}" maxlength="11" placeholder="숫자만 입력 (예: 01012345678)" oninput="this.value=this.value.replace(/[^0-9]/g,'')" /></div>
         <div class="write-grid">
           <div class="field"><label for="password">비밀번호 <span class="field-hint">8자 이상</span></label><input type="password" id="password" name="password" autocomplete="new-password" required minlength="8" /></div>
@@ -175,6 +203,54 @@
   sel.addEventListener('change', refresh);
   refresh();
 
+  // 이메일: 아이디 + 도메인 결합 & 중복 확인
+  var eid = document.getElementById('email_id'), edom = document.getElementById('email_domain'),
+      esel = document.getElementById('email_domain_sel'), ehid = document.getElementById('email'),
+      echk = document.getElementById('emailCheck');
+  var emailOk = false, chkTimer = null;
+  var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  function checkEmail(){
+    emailOk = false;
+    var v = ehid.value.trim();
+    echk.textContent = ''; echk.className = 'email-check';
+    if (!emailRe.test(v)) return;
+    clearTimeout(chkTimer);
+    echk.textContent = '확인 중…';
+    chkTimer = setTimeout(function(){
+      fetch('/api/check-email?email=' + encodeURIComponent(v))
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if (ehid.value.trim() !== v) return;                 // 그 사이 값이 바뀌면 무시
+          if (d.available){ emailOk = true; echk.textContent = '사용 가능한 이메일입니다.'; echk.className = 'email-check ok'; }
+          else { emailOk = false; echk.textContent = '이미 가입된 이메일입니다. 로그인을 이용해 주세요.'; echk.className = 'email-check err'; }
+        })
+        .catch(function(){ echk.textContent = ''; });
+    }, 400);
+  }
+  function syncEmail(){
+    var id = eid.value.trim().replace(/@/g,''), dom = edom.value.trim();
+    ehid.value = (id && dom) ? (id + '@' + dom) : '';
+    checkEmail();
+  }
+  esel.addEventListener('change', function(){
+    if (esel.value){ edom.value = esel.value; edom.readOnly = true; }
+    else { edom.readOnly = false; edom.value = ''; edom.focus(); }
+    syncEmail();
+  });
+  eid.addEventListener('input', syncEmail);
+  edom.addEventListener('input', syncEmail);
+  // 서버 검증 오류로 되돌아온 경우 기존 이메일을 분리해 채운다
+  (function initEmail(){
+    var v = ehid.value.trim();
+    if (v && v.indexOf('@') > 0){
+      var p = v.split('@'); eid.value = p[0]; edom.value = p[1];
+      var opt = Array.prototype.filter.call(esel.options, function(o){ return o.value === p[1]; })[0];
+      esel.value = opt ? p[1] : ''; edom.readOnly = !!opt;
+      checkEmail();
+    }
+  })();
+
   // 결제 모달
   var modal = document.getElementById('suModal');
   var payType2 = document.getElementById('suPayType2'), payAmt = document.getElementById('suPayAmt'), payAmt2 = document.getElementById('suPayAmt2');
@@ -204,6 +280,8 @@
 
   document.getElementById('suRegister').addEventListener('click', function(){
     if (!form.reportValidity()) return;               // 필수 필드 검증
+    if (!emailRe.test(ehid.value.trim())){ alert('이메일 아이디와 도메인을 정확히 입력해 주세요.'); eid.focus(); return; }
+    if (!emailOk){ alert('이메일 중복 확인이 필요합니다. 이미 가입된 이메일이면 로그인해 주세요.'); eid.focus(); checkEmail(); return; }
     if (form.password.value !== form.confirm.value){ alert('비밀번호 확인이 일치하지 않습니다.'); form.confirm.focus(); return; }
     if (!feeChk.checked){ alert('회비 납부(또는 무료 안내)에 동의해 주세요.'); feeChk.focus(); return; }
     if (currentFee() > 0){ openModal(); }             // 유료 → 결제 수단 선택창

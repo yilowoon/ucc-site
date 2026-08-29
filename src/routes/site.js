@@ -397,6 +397,13 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     if (req.session.member) return res.redirect("/");
     res.render("signup-form", { ...res.locals, title: "회원가입 신청", error: null, form: {}, types: MEMBER_TYPES, fees: MEMBER_FEE });
   });
+  // 이메일 중복 확인(실시간)
+  router.get("/api/check-email", (req, res) => {
+    const email = (req.query.email || "").trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.json({ available: false, invalid: true });
+    const exists = db.prepare("SELECT 1 FROM members WHERE email = ?").get(email);
+    res.json({ available: !exists });
+  });
 
   router.post("/signup", verifyCsrf, (req, res) => {
     const name = (req.body.name || "").trim();
