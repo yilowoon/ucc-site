@@ -183,6 +183,7 @@ try { db.exec("ALTER TABLE members ADD COLUMN specialty TEXT NOT NULL DEFAULT ''
 try { db.exec("ALTER TABLE members ADD COLUMN position TEXT NOT NULL DEFAULT ''"); } catch (e) {}   // 직급
 try { db.exec("ALTER TABLE members ADD COLUMN job TEXT NOT NULL DEFAULT ''"); } catch (e) {}        // 하시는일
 try { db.exec("ALTER TABLE members ADD COLUMN interest TEXT NOT NULL DEFAULT ''"); } catch (e) {}   // 관심분야
+try { db.exec("ALTER TABLE members ADD COLUMN fee_paid_at TEXT NOT NULL DEFAULT ''"); } catch (e) {} // 회비납부일
 // contacts: 문의 확인용 4자리 PIN 해시 · 회원 연동 · 관리자 답변
 try { db.exec("ALTER TABLE contacts ADD COLUMN pw_hash TEXT NOT NULL DEFAULT ''"); } catch (e) {}     // 4자리 PIN(bcrypt)
 try { db.exec("ALTER TABLE contacts ADD COLUMN member_id INTEGER NOT NULL DEFAULT 0"); } catch (e) {} // 회원이 작성한 경우

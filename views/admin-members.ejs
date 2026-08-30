@@ -3,7 +3,7 @@
   <div class="admin-head">
     <div>
       <h1>회원 관리</h1>
-      <p class="admin-sub">가입 시 <b>준회원</b>으로 등록됩니다. 회비 납부를 확인한 뒤 <b>정회원</b>으로 승인하세요. (개인정보 최소 열람 원칙)</p>
+      <p class="admin-sub">회원 목록입니다. 회원유형 탭 안에서 <b>정회원(회비 납부)</b>과 <b>준회원(회비 미납·미확인)</b>으로 구분됩니다. 이름을 클릭하면 상세 정보를 볼 수 있습니다.</p>
     </div>
     <div class="admin-head-actions">
       <a class="btn btn-neutral btn-sm" href="/admin">대시보드</a>
@@ -11,82 +11,78 @@
   </div>
 
   <div class="member-stats">
-    <span class="mstat"><b><%= byGrade['준회원'] || 0 %></b> 준회원</span>
-    <span class="mstat"><b><%= byGrade['정회원'] || 0 %></b> 정회원</span>
-    <span class="mstat"><b><%= feePaid || 0 %></b> 회비 납부</span>
+    <span class="mstat"><b><%= total || 0 %></b> 전체 회원</span>
     <span class="mstat">·</span>
     <% ["개인회원","기업회원","단체회원"].forEach(function(t){ %>
       <span class="mstat"><b><%= byType[t] || 0 %></b> <%= t %></span>
     <% }); %>
   </div>
 
+  <%
+    function tabHref(t){
+      var p = [];
+      if (t) p.push('type=' + encodeURIComponent(t));
+      if (q) p.push('q=' + encodeURIComponent(q));
+      return '/admin/members' + (p.length ? '?' + p.join('&') : '');
+    }
+  %>
   <div class="member-toolbar">
     <div class="seg" role="tablist">
-      <a class="seg-btn <%= !grade ? 'on' : '' %>" href="/admin/members<%= q ? '?q='+encodeURIComponent(q) : '' %>">전체</a>
-      <a class="seg-btn <%= grade==='준회원' ? 'on' : '' %>" href="/admin/members?grade=준회원<%= q ? '&q='+encodeURIComponent(q) : '' %>">준회원</a>
-      <a class="seg-btn <%= grade==='정회원' ? 'on' : '' %>" href="/admin/members?grade=정회원<%= q ? '&q='+encodeURIComponent(q) : '' %>">정회원</a>
+      <a class="seg-btn <%= !type ? 'on' : '' %>" href="<%= tabHref('') %>">전체</a>
+      <% ["개인회원","기업회원","단체회원"].forEach(function(t){ %>
+        <a class="seg-btn <%= type===t ? 'on' : '' %>" href="<%= tabHref(t) %>"><%= t %></a>
+      <% }); %>
     </div>
     <form class="member-search" method="get" action="/admin/members">
-      <% if (grade) { %><input type="hidden" name="grade" value="<%= esc(grade) %>" /><% } %>
-      <input type="text" name="q" value="<%= esc(q) %>" placeholder="이름·이메일·기관명 검색" />
+      <% if (type) { %><input type="hidden" name="type" value="<%= esc(type) %>" /><% } %>
+      <input type="text" name="q" value="<%= esc(q) %>" placeholder="이름·이메일·소속 검색" />
       <button type="submit" class="btn btn-primary btn-sm">검색</button>
-      <% if (q) { %><a class="btn btn-neutral btn-sm" href="/admin/members<%= grade ? '?grade='+encodeURIComponent(grade) : '' %>">초기화</a><% } %>
+      <% if (q) { %><a class="btn btn-neutral btn-sm" href="<%= tabHref(type) %>">초기화</a><% } %>
     </form>
   </div>
 
-  <% if (!members.length) { %>
-    <p class="post-empty"><%= q ? '검색 결과가 없습니다.' : '가입한 회원이 없습니다.' %></p>
-  <% } else { %>
-  <div class="member-cards">
-    <% members.forEach(function(m){ %>
-      <div class="mcard">
-        <div class="mcard-top">
-          <div class="mcard-name">
-            <%= esc(m.name) %>
-            <span class="mcard-mail"><%= esc(m.email) %></span>
-          </div>
-          <div class="mcard-badges">
-            <span class="grade-badge <%= m.grade === '정회원' ? 'grade-full' : 'grade-assoc' %>"><%= esc(m.grade || '준회원') %></span>
-            <span class="board-tag"><%= esc(m.member_type) %></span>
-            <span class="fee-badge <%= m.fee_paid ? 'fee-ok' : 'fee-no' %>"><%= m.fee_paid ? '회비납부' : '회비미납' %></span>
-          </div>
-        </div>
-        <div class="mcard-meta">
-          <span><b>연락처</b><%= esc(m.phone || '-') %></span>
-          <span><b>기관·단체</b><%= esc(m.org_name || '-') %></span>
-          <span><b>가입일</b><%= fmtDate(m.created_at) %><% if (m.grade === '정회원' && m.confirmed_at) { %> · 승인 <%= fmtDate(m.confirmed_at) %><% } %></span>
-        </div>
-        <div class="mcard-foot">
-          <% if (m.grade !== '정회원') { %>
-            <form action="/admin/members/<%= m.id %>/approve" method="post"
-                  onsubmit="if(!this.fee_confirm.checked){alert('회비 납부 여부를 확인하고 체크해 주세요.');return false;}return confirm('<%= esc(m.name) %> 님을 정회원으로 승인합니다. 계속할까요?');">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-              <input type="hidden" name="q" value="<%= esc(q) %>" />
-              <label class="fee-check"><input type="checkbox" name="fee_confirm" value="1" /> 회비 납부 확인</label>
-              <button type="submit" class="btn btn-primary btn-sm">정회원 승인</button>
-            </form>
-          <% } else { %>
-            <form action="/admin/members/<%= m.id %>/revert" method="post"
-                  onsubmit="return confirm('<%= esc(m.name) %> 님을 준회원으로 전환합니다. (회비 미납 등) 계속할까요?');">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-              <input type="hidden" name="q" value="<%= esc(q) %>" />
-              <button type="submit" class="linkbtn">준회원으로 전환</button>
-            </form>
-            <form action="/admin/members/<%= m.id %>/fee" method="post">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-              <input type="hidden" name="q" value="<%= esc(q) %>" />
-              <button type="submit" class="linkbtn"><%= m.fee_paid ? '회비 미납 처리' : '회비 납부 처리' %></button>
-            </form>
-          <% } %>
-          <form action="/admin/members/<%= m.id %>/delete" method="post" onsubmit="return confirm('이 회원을 삭제하시겠습니까?');">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-            <input type="hidden" name="q" value="<%= esc(q) %>" />
-            <button type="submit" class="linkbtn linkbtn-danger">삭제</button>
-          </form>
-        </div>
+  <%
+    var sections = [
+      { label: '정회원', note: '회비 납부 완료', list: full,  cls: 'grade-full'  },
+      { label: '준회원', note: '회비 미납·미확인', list: assoc, cls: 'grade-assoc' }
+    ];
+  %>
+  <% sections.forEach(function(sec){ %>
+    <section class="member-section">
+      <h2 class="member-sec-h">
+        <span class="grade-badge <%= sec.cls %>"><%= sec.label %></span>
+        <span class="member-sec-note"><%= sec.note %></span>
+        <span class="member-sec-count"><%= sec.list.length %>명</span>
+      </h2>
+      <% if (!sec.list.length) { %>
+        <p class="post-empty"><%= q ? '검색 결과가 없습니다.' : '해당하는 회원이 없습니다.' %></p>
+      <% } else { %>
+      <div class="member-scroll">
+        <table class="log-table member-table">
+          <thead>
+            <tr>
+              <th>회원유형</th><th>이름</th><th>소속</th><th>직급</th>
+              <th>관심분야</th><th>회원가입일</th><th>회비납부일</th><th>회원자격</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% sec.list.forEach(function(m){ %>
+              <tr class="member-row" onclick="location.href='/admin/members/<%= m.id %>'">
+                <td><span class="board-tag"><%= esc(m.member_type) %></span></td>
+                <td class="member-name"><a href="/admin/members/<%= m.id %>"><%= esc(m.name) %></a></td>
+                <td><%= esc(m.org_name || '-') %></td>
+                <td><%= esc(m.position || '-') %></td>
+                <td><%= esc(m.interest || '-') %></td>
+                <td><%= fmtDate(m.created_at) || '-' %></td>
+                <td><%= m.fee_paid_at ? fmtDate(m.fee_paid_at) : '-' %></td>
+                <td><span class="grade-badge <%= m.grade === '정회원' ? 'grade-full' : 'grade-assoc' %>"><%= esc(m.grade || '준회원') %></span></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
       </div>
-    <% }); %>
-  </div>
-  <% } %>
+      <% } %>
+    </section>
+  <% }); %>
 </div>
 <%- include('partials/footer') %>

@@ -1,0 +1,63 @@
+<%- include('partials/header') %>
+<div class="container admin-wrap">
+  <div class="admin-head">
+    <div>
+      <h1><%= esc(m.name) %> 회원</h1>
+      <p class="admin-sub">회원 상세 정보입니다.</p>
+    </div>
+    <div class="admin-head-actions">
+      <a class="btn btn-neutral btn-sm" href="/admin/members">← 회원 목록</a>
+    </div>
+  </div>
+
+  <div class="member-detail">
+    <div class="member-detail-badges">
+      <span class="board-tag"><%= esc(m.member_type) %></span>
+      <span class="grade-badge <%= m.grade === '정회원' ? 'grade-full' : 'grade-assoc' %>"><%= esc(m.grade || '준회원') %></span>
+      <span class="fee-badge <%= m.fee_paid ? 'fee-ok' : 'fee-no' %>"><%= m.fee_paid ? '회비 납부' : '회비 미납' %></span>
+    </div>
+
+    <dl class="mypage-info member-detail-info">
+      <div><dt>회원유형</dt><dd><%= esc(m.member_type) %></dd></div>
+      <div><dt>이름</dt><dd><%= esc(m.name) %></dd></div>
+      <div><dt>소속</dt><dd><%= esc(m.org_name || '-') %></dd></div>
+      <div><dt>직급</dt><dd><%= esc(m.position || '-') %></dd></div>
+      <div class="mypage-info-full"><dt>하시는 일</dt><dd><%= esc(m.job || '-') %></dd></div>
+      <div class="mypage-info-full"><dt>관심 분야</dt><dd><%= esc(m.interest || '-') %></dd></div>
+      <div><dt>이메일</dt><dd><%= esc(m.email || '-') %></dd></div>
+      <div><dt>연락처</dt><dd><%= esc(m.phone || '-') %></dd></div>
+      <div><dt>회원가입일</dt><dd><%= fmtDate(m.created_at) || '-' %></dd></div>
+      <div><dt>회비납부일</dt><dd><%= m.fee_paid_at ? fmtDate(m.fee_paid_at) : '-' %></dd></div>
+    </dl>
+
+    <div class="member-detail-actions">
+      <% if (m.grade !== '정회원') { %>
+        <form action="/admin/members/<%= m.id %>/approve" method="post" class="member-approve"
+              onsubmit="if(!this.fee_confirm.checked){alert('회비 납부 여부를 확인하고 체크해 주세요.');return false;}return confirm('<%= esc(m.name) %> 님의 회비 납부를 확인하고 정회원으로 전환합니다. 계속할까요?');">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <input type="hidden" name="back" value="/admin/members/<%= m.id %>" />
+          <label class="fee-check"><input type="checkbox" name="fee_confirm" value="1" /> 회비 납부를 확인했습니다</label>
+          <button type="submit" class="btn btn-primary">정회원으로 전환</button>
+        </form>
+        <p class="panel-note">※ 회비 납부를 확인한 뒤 체크하고 전환하면, 오늘 날짜가 <b>회비납부일</b>로 기록되며 <b>정회원</b>이 됩니다.</p>
+      <% } else { %>
+        <div class="member-full-note">이 회원은 <b>정회원</b>입니다. (회비납부일: <%= m.fee_paid_at ? fmtDate(m.fee_paid_at) : '-' %>)</div>
+        <div class="member-detail-links">
+          <form action="/admin/members/<%= m.id %>/revert" method="post"
+                onsubmit="return confirm('<%= esc(m.name) %> 님을 준회원으로 되돌립니다. (회비 납부기록도 초기화) 계속할까요?');">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input type="hidden" name="back" value="/admin/members/<%= m.id %>" />
+            <button type="submit" class="linkbtn">준회원으로 되돌리기</button>
+          </form>
+        </div>
+      <% } %>
+
+      <form action="/admin/members/<%= m.id %>/delete" method="post" class="member-delete"
+            onsubmit="return confirm('이 회원을 삭제하시겠습니까? 되돌릴 수 없습니다.');">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit" class="linkbtn linkbtn-danger">회원 삭제</button>
+      </form>
+    </div>
+  </div>
+</div>
+<%- include('partials/footer') %>

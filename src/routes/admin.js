@@ -380,39 +380,61 @@ module.exports = function adminRoutes({ verifyCsrf }) {
   });
 
   // ---------- 회원 관리 ----------
-  const MEMBER_COLS = "id, name, email, phone, member_type, org_name, grade, fee_paid, confirmed_at, created_at";
+  const MEMBER_TYPES = ["개인회원", "기업회원", "단체회원"];
+  const MEMBER_LIST_COLS =
+    "id, member_type, name, org_name, position, interest, grade, fee_paid, fee_paid_at, created_at";
+  // 목록으로 안전하게 돌아갈 back 경로만 허용
+  const safeBack = (v) =>
+    (typeof v === "string" && /^\/admin\/members(\/\d+|\?|$)/.test(v)) ? v : "/admin/members";
+
   router.get("/members", requireAdmin, (req, res) => {
     const q = (req.query.q || "").trim();
-    const grade = ["준회원", "정회원"].includes(req.query.grade) ? req.query.grade : "";
+    const type = MEMBER_TYPES.includes(req.query.type) ? req.query.type : "";
     const where = [], params = [];
     if (q) {
       where.push("(name LIKE ? OR email LIKE ? OR org_name LIKE ?)");
       const like = "%" + q + "%"; params.push(like, like, like);
     }
-    if (grade) { where.push("grade = ?"); params.push(grade); }
-    const sql = "SELECT " + MEMBER_COLS + " FROM members" +
-      (where.length ? " WHERE " + where.join(" AND ") : "") + " ORDER BY id DESC LIMIT 1000";
-    const members = db.prepare(sql).all(...params);
+    if (type) { where.push("member_type = ?"); params.push(type); }
+    const sql = "SELECT " + MEMBER_LIST_COLS + " FROM members" +
+      (where.length ? " WHERE " + where.join(" AND ") : "") + " ORDER BY id DESC LIMIT 2000";
+    const rows = db.prepare(sql).all(...params);
+    // 회비 납부(정회원) / 미납(준회원)으로 분리
+    const full = rows.filter((m) => m.grade === "정회원");
+    const assoc = rows.filter((m) => m.grade !== "정회원");
 
-    const byType = {};
-    for (const t of ["개인회원", "기업회원", "단체회원"]) {
+    const byType = {}; // 탭 배지용 전체 건수
+    for (const t of MEMBER_TYPES) {
       byType[t] = db.prepare("SELECT COUNT(*) AS n FROM members WHERE member_type = ?").get(t).n;
     }
-    const byGrade = {};
-    for (const g of ["준회원", "정회원"]) {
-      byGrade[g] = db.prepare("SELECT COUNT(*) AS n FROM members WHERE grade = ?").get(g).n;
+    const total = db.prepare("SELECT COUNT(*) AS n FROM members").get().n;
+    res.render("admin-members", {
+      ...res.locals, title: "회원 관리", full, assoc, q, type, byType, total,
+    });
+  });
+
+  // 회원 개별 상세 페이지
+  router.get("/members/:id", requireAdmin, (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const m = db.prepare(
+      "SELECT id, member_type, name, org_name, position, job, interest, email, phone, " +
+      "grade, fee_paid, fee_paid_at, confirmed_at, created_at FROM members WHERE id = ?"
+    ).get(id);
+    if (!m) {
+      return res.status(404).render("message", {
+        ...res.locals, title: "회원 없음", heading: "회원을 찾을 수 없습니다",
+        body: "삭제되었거나 존재하지 않는 회원입니다.", backUrl: "/admin/members",
+      });
     }
-    const feePaid = db.prepare("SELECT COUNT(*) AS n FROM members WHERE fee_paid = 1").get().n;
-    res.render("admin-members", { ...res.locals, title: "회원 관리", members, q, grade, byType, byGrade, feePaid });
+    res.render("admin-member", { ...res.locals, title: m.name + " 회원", m });
   });
 
   // 준회원 → 정회원 승인 (회비 납부 확인 필수)
   router.post("/members/:id/approve", requireAdmin, verifyCsrf, (req, res) => {
     const id = parseInt(req.params.id, 10);
     const feeConfirmed = req.body.fee_confirm === "1";
-    const back = "/admin/members" + (req.body.q ? "?q=" + encodeURIComponent(req.body.q) : "");
+    const back = safeBack(req.body.back);
     if (!feeConfirmed) {
-      // 회비 납부 확인 없이는 승인 불가 — 강화된 체크
       return res.status(400).render("message", {
         ...res.locals, title: "승인 불가",
         heading: "회비 납부 확인이 필요합니다",
@@ -420,32 +442,40 @@ module.exports = function adminRoutes({ verifyCsrf }) {
         backUrl: back,
       });
     }
-    db.prepare("UPDATE members SET grade = '정회원', fee_paid = 1, confirmed_at = ? WHERE id = ?")
-      .run(new Date().toISOString(), id);
+    const now = new Date().toISOString();
+    // 기존 납부일이 있으면 유지, 없으면 오늘로 기록
+    const cur = db.prepare("SELECT fee_paid_at FROM members WHERE id = ?").get(id);
+    const paidAt = (cur && cur.fee_paid_at) ? cur.fee_paid_at : now;
+    db.prepare("UPDATE members SET grade = '정회원', fee_paid = 1, fee_paid_at = ?, confirmed_at = ? WHERE id = ?")
+      .run(paidAt, now, id);
     res.redirect(back);
   });
 
   // 정회원 → 준회원 전환 (회비 미납 등)
   router.post("/members/:id/revert", requireAdmin, verifyCsrf, (req, res) => {
     const id = parseInt(req.params.id, 10);
-    const back = "/admin/members" + (req.body.q ? "?q=" + encodeURIComponent(req.body.q) : "");
-    db.prepare("UPDATE members SET grade = '준회원', confirmed_at = '' WHERE id = ?").run(id);
+    const back = safeBack(req.body.back);
+    db.prepare("UPDATE members SET grade = '준회원', fee_paid = 0, fee_paid_at = '', confirmed_at = '' WHERE id = ?")
+      .run(id);
     res.redirect(back);
   });
 
   // 회비 납부 여부 토글
   router.post("/members/:id/fee", requireAdmin, verifyCsrf, (req, res) => {
     const id = parseInt(req.params.id, 10);
-    const back = "/admin/members" + (req.body.q ? "?q=" + encodeURIComponent(req.body.q) : "");
+    const back = safeBack(req.body.back);
     const cur = db.prepare("SELECT fee_paid FROM members WHERE id = ?").get(id);
-    if (cur) db.prepare("UPDATE members SET fee_paid = ? WHERE id = ?").run(cur.fee_paid ? 0 : 1, id);
+    if (cur) {
+      const paid = cur.fee_paid ? 0 : 1;
+      db.prepare("UPDATE members SET fee_paid = ?, fee_paid_at = ? WHERE id = ?")
+        .run(paid, paid ? new Date().toISOString() : "", id);
+    }
     res.redirect(back);
   });
 
   router.post("/members/:id/delete", requireAdmin, verifyCsrf, (req, res) => {
     db.prepare("DELETE FROM members WHERE id = ?").run(parseInt(req.params.id, 10));
-    const back = "/admin/members" + (req.body.q ? "?q=" + encodeURIComponent(req.body.q) : "");
-    res.redirect(back);
+    res.redirect("/admin/members");
   });
 
   // ---------- 트래픽 통계 ----------
