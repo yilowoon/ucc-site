@@ -289,8 +289,8 @@
 .corp-exec .partner-card { background: #fff; }
 
 /* ── 기업회원(협력기업) 소개 박스 ── */
-.partner-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 22px 0 8px; }
-.partner-card { padding: 22px 24px; border-radius: var(--radius); background: var(--paper); border: 1px solid var(--line); border-top: 3px solid var(--ci-green-d); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 10px; }
+.partner-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 22px 0 8px; align-items: stretch; }
+.partner-card { height: 100%; padding: 22px 24px; border-radius: var(--radius); background: var(--paper); border: 1px solid var(--line); border-top: 3px solid var(--ci-green-d); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 10px; }
 .partner-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .partner-name { font-size: 1.12rem; font-weight: 800; color: var(--green-900); margin: 0; }
 .partner-field { font-size: .76rem; font-weight: 700; color: var(--green-700); background: var(--paper-warm); border: 1px solid var(--line); border-radius: 999px; padding: 3px 11px; white-space: nowrap; }
@@ -318,13 +318,17 @@
 /* contain + 자연크기 상한(업스케일 방지)으로 어떤 로고든 선명·균일하게 */
 .partner-logo { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; display: block; }
 @media (max-width: 640px) { .partner-logo-band { height: 104px; } }
-.partner-title { min-width: 0; }
-.partner-card--std .partner-name { font-size: 1.15rem; }
-.partner-ceo { font-size: .9rem; color: var(--ink-soft); margin: 4px 0 0; }
+.partner-logo-ph { font-size: .85rem; color: var(--muted); }
+/* 기업명: 1줄 고정(넘치면 말줄임) */
+.partner-card--std .partner-name { font-size: 1.15rem; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 대표자명: 1줄 높이 확보(없어도 자리 유지) */
+.partner-ceo { font-size: .9rem; color: var(--ink-soft); margin: 0; min-height: 1.4em; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .partner-ceo b { color: var(--green-800); font-weight: 700; }
-.partner-line { font-size: .92rem; color: var(--ink); margin: 0; }
+/* 주요사업분야: 1~2줄 허용, 최대 2줄 높이로 통일 */
+.partner-line { font-size: .92rem; color: var(--ink); margin: 0; line-height: 1.5; min-height: 3em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .partner-line-label { display: inline-block; font-size: .78rem; font-weight: 700; color: #fff; background: var(--ci-green-d); border-radius: 6px; padding: 2px 8px; margin-right: 6px; }
-.partner-info { display: grid; gap: 6px; margin: 4px 0 0; padding-top: 12px; border-top: 1px dashed var(--line); }
+/* foot(주소·연락처·Home): 카드 최하단에 정렬(내용 길이와 무관하게 같은 위치) */
+.partner-info { display: grid; gap: 6px; margin-top: auto; padding-top: 12px; border-top: 1px dashed var(--line); }
 .partner-info > div { display: flex; gap: 10px; font-size: .88rem; line-height: 1.5; }
 .partner-info dt { flex-shrink: 0; width: 52px; color: var(--muted); font-weight: 600; }
 .partner-info dd { margin: 0; color: var(--ink); word-break: break-all; }
