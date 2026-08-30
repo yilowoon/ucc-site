@@ -278,6 +278,16 @@
 .mi-count { font-weight: 600; opacity: .85; }
 .mi-panel { margin-top: 4px; }
 
+/* ── 기업회원: 임원사 섹션 ── */
+.corp-exec { margin-top: 26px; padding: 22px 24px; border: 1px solid var(--gold-500); border-radius: 14px; background: var(--paper-warm); }
+.corp-exec-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+.corp-exec-h { font-size: 1.25rem; font-weight: 800; color: var(--green-900); margin: 0; }
+.corp-exec-en { font-size: .72rem; font-weight: 700; letter-spacing: .1em; color: var(--gold-600); }
+.corp-exec-desc { font-size: .95rem; color: var(--ink-soft); line-height: 1.75; margin: 0 0 8px; }
+.corp-members-h { font-size: 1.25rem; font-weight: 800; color: var(--green-900); margin: 34px 0 6px; }
+.corp-members-desc { font-size: .92rem; color: var(--muted); line-height: 1.7; margin: 0 0 14px; }
+.corp-exec .partner-card { background: #fff; }
+
 /* ── 기업회원(협력기업) 소개 박스 ── */
 .partner-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 22px 0 8px; }
 .partner-card { padding: 22px 24px; border-radius: var(--radius); background: var(--paper); border: 1px solid var(--line); border-top: 3px solid var(--ci-green-d); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 10px; }
