@@ -1,0 +1,45 @@
+<%- include('partials/header') %>
+<div class="container admin-wrap">
+  <div class="admin-head">
+    <div>
+      <h1>임원사 관리</h1>
+      <p class="admin-sub">기업회원 페이지 상단에 노출되는 <b>임원사(EXECUTIVE PARTNERS)</b>를 등록·관리합니다. 등록하면 기업회원 페이지에 자동 출력됩니다.</p>
+    </div>
+    <div class="admin-head-actions">
+      <a class="btn btn-primary btn-sm" href="/admin/partners/new">+ 임원사 등록</a>
+      <a class="btn btn-neutral btn-sm" href="/admin">대시보드</a>
+    </div>
+  </div>
+
+  <% if (!partners.length) { %>
+    <p class="post-empty">등록된 임원사가 없습니다. <a href="/admin/partners/new">첫 임원사 등록하기</a></p>
+  <% } else { %>
+  <div class="member-scroll">
+    <table class="log-table">
+      <thead>
+        <tr><th>순서</th><th>로고</th><th>기업명</th><th>대표이사</th><th>주요사업분야</th><th>노출</th><th>관리</th></tr>
+      </thead>
+      <tbody>
+        <% partners.forEach(function(p){ %>
+          <tr>
+            <td><%= p.sort_order %></td>
+            <td><% if (p.logo) { %><img src="<%= esc(p.logo) %>" alt="" style="max-width:90px;max-height:34px;object-fit:contain" /><% } else { %>-<% } %></td>
+            <td class="log-path"><b><%= esc(p.name) %></b></td>
+            <td><%= esc(p.ceo || '-') %></td>
+            <td><%= esc(p.field || '-') %></td>
+            <td><%= p.featured ? '박스+목록' : '목록만' %></td>
+            <td>
+              <a class="linkbtn" href="/admin/partners/<%= p.id %>/edit">수정</a>
+              <form action="/admin/partners/<%= p.id %>/delete" method="post" style="display:inline" onsubmit="return confirm('<%= esc(p.name) %> 임원사를 삭제하시겠습니까?');">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <button type="submit" class="linkbtn linkbtn-danger">삭제</button>
+              </form>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</div>
+<%- include('partials/footer') %>

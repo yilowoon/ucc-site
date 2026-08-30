@@ -1,0 +1,112 @@
+<%- include('partials/header') %>
+<div class="container admin-wrap">
+  <div class="admin-head">
+    <div>
+      <h1><%= mode === 'edit' ? '임원사 수정' : '임원사 등록' %></h1>
+      <p class="admin-sub">입력값을 저장하면 기업회원 페이지의 임원사 카드로 자동 출력됩니다. <b>회사소개는 입력값 기반으로 자동 생성</b>됩니다(200자 내외).</p>
+    </div>
+    <div class="admin-head-actions">
+      <a class="btn btn-neutral btn-sm" href="/admin/partners">← 목록</a>
+    </div>
+  </div>
+
+  <% if (error) { %><p class="form-alert err"><%= error %></p><% } %>
+
+  <form class="admin-form-fields pt-form" method="post"
+        action="<%= mode === 'edit' ? '/admin/partners/' + p.id : '/admin/partners' %>"
+        enctype="multipart/form-data" autocomplete="off">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+    <div class="write-grid pt-grid">
+      <div class="field"><label for="name">기업명 <span class="field-hint">필수</span></label><input type="text" id="name" name="name" value="<%= esc(p.name || '') %>" required /></div>
+      <div class="field"><label for="ceo">대표이사</label><input type="text" id="ceo" name="ceo" value="<%= esc(p.ceo || '') %>" /></div>
+    </div>
+    <div class="field"><label for="field">주요사업분야</label><input type="text" id="field" name="field" value="<%= esc(p.field || '') %>" placeholder="예: 창의수학, 한글교육 전문" /></div>
+    <div class="write-grid pt-grid">
+      <div class="field"><label for="phone">연락처</label><input type="text" id="phone" name="phone" value="<%= esc(p.phone || '') %>" placeholder="예: 1670-9678" /></div>
+      <div class="field"><label for="region">지역</label><input type="text" id="region" name="region" value="<%= esc(p.region || '') %>" placeholder="예: 세종" /></div>
+    </div>
+    <div class="field"><label for="address">주소</label><input type="text" id="address" name="address" value="<%= esc(p.address || '') %>" /></div>
+    <div class="field"><label for="url">홈페이지</label><input type="text" id="url" name="url" value="<%= esc(p.url || '') %>" placeholder="https://…" /></div>
+
+    <div class="field"><label for="memo">사업 개요 <span class="field-hint">회사소개 자동생성 참고용(선택) — 주요 제품·서비스·특징을 자유롭게 입력</span></label>
+      <textarea id="memo" name="memo" rows="3" placeholder="예: 유아·초등 창의영재수학 K-MATH 운영, 가정연계 온라인 콘텐츠 등"><%= esc(p.memo || '') %></textarea>
+    </div>
+
+    <div class="field">
+      <label for="intro">회사소개 <span class="field-hint">아래 버튼으로 자동 생성 후 필요 시 수정 (200자 내외·완결 문장)</span></label>
+      <div class="pt-intro-row">
+        <button type="button" class="btn btn-neutral btn-sm" id="genIntro">✦ 회사소개 자동 생성</button>
+        <span class="pt-intro-count" id="introCount">0자</span>
+      </div>
+      <textarea id="intro" name="intro" rows="5" placeholder="‘회사소개 자동 생성’을 누르면 입력값으로 채워집니다."><%= esc(p.intro || '') %></textarea>
+    </div>
+
+    <div class="write-grid pt-grid">
+      <div class="field">
+        <label for="logo">로고(CI) <span class="field-hint">이미지 파일</span></label>
+        <input type="file" id="logo" name="logo" accept="image/*" />
+        <% if (p.logo) { %><div class="pt-cur">현재: <img src="<%= esc(p.logo) %>" alt="" style="max-height:36px;vertical-align:middle;max-width:140px;object-fit:contain" /></div><% } %>
+      </div>
+      <div class="field">
+        <label for="profile">기업소개자료 <span class="field-hint">PDF/한글/워드/PPT 등</span></label>
+        <input type="file" id="profile" name="profile" accept=".pdf,.hwp,.hwpx,.doc,.docx,.ppt,.pptx,.zip,image/*" />
+        <% if (p.profile_file) { %><div class="pt-cur">현재: <a href="/uploads/<%= esc(p.profile_file) %>" target="_blank" rel="noopener"><%= esc(p.profile_name || p.profile_file) %></a></div><% } %>
+      </div>
+    </div>
+
+    <div class="write-grid pt-grid">
+      <div class="field"><label for="sort_order">정렬 순서 <span class="field-hint">작을수록 먼저</span></label><input type="number" id="sort_order" name="sort_order" value="<%= (p.sort_order != null ? p.sort_order : 0) %>" /></div>
+      <div class="field">
+        <label>상단 박스 노출</label>
+        <label class="fee-check" style="margin-top:8px"><input type="checkbox" name="featured" value="1" <%= (p.featured == null || p.featured) ? 'checked' : '' %> /> 임원사 박스에 카드로 노출</label>
+      </div>
+    </div>
+
+    <div style="margin-top:18px;display:flex;gap:10px">
+      <button type="submit" class="btn btn-primary"><%= mode === 'edit' ? '수정 저장' : '등록' %></button>
+      <a class="btn btn-neutral" href="/admin/partners">취소</a>
+    </div>
+  </form>
+</div>
+
+<style>
+  .pt-form textarea{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:9px;font-family:inherit;font-size:.95rem;line-height:1.6;resize:vertical}
+  .pt-grid{grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:560px){.pt-grid{grid-template-columns:1fr}}
+  .pt-intro-row{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  .pt-intro-count{font-size:.82rem;color:var(--muted)}
+  .pt-intro-count.over{color:#b4232a;font-weight:700}
+  .pt-cur{font-size:.82rem;color:var(--muted);margin-top:6px}
+  #genIntro.loading{opacity:.6;pointer-events:none}
+</style>
+
+<script>
+(function(){
+  var btn=document.getElementById('genIntro'), intro=document.getElementById('intro'), cnt=document.getElementById('introCount');
+  var csrf=document.querySelector('input[name=_csrf]').value;
+  function count(){ var n=Array.from(intro.value.trim()).length; cnt.textContent=n+'자'; cnt.classList.toggle('over', n>230); }
+  intro.addEventListener('input', count); count();
+  btn.addEventListener('click', function(){
+    var body=new URLSearchParams({
+      _csrf:csrf,
+      name:document.getElementById('name').value,
+      ceo:document.getElementById('ceo').value,
+      field:document.getElementById('field').value,
+      url:document.getElementById('url').value,
+      memo:document.getElementById('memo').value
+    });
+    if(!document.getElementById('name').value.trim()){ alert('기업명을 먼저 입력해 주세요.'); return; }
+    btn.classList.add('loading'); btn.textContent='생성 중…';
+    fetch('/admin/partners/generate-intro',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        btn.classList.remove('loading'); btn.textContent='✦ 회사소개 자동 생성';
+        if(d.ok){ intro.value=d.intro; count(); }
+        else { alert(d.error||'자동 생성 실패'); }
+      })
+      .catch(function(){ btn.classList.remove('loading'); btn.textContent='✦ 회사소개 자동 생성'; alert('자동 생성 중 오류가 발생했습니다.'); });
+  });
+})();
+</script>
+<%- include('partials/footer') %>

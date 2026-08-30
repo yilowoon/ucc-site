@@ -497,6 +497,98 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     res.redirect("/admin/members");
   });
 
+  // ---------- 기업회원 > 임원사 관리 ----------
+  const { generateIntro } = require("../partner-intro");
+  // 로고(logo, 이미지) + 기업소개자료(profile) 업로드
+  function partnerUpload(req, res, next) {
+    upload.fields([{ name: "logo", maxCount: 1 }, { name: "profile", maxCount: 1 }])(req, res, (err) => {
+      if (err) {
+        err.status = err.code === "LIMIT_FILE_SIZE" ? 413 : (err.status || 400);
+        err.publicMessage = err.code === "LIMIT_FILE_SIZE" ? "파일 크기는 최대 12MB까지 가능합니다." : (err.publicMessage || "파일 업로드 오류입니다.");
+        return next(err);
+      }
+      next();
+    });
+  }
+  const partnerFields = (req) => ({
+    name: (req.body.name || "").trim(),
+    ceo: (req.body.ceo || "").trim(),
+    field: (req.body.field || "").trim(),
+    address: (req.body.address || "").trim(),
+    phone: (req.body.phone || "").trim(),
+    url: (req.body.url || "").trim(),
+    region: (req.body.region || "").trim(),
+    memo: (req.body.memo || "").trim(),
+    intro: (req.body.intro || "").trim(),
+    featured: req.body.featured === "1" ? 1 : 0,
+    sort_order: parseInt(req.body.sort_order, 10) || 0,
+  });
+
+  router.get("/partners", requireAdmin, (req, res) => {
+    const partners = db.prepare("SELECT * FROM partners ORDER BY sort_order, id").all();
+    res.render("admin-partners", { ...res.locals, title: "임원사 관리", partners });
+  });
+
+  router.get("/partners/new", requireAdmin, (req, res) => {
+    res.render("admin-partner-form", { ...res.locals, title: "임원사 등록", mode: "new", p: {}, error: null });
+  });
+
+  router.get("/partners/:id/edit", requireAdmin, (req, res) => {
+    const p = db.prepare("SELECT * FROM partners WHERE id = ?").get(parseInt(req.params.id, 10));
+    if (!p) return res.redirect("/admin/partners");
+    res.render("admin-partner-form", { ...res.locals, title: "임원사 수정", mode: "edit", p, error: null });
+  });
+
+  // 회사소개 자동 생성(미리보기) — 입력값 기반
+  router.post("/partners/generate-intro", requireAdmin, verifyCsrf, async (req, res) => {
+    const f = partnerFields(req);
+    try {
+      const intro = await generateIntro(f);
+      res.json({ ok: true, intro });
+    } catch (e) {
+      res.json({ ok: false, error: "자동 생성에 실패했습니다. 잠시 후 다시 시도해 주세요." });
+    }
+  });
+
+  router.post("/partners", requireAdmin, partnerUpload, verifyCsrf, async (req, res) => {
+    const f = partnerFields(req);
+    if (!f.name) return res.status(400).render("admin-partner-form", { ...res.locals, title: "임원사 등록", mode: "new", p: f, error: "기업명을 입력해 주세요." });
+    const files = req.files || {};
+    const logo = files.logo && files.logo[0] ? "/uploads/" + files.logo[0].filename : "";
+    const profile = files.profile && files.profile[0] ? files.profile[0].filename : "";
+    const profileName = files.profile && files.profile[0] ? fixName(files.profile[0].originalname) : "";
+    // 회사소개: 입력값 기반 자동 생성(폼에서 미리 생성해 보낸 값이 있으면 사용)
+    const intro = f.intro || await generateIntro(f);
+    db.prepare(
+      "INSERT INTO partners (name, logo, ceo, field, intro, address, phone, url, region, profile_file, profile_name, featured, sort_order, created_at) " +
+      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    ).run(f.name, logo, f.ceo, f.field, intro, f.address, f.phone, f.url, f.region, profile, profileName, f.featured, f.sort_order, new Date().toISOString());
+    res.redirect("/admin/partners");
+  });
+
+  router.post("/partners/:id", requireAdmin, partnerUpload, verifyCsrf, async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const cur = db.prepare("SELECT * FROM partners WHERE id = ?").get(id);
+    if (!cur) return res.redirect("/admin/partners");
+    const f = partnerFields(req);
+    if (!f.name) return res.status(400).render("admin-partner-form", { ...res.locals, title: "임원사 수정", mode: "edit", p: { ...cur, ...f }, error: "기업명을 입력해 주세요." });
+    const files = req.files || {};
+    const logo = files.logo && files.logo[0] ? "/uploads/" + files.logo[0].filename : cur.logo;
+    let profile = cur.profile_file, profileName = cur.profile_name;
+    if (files.profile && files.profile[0]) { profile = files.profile[0].filename; profileName = fixName(files.profile[0].originalname); }
+    // 회사소개: 폼 값 우선(자동생성 반영), 비었으면 재생성
+    const intro = f.intro || await generateIntro(f);
+    db.prepare(
+      "UPDATE partners SET name=?, logo=?, ceo=?, field=?, intro=?, address=?, phone=?, url=?, region=?, profile_file=?, profile_name=?, featured=?, sort_order=? WHERE id=?"
+    ).run(f.name, logo, f.ceo, f.field, intro, f.address, f.phone, f.url, f.region, profile, profileName, f.featured, f.sort_order, id);
+    res.redirect("/admin/partners");
+  });
+
+  router.post("/partners/:id/delete", requireAdmin, verifyCsrf, (req, res) => {
+    db.prepare("DELETE FROM partners WHERE id = ?").run(parseInt(req.params.id, 10));
+    res.redirect("/admin/partners");
+  });
+
   // ---------- 트래픽 통계 ----------
   const kstDay = (offset = 0) =>
     new Date(Date.now() + 9 * 3600 * 1000 - offset * 86400 * 1000).toISOString().slice(0, 10);

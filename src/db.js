@@ -159,6 +159,26 @@ db.exec(`
   );
   CREATE UNIQUE INDEX IF NOT EXISTS idx_newsletter_guid ON newsletter(guid);
   CREATE INDEX IF NOT EXISTS idx_newsletter_id ON newsletter(id DESC);
+
+  -- 기업회원 임원사(EXECUTIVE PARTNERS): 관리자 등록, 기업회원 페이지에 자동 출력
+  CREATE TABLE IF NOT EXISTS partners (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    name          TEXT NOT NULL,
+    logo          TEXT NOT NULL DEFAULT '',   -- 로고(CI) 파일명(=/uploads/…)
+    ceo           TEXT NOT NULL DEFAULT '',   -- 대표이사
+    field         TEXT NOT NULL DEFAULT '',   -- 주요사업분야
+    intro         TEXT NOT NULL DEFAULT '',   -- 회사소개(입력값 기반 자동 생성, 200자 내외)
+    address       TEXT NOT NULL DEFAULT '',
+    phone         TEXT NOT NULL DEFAULT '',
+    url           TEXT NOT NULL DEFAULT '',   -- 홈페이지
+    region        TEXT NOT NULL DEFAULT '',
+    profile_file  TEXT NOT NULL DEFAULT '',   -- 기업소개자료 파일명
+    profile_name  TEXT NOT NULL DEFAULT '',   -- 기업소개자료 원본파일명
+    featured      INTEGER NOT NULL DEFAULT 1, -- 상단 박스 노출
+    sort_order    INTEGER NOT NULL DEFAULT 0,
+    created_at    TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_partners_sort ON partners(sort_order, id);
 `);
 
 // posts: 자동 수집 글의 원문 식별자 — 같은 기사를 두 번 올리지 않기 위함
@@ -285,5 +305,28 @@ function seedAdmin() {
   console.log("============================================================\n");
 }
 seedAdmin();
+
+/* ---- 임원사(partners): 최초 1회 partners.js 데이터로 시드 ---- */
+function seedPartners() {
+  const row = db.prepare("SELECT COUNT(*) AS n FROM partners").get();
+  if (row.n > 0) return;
+  let PARTNERS = [];
+  try { PARTNERS = require("./partners").PARTNERS || []; } catch (e) {}
+  if (!PARTNERS.length) return;
+  const now = new Date().toISOString();
+  const stmt = db.prepare(
+    "INSERT INTO partners (name, logo, ceo, field, intro, address, phone, url, region, featured, sort_order, created_at) " +
+    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  );
+  PARTNERS.forEach((p, i) => {
+    stmt.run(
+      p.name || "", p.logo || "", p.ceo || "", p.field || "", p.intro || "",
+      p.address || "", p.phone || "", p.url || "", p.region || "",
+      p.featured ? 1 : 0, i, now
+    );
+  });
+  console.log("[partners] partners.js → DB 시드 완료:", PARTNERS.length + "건");
+}
+seedPartners();
 
 module.exports = { db, DATA_DIR, UPLOAD_DIR, DB_PATH };

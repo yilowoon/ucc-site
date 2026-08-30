@@ -285,11 +285,11 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     res.render("members-individual", { ...res.locals, title: page.title, page, full, assoc });
   });
 
-  // 기업회원 — 협력기업 소개(박스) + 전체보기 + 정회원/준회원 명단 탭
+  // 기업회원 — 임원사 소개(박스) + 전체보기 + 정회원/준회원 명단 탭
   router.get("/members/corporate", (req, res) => {
-    const { PARTNERS } = require("../partners");
+    const partners = db.prepare("SELECT * FROM partners ORDER BY sort_order, id").all();
     const { full, assoc } = typeMembers("기업회원");
-    res.render("members-corporate", { ...res.locals, title: "기업회원", partners: PARTNERS, full, assoc });
+    res.render("members-corporate", { ...res.locals, title: "기업회원", partners, full, assoc });
   });
 
   // 단체회원 — 안내 + 정회원 명단(준회원 구분 없음)

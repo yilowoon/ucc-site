@@ -40,11 +40,12 @@
           <% if (p.field) { %><p class="partner-line"><span class="partner-line-label">주요사업분야</span> <%= esc(p.field) %></p><% } %>
           <% if (p.intro) { %><p class="partner-intro"><%= esc(p.intro) %></p><% } %>
 
-          <% if (p.address || p.phone || p.url) { %>
+          <% if (p.address || p.phone || p.url || p.profile_file) { %>
             <dl class="partner-info">
               <% if (p.address) { %><div><dt>주소</dt><dd><%= esc(p.address) %></dd></div><% } %>
               <% if (p.phone) { %><div><dt>연락처</dt><dd><%= esc(p.phone) %></dd></div><% } %>
               <% if (p.url) { %><div><dt>Home</dt><dd><a href="<%= esc(p.url) %>" target="_blank" rel="noopener"><%= esc(p.url) %></a></dd></div><% } %>
+              <% if (p.profile_file) { %><div><dt>소개자료</dt><dd><a href="/uploads/<%= esc(p.profile_file) %>" download="<%= esc(p.profile_name || p.profile_file) %>"><%= esc(p.profile_name || '기업소개자료 내려받기') %></a></dd></div><% } %>
             </dl>
           <% } %>
         </div>
