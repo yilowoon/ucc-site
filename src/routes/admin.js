@@ -573,9 +573,17 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     const f = partnerFields(req);
     if (!f.name) return res.status(400).render("admin-partner-form", { ...res.locals, title: "임원사 수정", mode: "edit", p: { ...cur, ...f }, error: "기업명을 입력해 주세요." });
     const files = req.files || {};
-    const logo = files.logo && files.logo[0] ? "/uploads/" + files.logo[0].filename : cur.logo;
+    // /uploads/ 실제 파일만 삭제(정적 /img/ 자산은 보존)
+    const unlinkWeb = (webpath) => { if (webpath && webpath.startsWith("/uploads/")) { try { fs.unlinkSync(path.join(UPLOAD_DIR, webpath.slice(9))); } catch (e) {} } };
+    const unlinkFile = (fname) => { if (fname) { try { fs.unlinkSync(path.join(UPLOAD_DIR, fname)); } catch (e) {} } };
+    // 로고: 새 업로드 우선 → 삭제 체크 → 기존 유지
+    let logo = cur.logo;
+    if (files.logo && files.logo[0]) { unlinkWeb(cur.logo); logo = "/uploads/" + files.logo[0].filename; }
+    else if (req.body.remove_logo === "1") { unlinkWeb(cur.logo); logo = ""; }
+    // 기업소개자료: 새 업로드 우선 → 삭제 체크 → 기존 유지
     let profile = cur.profile_file, profileName = cur.profile_name;
-    if (files.profile && files.profile[0]) { profile = files.profile[0].filename; profileName = fixName(files.profile[0].originalname); }
+    if (files.profile && files.profile[0]) { unlinkFile(cur.profile_file); profile = files.profile[0].filename; profileName = fixName(files.profile[0].originalname); }
+    else if (req.body.remove_profile === "1") { unlinkFile(cur.profile_file); profile = ""; profileName = ""; }
     // 회사소개: 폼 값 우선(자동생성 반영), 비었으면 재생성
     const intro = f.intro || await generateIntro(f);
     db.prepare(
