@@ -28,17 +28,26 @@
     %>
     <div class="partner-cards">
       <% featured.forEach(function(p){ %>
-        <div class="partner-card">
-          <div class="partner-card-head">
-            <h3 class="partner-name"><%= esc(p.name) %></h3>
-            <% if (p.field) { %><span class="partner-field"><%= esc(p.field) %></span><% } %>
-          </div>
-          <p class="partner-intro"><%= esc(p.intro) %></p>
-          <% if (p.region || p.url) { %>
-            <div class="partner-meta">
-              <% if (p.region) { %><span>📍 <%= esc(p.region) %></span><% } %>
-              <% if (p.url) { %><a href="<%= esc(p.url) %>" target="_blank" rel="noopener">홈페이지 →</a><% } %>
+        <div class="partner-card partner-card--std">
+          <div class="partner-card-top">
+            <% if (p.logo) { %>
+              <div class="partner-logo-wrap"><img class="partner-logo" src="<%= esc(p.logo) %>" alt="<%= esc(p.name) %> 로고(CI)" loading="lazy" /></div>
+            <% } %>
+            <div class="partner-title">
+              <h3 class="partner-name"><%= esc(p.name) %></h3>
+              <% if (p.ceo) { %><p class="partner-ceo">대표이사 <b><%= esc(p.ceo) %></b></p><% } %>
             </div>
+          </div>
+
+          <% if (p.field) { %><p class="partner-line"><span class="partner-line-label">주요사업분야</span> <%= esc(p.field) %></p><% } %>
+          <% if (p.intro) { %><p class="partner-intro"><%= esc(p.intro) %></p><% } %>
+
+          <% if (p.address || p.phone || p.url) { %>
+            <dl class="partner-info">
+              <% if (p.address) { %><div><dt>주소</dt><dd><%= esc(p.address) %></dd></div><% } %>
+              <% if (p.phone) { %><div><dt>연락처</dt><dd><%= esc(p.phone) %></dd></div><% } %>
+              <% if (p.url) { %><div><dt>Home</dt><dd><a href="<%= esc(p.url) %>" target="_blank" rel="noopener"><%= esc(p.url) %></a></dd></div><% } %>
+            </dl>
           <% } %>
         </div>
       <% }); %>
@@ -60,20 +69,20 @@
       <div class="reg-table-wrap">
         <table class="reg-table">
           <thead>
-            <tr><th>기업명</th><th>분야</th><th>지역</th><th>협력 소개</th></tr>
+            <tr><th>기업명</th><th>대표이사</th><th>주요사업분야</th><th>지역</th><th>연락처</th><th>홈페이지</th></tr>
           </thead>
           <tbody>
             <% if (!partners.length) { %>
-              <tr><td colspan="4" class="reg-empty">등록된 임원사가 없습니다.</td></tr>
+              <tr><td colspan="6" class="reg-empty">등록된 임원사가 없습니다.</td></tr>
             <% } %>
             <% partners.forEach(function(p){ %>
               <tr>
-                <td class="reg-name">
-                  <% if (p.url) { %><a href="<%= esc(p.url) %>" target="_blank" rel="noopener"><%= esc(p.name) %></a><% } else { %><%= esc(p.name) %><% } %>
-                </td>
+                <td class="reg-name"><%= esc(p.name) %></td>
+                <td><%= esc(p.ceo || '-') %></td>
                 <td><%= esc(p.field || '-') %></td>
                 <td><%= esc(p.region || '-') %></td>
-                <td><%= esc(p.intro || '-') %></td>
+                <td><%= esc(p.phone || '-') %></td>
+                <td><% if (p.url) { %><a href="<%= esc(p.url) %>" target="_blank" rel="noopener">바로가기 →</a><% } else { %>-<% } %></td>
               </tr>
             <% }); %>
           </tbody>
