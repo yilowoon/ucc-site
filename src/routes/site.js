@@ -216,6 +216,12 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     res.render("page", { ...res.locals, title: page.title, page, regularMembers });
   });
 
+  // 기업회원 — 협력기업 소개(박스) + 전체보기 테이블
+  router.get("/members/corporate", (req, res) => {
+    const { PARTNERS } = require("../partners");
+    res.render("members-corporate", { ...res.locals, title: "기업회원", partners: PARTNERS });
+  });
+
   // 배움터/회원 콘텐츠 페이지 (위 특정 라우트 뒤에 배치)
   router.get("/learn/:slug", renderPage("learn"));
   router.get("/members/:slug", renderPage("members"));

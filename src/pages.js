@@ -248,9 +248,10 @@ const PAGES = {
     group: "members", title: "정회원", en: "REGULAR MEMBER",
     html: `
       <p class="lead">정회원은 도시공동체본부의 활동에 직접 참여하고 의사결정에 함께하는 핵심 구성원입니다.</p>
-      <div class="page-cards">
+      <div class="page-cards page-cards--3">
         <div class="page-card"><h3>개인회원</h3><p>개인 자격으로 가입하여 총회 참여, 교육·행사 우대 등의 권리를 갖습니다.</p><p><a href="/members/individual">자세히 보기 →</a></p></div>
-        <div class="page-card"><h3>기업·단체회원</h3><p>기업·기관·단체 자격으로 가입하여 협력사업과 네트워크에 참여합니다.</p><p><a href="/members/corporate">자세히 보기 →</a></p></div>
+        <div class="page-card"><h3>기업회원</h3><p>도시공동체본부와 함께 실제 도시문제를 해결하는 협력기업입니다.</p><p><a href="/members/corporate">자세히 보기 →</a></p></div>
+        <div class="page-card"><h3>단체회원</h3><p>공공기관·비영리단체·협동조합 등이 협력사업과 네트워크에 참여합니다.</p><p><a href="/members/group">자세히 보기 →</a></p></div>
       </div>
     `,
   },
@@ -267,17 +268,17 @@ const PAGES = {
       <p style="margin-top:22px"><a class="btn btn-primary" href="/signup">개인회원 가입 · 혜택 전체보기</a></p>
     `,
   },
-  corporate: {
-    group: "members", title: "기업·단체회원", en: "CORPORATE MEMBER",
+  group: {
+    group: "members", title: "단체회원", en: "GROUP MEMBER",
     html: `
-      <p class="lead">기업·기관·단체 자격으로 가입하는 정회원입니다.</p>
+      <p class="lead">공공기관·비영리단체·협동조합 등 단체 자격으로 가입하는 회원입니다.</p>
       <ul class="page-list">
-        <li><strong>자격</strong> 본부의 목적에 공감하는 기업·공공기관·비영리단체·사회적기업·협동조합</li>
-        <li><strong>회비</strong> 기업회원 입회비·연회비 각 30만원(익년도부터) · 단체회원 현재 무료(익년도부터 유료, 이사회 결정)</li>
-        <li><strong>권리</strong> 대표 1인 의결권, 협력사업 우선 참여, 공동 프로젝트·네트워크, 브랜드 협력</li>
-        <li><strong>추가 혜택</strong> ESG 진단 무료(기업), 직원 교육 단체 할인, 파트너 기관 소개 게시 등</li>
+        <li><strong>자격</strong> 본부의 목적에 공감하는 공공기관·비영리단체·사회적기업·협동조합 등</li>
+        <li><strong>회비</strong> 현재 무료 (익년도부터 유료 전환 가능, 이사회 결정)</li>
+        <li><strong>권리</strong> 대표 1인 의결권, 협력사업 우선 참여, 공동 프로젝트·네트워크</li>
+        <li><strong>추가 혜택</strong> 직원·회원 교육 단체 할인, 파트너 기관 소개 게시, 공동 사업 발굴 등</li>
       </ul>
-      <p style="margin-top:22px"><a class="btn btn-primary" href="/signup">기업·단체회원 가입 · 혜택 전체보기</a></p>
+      <p style="margin-top:22px"><a class="btn btn-primary" href="/signup">단체회원 가입 · 혜택 전체보기</a></p>
     `,
   },
   associate: {

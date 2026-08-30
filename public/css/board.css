@@ -270,3 +270,18 @@
 .reg-table .reg-name { font-weight: 700; color: var(--green-800); white-space: nowrap; }
 .reg-table .reg-date { color: var(--muted); white-space: nowrap; }
 .reg-table .reg-empty { text-align: center; color: var(--muted); padding: 28px 16px; }
+
+/* ── 기업회원(협력기업) 소개 박스 ── */
+.partner-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 22px 0 8px; }
+.partner-card { padding: 22px 24px; border-radius: var(--radius); background: var(--paper); border: 1px solid var(--line); border-top: 3px solid var(--ci-green-d); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 10px; }
+.partner-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.partner-name { font-size: 1.12rem; font-weight: 800; color: var(--green-900); margin: 0; }
+.partner-field { font-size: .76rem; font-weight: 700; color: var(--green-700); background: var(--paper-warm); border: 1px solid var(--line); border-radius: 999px; padding: 3px 11px; white-space: nowrap; }
+.partner-intro { font-size: .95rem; color: var(--ink-soft); line-height: 1.65; margin: 0; }
+.partner-meta { display: flex; gap: 14px; font-size: .85rem; color: var(--muted); margin-top: 2px; }
+.partner-meta a { color: var(--green-600); font-weight: 600; text-decoration: none; }
+.partner-meta a:hover { text-decoration: underline; }
+.partner-viewall { display: flex; justify-content: center; margin: 26px 0 4px; }
+.partner-viewall .btn.on { background: var(--ci-green-d); color: #fff; border-color: var(--ci-green-d); }
+.partner-list { margin-top: 20px; }
+@media (max-width: 640px) { .partner-cards { grid-template-columns: 1fr; } }
