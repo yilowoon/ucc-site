@@ -266,6 +266,18 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     res.render("members-corporate", { ...res.locals, title: "기업회원", partners: PARTNERS });
   });
 
+  // 개인회원 — 안내 + 정회원/준회원 명단 탭(회비납부일 제외, 링크 없음)
+  router.get("/members/individual", (req, res) => {
+    const page = PAGES.individual;
+    const cols = "member_type, name, org_name, position, interest, grade, created_at";
+    const rows = db.prepare(
+      "SELECT " + cols + " FROM members WHERE member_type = '개인회원' ORDER BY created_at DESC, id DESC"
+    ).all();
+    const full = rows.filter((m) => m.grade === "정회원");
+    const assoc = rows.filter((m) => m.grade !== "정회원");
+    res.render("members-individual", { ...res.locals, title: page.title, page, full, assoc });
+  });
+
   // 배움터/회원 콘텐츠 페이지 (위 특정 라우트 뒤에 배치)
   router.get("/learn/:slug", renderPage("learn"));
   router.get("/members/:slug", renderPage("members"));

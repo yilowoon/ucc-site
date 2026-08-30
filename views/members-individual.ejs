@@ -1,0 +1,81 @@
+<%- include('partials/header') %>
+
+<section class="page-banner page-banner--sm">
+  <div class="container">
+    <span class="page-banner-en"><%= page.en %></span>
+    <h1 class="page-banner-title"><%= page.title %></h1>
+  </div>
+</section>
+
+<div class="container page-wrap">
+  <article class="page-content">
+    <%- page.html %>
+
+    <%
+      var groups = [
+        { key: 'full',  label: '정회원', cls: 'grade-full',  note: '회비 납부가 확인된 정회원', list: full },
+        { key: 'assoc', label: '준회원', cls: 'grade-assoc', note: '회비 납부 확인 전(준회원)', list: assoc }
+      ];
+    %>
+    <section class="mi-members">
+      <div class="seg mi-tabs" role="tablist">
+        <% groups.forEach(function(g, i){ %>
+          <button type="button" class="seg-btn <%= i===0 ? 'on' : '' %>" role="tab" data-tab="<%= g.key %>" aria-selected="<%= i===0 ? 'true' : 'false' %>">
+            <%= g.label %> <span class="mi-count">(<%= g.list.length %>)</span>
+          </button>
+        <% }); %>
+      </div>
+
+      <% groups.forEach(function(g, i){ %>
+        <div class="mi-panel" id="miPanel-<%= g.key %>" role="tabpanel" <%= i===0 ? '' : 'hidden' %>>
+          <p class="reg-members-desc"><span class="grade-badge <%= g.cls %>"><%= g.label %></span> <%= g.note %> · <strong><%= g.list.length %></strong>명</p>
+          <div class="reg-table-wrap">
+            <table class="reg-table">
+              <thead>
+                <tr><th>회원유형</th><th>이름</th><th>소속</th><th>직급</th><th>관심분야</th><th>회원가입일</th><th>회원자격</th></tr>
+              </thead>
+              <tbody>
+                <% if (!g.list.length) { %>
+                  <tr><td colspan="7" class="reg-empty">해당하는 회원이 없습니다.</td></tr>
+                <% } %>
+                <% g.list.forEach(function(m){ %>
+                  <tr>
+                    <td><%= esc(m.member_type) %></td>
+                    <td class="reg-name"><%= esc(m.name) %></td>
+                    <td><%= esc(m.org_name || '-') %></td>
+                    <td><%= esc(m.position || '-') %></td>
+                    <td><%= esc(m.interest || '-') %></td>
+                    <td class="reg-date"><%= fmtDate(m.created_at) %></td>
+                    <td><span class="grade-badge <%= m.grade === '정회원' ? 'grade-full' : 'grade-assoc' %>"><%= esc(m.grade || '준회원') %></span></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% }); %>
+    </section>
+  </article>
+</div>
+
+<script>
+  (function(){
+    var tabs = document.querySelectorAll('.mi-tabs .seg-btn');
+    if (!tabs.length) return;
+    tabs.forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var key = btn.getAttribute('data-tab');
+        tabs.forEach(function(b){
+          var on = b === btn;
+          b.classList.toggle('on', on);
+          b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        document.querySelectorAll('.mi-panel').forEach(function(p){
+          p.hidden = (p.id !== 'miPanel-' + key);
+        });
+      });
+    });
+  })();
+</script>
+
+<%- include('partials/footer') %>
