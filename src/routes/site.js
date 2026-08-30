@@ -251,14 +251,23 @@ module.exports = function siteRoutes({ verifyCsrf }) {
 
   // 함께하는 사람들: 임원진(Board Member) 전용 뷰
   router.get("/members/board", (req, res) => res.render("people", { ...res.locals, title: "함께하는 사람들" }));
-  // 정회원 페이지 — 현재 가입된 정회원 명단(이름·소속·직급·관심분야·가입일)을 함께 노출
-  router.get("/members/regular", (req, res) => {
-    const page = PAGES.regular;
-    const regularMembers = db.prepare(
-      "SELECT name, org_name, position, interest, created_at FROM members WHERE grade = '정회원' ORDER BY created_at DESC, id DESC"
-    ).all();
-    res.render("page", { ...res.locals, title: page.title, page, regularMembers });
-  });
+  // 정회원/준회원 페이지 — 통일 구조: 설명 + 개인/기업/단체 구분 + 명단(회원유형 열 포함)
+  function renderGrade(grade, en, lead) {
+    return (req, res) => {
+      const members = db.prepare(
+        "SELECT member_type, name, org_name, position, interest, created_at FROM members WHERE grade = ? ORDER BY created_at DESC, id DESC"
+      ).all(grade);
+      res.render("members-grade", { ...res.locals, title: grade, grade, en, lead, members });
+    };
+  }
+  router.get("/members/regular", renderGrade(
+    "정회원", "REGULAR MEMBER",
+    "정회원은 도시공동체본부의 활동에 직접 참여하고 의사결정에 함께하는 핵심 구성원입니다."
+  ));
+  router.get("/members/associate", renderGrade(
+    "준회원", "ASSOCIATE MEMBER",
+    "준회원은 본부의 활동에 관심을 갖고 참여하는 회원으로, 의결권을 제외한 대부분의 혜택을 누립니다."
+  ));
 
   // 기업회원 — 협력기업 소개(박스) + 전체보기 테이블
   router.get("/members/corporate", (req, res) => {

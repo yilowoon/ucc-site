@@ -1,0 +1,50 @@
+<%- include('partials/header') %>
+
+<section class="page-banner page-banner--sm">
+  <div class="container">
+    <span class="page-banner-en"><%= en %></span>
+    <h1 class="page-banner-title"><%= grade %></h1>
+  </div>
+</section>
+
+<div class="container page-wrap">
+  <article class="page-content">
+    <p class="lead"><%= lead %></p>
+    <p><%= grade %>은 회원의 자격요건 중 <strong>회비 납부 여부</strong>를 기준으로 분류되며, 가입 유형에 따라 <strong>개인회원 · 기업회원 · 단체회원</strong>으로 구분됩니다.</p>
+
+    <div class="page-cards page-cards--3">
+      <div class="page-card"><h3>개인회원</h3><p>개인 자격으로 가입하는 회원입니다.</p><p><a href="/members/individual">자세히 보기 →</a></p></div>
+      <div class="page-card"><h3>기업회원</h3><p>도시공동체본부와 함께 실제 도시문제를 해결하는 협력기업입니다.</p><p><a href="/members/corporate">자세히 보기 →</a></p></div>
+      <div class="page-card"><h3>단체회원</h3><p>공공기관·비영리단체·협동조합 등이 참여하는 회원입니다.</p><p><a href="/members/group">자세히 보기 →</a></p></div>
+    </div>
+
+    <section class="reg-members">
+      <h2 class="reg-members-title"><%= grade %> 명단</h2>
+      <p class="reg-members-desc"><%= grade === '정회원' ? '회비 납부가 확인된' : '회비 납부 확인 전(준회원)' %> <%= grade %> 명단입니다. <strong><%= members.length %></strong>명</p>
+      <div class="reg-table-wrap">
+        <table class="reg-table">
+          <thead>
+            <tr><th>회원유형</th><th>이름</th><th>소속</th><th>직급</th><th>관심분야</th><th>가입일</th></tr>
+          </thead>
+          <tbody>
+            <% if (members.length === 0) { %>
+              <tr><td colspan="6" class="reg-empty">아직 등록된 <%= grade %>이 없습니다.</td></tr>
+            <% } %>
+            <% members.forEach(function(m){ %>
+              <tr>
+                <td><%= esc(m.member_type || '개인회원') %></td>
+                <td class="reg-name"><%= esc(m.name) %></td>
+                <td><%= esc(m.org_name || '-') %></td>
+                <td><%= esc(m.position || '-') %></td>
+                <td><%= esc(m.interest || '-') %></td>
+                <td class="reg-date"><%= fmtDate(m.created_at) %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </article>
+</div>
+
+<%- include('partials/footer') %>
