@@ -27,6 +27,30 @@ const PARTNERS = [
     url: "",
     featured: true,
   },
+  {
+    name: "그린나래솔루션",
+    field: "친환경 · 그린 솔루션",
+    region: "",
+    intro: "친환경 솔루션 기업으로, 지역의 지속가능한 도시환경 조성 사업에 본부와 협력합니다.",
+    url: "",
+    featured: true,
+  },
+  {
+    name: "물산업연구조합",
+    field: "물산업 · 연구",
+    region: "",
+    intro: "물산업 분야 연구조합으로, 물·환경 관련 연구와 실증 사업에 본부와 협력합니다.",
+    url: "",
+    featured: true,
+  },
+  {
+    name: "(주)에너팜",
+    field: "에너지 · 신재생",
+    region: "",
+    intro: "에너지 분야 기업으로, 햇빛소득마을 등 신재생에너지·에너지전환 사업에 본부와 협력합니다.",
+    url: "",
+    featured: true,
+  },
 ];
 
 module.exports = { PARTNERS };
