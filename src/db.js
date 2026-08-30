@@ -184,6 +184,13 @@ try { db.exec("ALTER TABLE members ADD COLUMN position TEXT NOT NULL DEFAULT ''"
 try { db.exec("ALTER TABLE members ADD COLUMN job TEXT NOT NULL DEFAULT ''"); } catch (e) {}        // 하시는일
 try { db.exec("ALTER TABLE members ADD COLUMN interest TEXT NOT NULL DEFAULT ''"); } catch (e) {}   // 관심분야
 try { db.exec("ALTER TABLE members ADD COLUMN fee_paid_at TEXT NOT NULL DEFAULT ''"); } catch (e) {} // 회비납부일
+// 기업·단체(기관)회원 전용 추가 정보
+try { db.exec("ALTER TABLE members ADD COLUMN biz_ceo TEXT NOT NULL DEFAULT ''"); } catch (e) {}      // 대표자 이름
+try { db.exec("ALTER TABLE members ADD COLUMN biz_sector TEXT NOT NULL DEFAULT ''"); } catch (e) {}   // 주요업종
+try { db.exec("ALTER TABLE members ADD COLUMN biz_website TEXT NOT NULL DEFAULT ''"); } catch (e) {}  // 누리집 주소
+try { db.exec("ALTER TABLE members ADD COLUMN biz_logo TEXT NOT NULL DEFAULT ''"); } catch (e) {}     // 로고(CI) 파일
+try { db.exec("ALTER TABLE members ADD COLUMN biz_profile TEXT NOT NULL DEFAULT ''"); } catch (e) {}  // 기업소개자료 파일
+try { db.exec("ALTER TABLE members ADD COLUMN biz_profile_name TEXT NOT NULL DEFAULT ''"); } catch (e) {} // 소개자료 원본파일명
 // contacts: 문의 확인용 4자리 PIN 해시 · 회원 연동 · 관리자 답변
 try { db.exec("ALTER TABLE contacts ADD COLUMN pw_hash TEXT NOT NULL DEFAULT ''"); } catch (e) {}     // 4자리 PIN(bcrypt)
 try { db.exec("ALTER TABLE contacts ADD COLUMN member_id INTEGER NOT NULL DEFAULT 0"); } catch (e) {} // 회원이 작성한 경우

@@ -950,6 +950,9 @@ a.seg-btn { display: inline-block; text-decoration: none; }
 .member-detail-links { display: flex; gap: 14px; }
 .member-detail-links form, .member-delete { margin: 0; }
 .member-delete { margin-top: 6px; }
+.member-biz { border-top: 1px solid var(--line); margin-top: 22px; padding-top: 20px; }
+.member-biz-h { font-size: 1rem; font-weight: 800; color: var(--green-900); margin: 0 0 14px; }
+.member-biz-logo { max-width: 180px; max-height: 90px; border: 1px solid var(--line); border-radius: 8px; padding: 6px; background: #fff; }
 
 /* ===== 관리자: 접속기록(IP 로그) ===== */
 .log-table { width: 100%; min-width: 720px; border-collapse: collapse; font-size: .9rem; }

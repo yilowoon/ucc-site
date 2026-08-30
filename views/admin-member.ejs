@@ -30,6 +30,25 @@
       <div><dt>회비납부일</dt><dd><%= m.fee_paid_at ? fmtDate(m.fee_paid_at) : '-' %></dd></div>
     </dl>
 
+    <% if (m.member_type === '기업회원' || m.member_type === '단체회원') { %>
+      <div class="member-biz">
+        <h2 class="member-biz-h"><%= m.member_type === '단체회원' ? '단체(기관)' : '기업' %> 추가 정보</h2>
+        <dl class="mypage-info member-detail-info">
+          <div><dt>대표자 이름</dt><dd><%= esc(m.biz_ceo || '-') %></dd></div>
+          <div><dt>주요업종</dt><dd><%= esc(m.biz_sector || '-') %></dd></div>
+          <div class="mypage-info-full"><dt>누리집 주소</dt><dd>
+            <% if (m.biz_website) { %><a href="<%= esc(m.biz_website) %>" target="_blank" rel="noopener"><%= esc(m.biz_website) %></a><% } else { %>-<% } %>
+          </dd></div>
+          <div class="mypage-info-full"><dt>로고(CI)</dt><dd>
+            <% if (m.biz_logo) { %><a href="/uploads/<%= esc(m.biz_logo) %>" target="_blank" rel="noopener"><img class="member-biz-logo" src="/uploads/<%= esc(m.biz_logo) %>" alt="<%= esc(m.name) %> 로고" /></a><% } else { %>-<% } %>
+          </dd></div>
+          <div class="mypage-info-full"><dt>기업소개자료</dt><dd>
+            <% if (m.biz_profile) { %><a class="btn btn-neutral btn-sm" href="/uploads/<%= esc(m.biz_profile) %>" download="<%= esc(m.biz_profile_name || m.biz_profile) %>"><%= esc(m.biz_profile_name || '소개자료 내려받기') %></a><% } else { %>-<% } %>
+          </dd></div>
+        </dl>
+      </div>
+    <% } %>
+
     <div class="member-detail-actions">
       <% if (m.grade !== '정회원') { %>
         <form action="/admin/members/<%= m.id %>/approve" method="post" class="member-approve"

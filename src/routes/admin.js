@@ -427,6 +427,7 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     const id = parseInt(req.params.id, 10);
     const m = db.prepare(
       "SELECT id, member_type, name, org_name, position, job, interest, email, phone, " +
+      "biz_ceo, biz_sector, biz_website, biz_logo, biz_profile, biz_profile_name, " +
       "grade, fee_paid, fee_paid_at, confirmed_at, created_at FROM members WHERE id = ?"
     ).get(id);
     if (!m) {

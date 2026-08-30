@@ -3,7 +3,11 @@
 
 const express = require("express");
 const bcrypt = require("bcryptjs");
-const { db } = require("../db");
+const path = require("path");
+const fs = require("fs");
+const crypto = require("crypto");
+const multer = require("multer");
+const { db, UPLOAD_DIR } = require("../db");
 const cfg = require("../config");
 const { PAGES } = require("../pages");
 const chatkb = require("../chatkb"); // 소개 챗봇: 지식베이스 + Gemini 응답
@@ -45,6 +49,46 @@ function homeLead(content, summary) {
   }
   return out.join(" ").trim() || text.slice(0, 240);
 }
+
+// 기업·단체회원 파일 업로드(로고/소개자료) — data/uploads 에 저장(=/uploads 로 서빙)
+const MEMBER_ALLOWED_EXT = new Set([
+  ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg",
+  ".pdf", ".hwp", ".hwpx", ".doc", ".docx", ".ppt", ".pptx", ".zip",
+]);
+const memberUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, crypto.randomBytes(12).toString("hex") + ext);
+    },
+  }),
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (file.fieldname === "biz_logo" && !/^image\//.test(file.mimetype)) {
+      const e = new Error("로고는 이미지 파일만 업로드할 수 있습니다."); e.publicMessage = e.message; return cb(e);
+    }
+    if (MEMBER_ALLOWED_EXT.has(ext)) return cb(null, true);
+    const e = new Error("허용되지 않는 파일 형식입니다."); e.publicMessage = "이미지 또는 문서 파일만 업로드할 수 있습니다."; cb(e);
+  },
+  limits: { fileSize: 12 * 1024 * 1024, files: 2 },
+});
+// multer 오류를 폼으로 되돌려 표시
+function memberUploadMw(req, res, next) {
+  memberUpload.fields([{ name: "biz_logo", maxCount: 1 }, { name: "biz_profile", maxCount: 1 }])(req, res, (err) => {
+    if (err) {
+      const msg = err.code === "LIMIT_FILE_SIZE" ? "파일 크기는 최대 12MB까지 가능합니다." : (err.publicMessage || "파일 업로드 중 오류가 발생했습니다.");
+      return res.status(400).render("signup-form", {
+        ...res.locals, title: "회원가입 신청", error: msg, form: req.body || {},
+        types: ["개인회원", "기업회원", "단체회원"], fees: { "개인회원": 10000, "기업회원": 300000, "단체회원": 0 },
+        verifiedEmail: req.session.emailVerified || "",
+      });
+    }
+    next();
+  });
+}
+// 업로드된 파일 원본명 UTF-8 복원
+function fixName(name) { try { return Buffer.from(name, "latin1").toString("utf8"); } catch { return name; } }
 
 module.exports = function siteRoutes({ verifyCsrf }) {
   const router = express.Router();
@@ -461,7 +505,7 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     res.json({ ok: true });
   });
 
-  router.post("/signup", verifyCsrf, (req, res) => {
+  router.post("/signup", memberUploadMw, verifyCsrf, (req, res) => {
     const name = (req.body.name || "").trim();
     const email = (req.body.email || "").trim().toLowerCase();
     const phone = (req.body.phone || "").replace(/[^0-9]/g, ""); // 숫자만 저장
@@ -473,9 +517,25 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const interest = (req.body.interest || "").trim();
     const pw = req.body.password || "";
     const confirm = req.body.confirm || "";
-    const form = { name, email, phone, member_type: memberType, org_name: (req.body.org_name || "").trim(), position, job, interest };
-    const fail = (msg) =>
+    const isBiz = memberType === "기업회원" || memberType === "단체회원";
+    const bizCeo = isBiz ? (req.body.biz_ceo || "").trim() : "";
+    const bizSector = isBiz ? (req.body.biz_sector || "").trim() : "";
+    const bizWebsite = isBiz ? (req.body.biz_website || "").trim() : "";
+    const files = req.files || {};
+    const logoFile = (files.biz_logo && files.biz_logo[0]) || null;
+    const profileFile = (files.biz_profile && files.biz_profile[0]) || null;
+    // 업로드 파일 정리(검증 실패 시 고아 파일 삭제)
+    const cleanupFiles = () => {
+      [logoFile, profileFile].forEach((f) => { if (f) { try { fs.unlinkSync(path.join(UPLOAD_DIR, f.filename)); } catch (e) {} } });
+    };
+    const form = {
+      name, email, phone, member_type: memberType, org_name: (req.body.org_name || "").trim(),
+      position, job, interest, biz_ceo: bizCeo, biz_sector: bizSector, biz_website: bizWebsite,
+    };
+    const fail = (msg) => {
+      cleanupFiles();
       res.status(400).render("signup-form", { ...res.locals, title: "회원가입 신청", error: msg, form, types: MEMBER_TYPES, fees: MEMBER_FEE, verifiedEmail: req.session.emailVerified || "" });
+    };
 
     if (!name) return fail("이름을 입력해 주세요.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("유효한 이메일을 입력해 주세요.");
@@ -489,11 +549,19 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const exists = db.prepare("SELECT id FROM members WHERE email = ?").get(email);
     if (exists) return fail("이미 가입된 이메일입니다.");
 
+    const bizLogo = logoFile ? logoFile.filename : "";
+    const bizProfile = profileFile ? profileFile.filename : "";
+    const bizProfileName = profileFile ? fixName(profileFile.originalname) : "";
+
     // 데모 결제: 유료 회원이 결제완료(paid=1)면 회비 납부로 기록. 실제 청구는 없음(추후 PG 연동).
     const feePaid = (fee > 0 && req.body.paid === "1") ? 1 : 0;
     const hash = bcrypt.hashSync(pw, 10);
-    db.prepare("INSERT INTO members (name, email, phone, member_type, org_name, position, job, interest, password_hash, fee_paid, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-      .run(name, email, phone, memberType, orgName, position, job, interest, hash, feePaid, new Date().toISOString());
+    db.prepare(
+      "INSERT INTO members (name, email, phone, member_type, org_name, position, job, interest, " +
+      "biz_ceo, biz_sector, biz_website, biz_logo, biz_profile, biz_profile_name, password_hash, fee_paid, created_at) " +
+      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    ).run(name, email, phone, memberType, orgName, position, job, interest,
+      bizCeo, bizSector, bizWebsite, bizLogo, bizProfile, bizProfileName, hash, feePaid, new Date().toISOString());
     delete req.session.emailVerified;
     res.redirect("/login?joined=1");
   });
