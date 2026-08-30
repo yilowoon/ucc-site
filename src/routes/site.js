@@ -269,22 +269,36 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     "준회원은 본부의 활동에 관심을 갖고 참여하는 회원으로, 의결권을 제외한 대부분의 혜택을 누립니다."
   ));
 
-  // 기업회원 — 협력기업 소개(박스) + 전체보기 테이블
-  router.get("/members/corporate", (req, res) => {
-    const { PARTNERS } = require("../partners");
-    res.render("members-corporate", { ...res.locals, title: "기업회원", partners: PARTNERS });
-  });
+  // 회원유형별 명단 조회(회비납부일 제외, 링크 없음) — 정회원/준회원 분리
+  const MEMBER_LIST_COLS = "member_type, name, org_name, position, interest, grade, created_at";
+  function typeMembers(memberType) {
+    const rows = db.prepare(
+      "SELECT " + MEMBER_LIST_COLS + " FROM members WHERE member_type = ? ORDER BY created_at DESC, id DESC"
+    ).all(memberType);
+    return { full: rows.filter((m) => m.grade === "정회원"), assoc: rows.filter((m) => m.grade !== "정회원") };
+  }
 
-  // 개인회원 — 안내 + 정회원/준회원 명단 탭(회비납부일 제외, 링크 없음)
+  // 개인회원 — 안내 + 정회원/준회원 명단 탭
   router.get("/members/individual", (req, res) => {
     const page = PAGES.individual;
-    const cols = "member_type, name, org_name, position, interest, grade, created_at";
-    const rows = db.prepare(
-      "SELECT " + cols + " FROM members WHERE member_type = '개인회원' ORDER BY created_at DESC, id DESC"
-    ).all();
-    const full = rows.filter((m) => m.grade === "정회원");
-    const assoc = rows.filter((m) => m.grade !== "정회원");
+    const { full, assoc } = typeMembers("개인회원");
     res.render("members-individual", { ...res.locals, title: page.title, page, full, assoc });
+  });
+
+  // 기업회원 — 협력기업 소개(박스) + 전체보기 + 정회원/준회원 명단 탭
+  router.get("/members/corporate", (req, res) => {
+    const { PARTNERS } = require("../partners");
+    const { full, assoc } = typeMembers("기업회원");
+    res.render("members-corporate", { ...res.locals, title: "기업회원", partners: PARTNERS, full, assoc });
+  });
+
+  // 단체회원 — 안내 + 정회원 명단(준회원 구분 없음)
+  router.get("/members/group", (req, res) => {
+    const page = PAGES.group;
+    const full = db.prepare(
+      "SELECT " + MEMBER_LIST_COLS + " FROM members WHERE member_type = '단체회원' AND grade = '정회원' ORDER BY created_at DESC, id DESC"
+    ).all();
+    res.render("members-group", { ...res.locals, title: page.title, page, full });
   });
 
   // 배움터/회원 콘텐츠 페이지 (위 특정 라우트 뒤에 배치)

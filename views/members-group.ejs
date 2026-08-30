@@ -13,8 +13,7 @@
 
     <%
       var groups = [
-        { key: 'full',  label: '정회원', cls: 'grade-full',  note: '회비 납부가 확인된 정회원', list: full },
-        { key: 'assoc', label: '준회원', cls: 'grade-assoc', note: '회비 납부 확인 전(준회원)', list: assoc }
+        { key: 'full', label: '정회원', cls: 'grade-full', note: '등록된 단체회원', list: full }
       ];
     %>
     <%- include('partials/member-list-tabs', { groups: groups }) %>
