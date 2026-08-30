@@ -304,8 +304,20 @@
 
 /* 표준 포맷 임원사 카드 */
 .partner-card--std { gap: 12px; }
-.partner-logo-band { width: 100%; min-height: 76px; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; }
-.partner-logo { max-width: 100%; max-height: 92px; width: auto; height: auto; object-fit: contain; }
+/* 로고(CI) 표준 프레임 — 규격·형태가 달라도 균일한 흰 배경 프레임에 비율 유지로 자동 배치 */
+.partner-logo-band {
+  width: 100%; height: 120px;
+  display: flex; align-items: center; justify-content: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 22px;
+  box-shadow: inset 0 0 0 1px rgba(18, 58, 46, .03);
+  overflow: hidden;
+}
+/* contain + 자연크기 상한(업스케일 방지)으로 어떤 로고든 선명·균일하게 */
+.partner-logo { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; display: block; }
+@media (max-width: 640px) { .partner-logo-band { height: 104px; } }
 .partner-title { min-width: 0; }
 .partner-card--std .partner-name { font-size: 1.15rem; }
 .partner-ceo { font-size: .9rem; color: var(--ink-soft); margin: 4px 0 0; }
