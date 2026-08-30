@@ -522,14 +522,15 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const email = (req.body.email || "").trim().toLowerCase();
     const phone = (req.body.phone || "").replace(/[^0-9]/g, ""); // 숫자만 저장
     const memberType = MEMBER_TYPES.includes(req.body.member_type) ? req.body.member_type : "개인회원";
-    // 소속: 미입력 시 '도시공동체본부'로 명기
-    const orgName = (req.body.org_name || "").trim() || "도시공동체본부";
+    const isBiz = memberType === "기업회원" || memberType === "단체회원";
+    // 소속(org_name): 개인=소속(미입력 시 도시공동체본부) / 기업=기업명 / 단체=단체명
+    const orgNameRaw = (req.body.org_name || "").trim();
+    const orgName = isBiz ? orgNameRaw : (orgNameRaw || "도시공동체본부");
     const position = (req.body.position || "").trim();
     const job = (req.body.job || "").trim();
     const interest = (req.body.interest || "").trim();
     const pw = req.body.password || "";
     const confirm = req.body.confirm || "";
-    const isBiz = memberType === "기업회원" || memberType === "단체회원";
     const bizCeo = isBiz ? (req.body.biz_ceo || "").trim() : "";
     const bizSector = isBiz ? (req.body.biz_sector || "").trim() : "";
     const bizWebsite = isBiz ? (req.body.biz_website || "").trim() : "";
@@ -549,7 +550,8 @@ module.exports = function siteRoutes({ verifyCsrf }) {
       res.status(400).render("signup-form", { ...res.locals, title: "회원가입 신청", error: msg, form, types: MEMBER_TYPES, fees: MEMBER_FEE, verifiedEmail: req.session.emailVerified || "" });
     };
 
-    if (!name) return fail("이름을 입력해 주세요.");
+    if (!name) return fail(isBiz ? "담당자명을 입력해 주세요." : "이름을 입력해 주세요.");
+    if (isBiz && !orgNameRaw) return fail(memberType === "기업회원" ? "기업명을 입력해 주세요." : "단체명을 입력해 주세요.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("유효한 이메일을 입력해 주세요.");
     if (req.session.emailVerified !== email) return fail("이메일 인증을 완료해 주셔야 가입할 수 있습니다.");
     if (pw.length < 8) return fail("비밀번호는 8자 이상이어야 합니다.");

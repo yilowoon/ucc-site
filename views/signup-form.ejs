@@ -97,9 +97,9 @@
           </select>
         </div>
 
-        <div class="field"><label for="name">이름 <span class="field-hint">기업/단체는 담당자명</span></label><input type="text" id="name" name="name" value="<%= esc(form.name || '') %>" autocomplete="name" required /></div>
+        <div class="field" id="f_name"><label for="name"><span class="lbl-text">이름</span></label><input type="text" id="name" name="name" value="<%= esc(form.name || '') %>" autocomplete="name" required /></div>
 
-        <div class="field"><label for="org_name">소속 <span class="field-hint">소속기관이 없으면 '도시공동체본부'라고 입력</span></label><input type="text" id="org_name" name="org_name" value="<%= esc(form.org_name || '') %>" placeholder="소속기관·단체명 (없으면 도시공동체본부)" /></div>
+        <div class="field" id="f_org"><label for="org_name"><span class="lbl-text">소속</span> <span class="field-hint" id="hintOrg">소속기관이 없으면 '도시공동체본부'라고 입력</span></label><input type="text" id="org_name" name="org_name" value="<%= esc(form.org_name || '') %>" placeholder="소속기관·단체명 (없으면 도시공동체본부)" /></div>
         <div class="field"><label for="position">직급</label><input type="text" id="position" name="position" value="<%= esc(form.position || '') %>" placeholder="예: 대표, 팀장, 연구원" /></div>
         <div class="field"><label for="job">하시는 일</label><input type="text" id="job" name="job" value="<%= esc(form.job || '') %>" placeholder="담당 업무·활동" /></div>
         <div class="field"><label for="interest">관심 분야</label><input type="text" id="interest" name="interest" value="<%= esc(form.interest || '') %>" placeholder="예: 사회적경제, 도시재생, 협동조합" /></div>
@@ -234,9 +234,30 @@
     if (show && bizHeadType) bizHeadType.textContent = (sel.value === '단체회원') ? '단체(기관)' : '기업';
   }
 
+  // 회원유형별 라벨/순서: 개인=이름·소속 / 기업=기업명·담당자명 / 단체=단체명·담당자명
+  var fName = document.getElementById('f_name'), fOrg = document.getElementById('f_org');
+  var lblName = fName.querySelector('.lbl-text'), lblOrg = fOrg.querySelector('.lbl-text');
+  var hintOrg = document.getElementById('hintOrg'), inpOrg = document.getElementById('org_name');
+  function refreshLabels(){
+    var t = sel.value;
+    if (t === '기업회원' || t === '단체회원'){
+      var orgWord = (t === '기업회원') ? '기업명' : '단체명';
+      lblOrg.textContent = orgWord; lblName.textContent = '담당자명';
+      if (hintOrg) hintOrg.hidden = true;
+      inpOrg.placeholder = orgWord + ' 입력';
+      fOrg.parentNode.insertBefore(fOrg, fName);   // 기업명/단체명 → 담당자명 순
+    } else {
+      lblName.textContent = '이름'; lblOrg.textContent = '소속';
+      if (hintOrg) hintOrg.hidden = false;
+      inpOrg.placeholder = "소속기관·단체명 (없으면 도시공동체본부)";
+      fName.parentNode.insertBefore(fName, fOrg);   // 이름 → 소속 순
+    }
+  }
+
   function refresh(){
     var type = sel.value, fee = currentFee();
     refreshBiz();
+    refreshLabels();
     msgEl.innerHTML = MSG[type] || '';
     if (fee > 0){
       amtEl.textContent = '연 ' + won(fee);
