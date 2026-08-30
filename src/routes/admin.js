@@ -10,6 +10,7 @@ const bcrypt = require("bcryptjs");
 
 const { db, UPLOAD_DIR } = require("../db");
 const cfg = require("../config");
+const mailer = require("../mailer"); // 정회원 전환 시 환영 메일 발송
 
 // ---- 업로드 설정 ----
 const ALLOWED_EXT = new Set([
@@ -381,6 +382,14 @@ module.exports = function adminRoutes({ verifyCsrf }) {
 
   // ---------- 회원 관리 ----------
   const MEMBER_TYPES = ["개인회원", "기업회원", "단체회원"];
+  const mailTpl = require("../mail-templates");
+
+  // 정회원 전환 환영 메일 발송
+  async function sendWelcomeMail(m, paidAt) {
+    if (!m || !m.email) return { sent: false, reason: "no-email" };
+    const { subject, text, html } = mailTpl.welcomeMemberMail(m, paidAt);
+    return mailer.sendMail(m.email, subject, text, html);
+  }
   const MEMBER_LIST_COLS =
     "id, member_type, name, org_name, position, interest, grade, fee_paid, fee_paid_at, created_at";
   // 목록으로 안전하게 돌아갈 back 경로만 허용
@@ -429,8 +438,8 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     res.render("admin-member", { ...res.locals, title: m.name + " 회원", m });
   });
 
-  // 준회원 → 정회원 승인 (회비 납부 확인 필수)
-  router.post("/members/:id/approve", requireAdmin, verifyCsrf, (req, res) => {
+  // 준회원 → 정회원 승인 (회비 납부 확인 필수) — 완료 시 회원에게 환영 메일 발송
+  router.post("/members/:id/approve", requireAdmin, verifyCsrf, async (req, res) => {
     const id = parseInt(req.params.id, 10);
     const feeConfirmed = req.body.fee_confirm === "1";
     const back = safeBack(req.body.back);
@@ -443,11 +452,20 @@ module.exports = function adminRoutes({ verifyCsrf }) {
       });
     }
     const now = new Date().toISOString();
+    const cur = db.prepare("SELECT name, email, member_type, grade, fee_paid_at FROM members WHERE id = ?").get(id);
+    if (!cur) return res.redirect("/admin/members");
+    const wasFull = cur.grade === "정회원";
     // 기존 납부일이 있으면 유지, 없으면 오늘로 기록
-    const cur = db.prepare("SELECT fee_paid_at FROM members WHERE id = ?").get(id);
-    const paidAt = (cur && cur.fee_paid_at) ? cur.fee_paid_at : now;
+    const paidAt = cur.fee_paid_at ? cur.fee_paid_at : now;
     db.prepare("UPDATE members SET grade = '정회원', fee_paid = 1, fee_paid_at = ?, confirmed_at = ? WHERE id = ?")
       .run(paidAt, now, id);
+    // 새로 정회원이 된 경우에만 환영 메일 발송 (발송 실패는 전환을 막지 않음)
+    if (!wasFull) {
+      try {
+        const r = await sendWelcomeMail({ name: cur.name, email: cur.email, member_type: cur.member_type }, paidAt);
+        if (!r.sent) console.warn("[mail] 정회원 환영 메일 미발송:", r.reason || "unknown");
+      } catch (e) { console.error("[mail] 정회원 환영 메일 오류:", e.message); }
+    }
     res.redirect(back);
   });
 
