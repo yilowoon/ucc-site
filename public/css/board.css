@@ -304,9 +304,8 @@
 
 /* 표준 포맷 임원사 카드 */
 .partner-card--std { gap: 12px; }
-.partner-card-top { display: flex; align-items: center; gap: 14px; }
-.partner-logo-wrap { flex-shrink: 0; width: 84px; height: 84px; border: 1px solid var(--line); border-radius: 10px; background: #fff; display: grid; place-items: center; padding: 6px; }
-.partner-logo { max-width: 100%; max-height: 100%; object-fit: contain; }
+.partner-logo-band { width: 100%; min-height: 76px; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; }
+.partner-logo { max-width: 100%; max-height: 92px; width: auto; height: auto; object-fit: contain; }
 .partner-title { min-width: 0; }
 .partner-card--std .partner-name { font-size: 1.15rem; }
 .partner-ceo { font-size: .9rem; color: var(--ink-soft); margin: 4px 0 0; }
