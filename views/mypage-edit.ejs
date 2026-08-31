@@ -23,7 +23,20 @@
       <% if (error) { %><p class="form-alert err"><%= error %></p><% } %>
       <form method="post" action="/mypage/edit" class="admin-form-fields" autocomplete="off">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <div class="field"><label>이메일</label><input type="email" value="<%= esc(m.email) %>" disabled /><span class="field-hint">이메일은 변경할 수 없습니다. 변경이 필요하면 사무처로 문의해 주세요.</span></div>
+        <div class="field">
+          <label for="email">이메일</label>
+          <input type="email" id="email" name="email" value="<%= esc(m.email) %>" data-orig="<%= esc(m.email) %>" autocomplete="off" required />
+          <p class="email-check" id="emailCheck" role="status" aria-live="polite"></p>
+          <div class="email-verify" id="emailVerify" hidden>
+            <button type="button" class="btn btn-neutral btn-sm" id="btnSendCode">인증코드 받기</button>
+            <div class="code-row" id="codeRow" hidden>
+              <input type="text" id="email_code" inputmode="numeric" maxlength="6" placeholder="메일로 받은 6자리 코드" oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
+              <button type="button" class="btn btn-primary btn-sm" id="btnVerifyCode">확인</button>
+            </div>
+            <p class="verify-msg" id="verifyMsg" role="status" aria-live="polite"></p>
+          </div>
+          <span class="field-hint">이메일을 바꾸려면 새 이메일 입력 후 인증을 완료해 주세요.</span>
+        </div>
         <div class="field"><label>회원 등급</label><input type="text" value="<%= esc(m.grade || '준회원') %>" disabled /><span class="field-hint">정회원 전환은 회비 확인 후 관리자가 처리합니다.</span></div>
         <div class="field"><label for="member_type">회원 유형</label>
           <select id="member_type" name="member_type">
@@ -88,6 +101,78 @@
 
   <p style="text-align:center;margin-top:18px"><a class="btn btn-ghost btn-sm" href="/mypage">← 마이페이지로</a></p>
 </div>
+
+<style>
+  #emailVerify{margin-top:10px}
+  .code-row{display:flex;gap:8px;margin-top:8px}
+  .code-row input{flex:1;letter-spacing:4px;font-weight:700;text-align:center}
+  .code-row input[readonly]{background:#e3f2e8;color:var(--green-800)}
+  .code-row .btn{flex-shrink:0}
+  .email-check{font-size:.82rem;margin:6px 0 0;min-height:1.1em}
+  .email-check.ok{color:var(--green-700)} .email-check.err{color:#b53a2e}
+  .verify-msg{font-size:.82rem;margin:8px 0 0;min-height:1em}
+  .verify-msg.ok{color:var(--green-700);font-weight:600} .verify-msg.err{color:#b53a2e}
+</style>
+<script>
+(function(){
+  var inp=document.getElementById('email'); if(!inp) return;
+  var orig=(inp.dataset.orig||'').toLowerCase();
+  var chk=document.getElementById('emailCheck'), verify=document.getElementById('emailVerify');
+  var codeRow=document.getElementById('codeRow'), codeInput=document.getElementById('email_code');
+  var btnSend=document.getElementById('btnSendCode'), btnVerify=document.getElementById('btnVerifyCode'), vmsg=document.getElementById('verifyMsg');
+  var re=/^[^\s@]+@[^\s@]+\.[^\s@]+$/, emailOk=false, verified=false, timer=null;
+  var form=inp.closest('form');
+
+  function reset(){ verified=false; verify.hidden=true; codeRow.hidden=true; codeInput.value=''; codeInput.readOnly=false;
+    vmsg.textContent=''; vmsg.className='verify-msg'; btnSend.disabled=false; btnSend.textContent='인증코드 받기'; btnVerify.disabled=false; }
+  function lock(){ verified=true; codeInput.readOnly=true; btnVerify.disabled=true; btnSend.disabled=true; btnSend.textContent='인증 완료';
+    vmsg.textContent='새 이메일이 인증되었습니다.'; vmsg.className='verify-msg ok'; }
+
+  function check(){
+    var v=inp.value.trim().toLowerCase();
+    chk.textContent=''; chk.className='email-check'; emailOk=false;
+    if(v===orig){ verify.hidden=true; chk.textContent='현재 이메일입니다.'; return; }
+    if(!re.test(v)){ verify.hidden=true; return; }
+    clearTimeout(timer); chk.textContent='확인 중…';
+    timer=setTimeout(function(){
+      fetch('/api/check-email?email='+encodeURIComponent(v)).then(function(r){return r.json();}).then(function(d){
+        if(inp.value.trim().toLowerCase()!==v) return;
+        if(d.available){ emailOk=true; chk.textContent='사용 가능한 이메일입니다. 인증코드를 받아 인증해 주세요.'; chk.className='email-check ok'; verify.hidden=false; }
+        else { emailOk=false; chk.textContent='이미 사용 중인 이메일입니다.'; chk.className='email-check err'; verify.hidden=true; }
+      }).catch(function(){ chk.textContent=''; });
+    },400);
+  }
+  inp.addEventListener('input', function(){ reset(); check(); });
+
+  btnSend.addEventListener('click', function(){
+    var v=inp.value.trim().toLowerCase();
+    if(!re.test(v)){ vmsg.textContent='이메일을 먼저 정확히 입력해 주세요.'; vmsg.className='verify-msg err'; return; }
+    btnSend.disabled=true; btnSend.textContent='전송 중…';
+    fetch('/api/send-code',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({email:v}).toString()})
+      .then(function(r){return r.json();}).then(function(d){
+        btnSend.disabled=false; btnSend.textContent='코드 재전송';
+        if(!d.ok){ vmsg.textContent=d.error||'코드 발송에 실패했습니다.'; vmsg.className='verify-msg err'; return; }
+        codeRow.hidden=false; codeInput.focus();
+        vmsg.textContent='인증 코드를 새 이메일로 보냈습니다. 10분 이내 입력해 주세요.'+(d.devCode?' [테스트: '+d.devCode+']':''); vmsg.className='verify-msg';
+      }).catch(function(){ btnSend.disabled=false; btnSend.textContent='인증코드 받기'; vmsg.textContent='발송 오류. 잠시 후 다시 시도해 주세요.'; vmsg.className='verify-msg err'; });
+  });
+  btnVerify.addEventListener('click', function(){
+    var v=inp.value.trim().toLowerCase(), code=codeInput.value.trim();
+    if(code.length!==6){ vmsg.textContent='6자리 코드를 입력해 주세요.'; vmsg.className='verify-msg err'; return; }
+    btnVerify.disabled=true;
+    fetch('/api/verify-code',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({email:v,code:code}).toString()})
+      .then(function(r){return r.json();}).then(function(d){
+        if(d.ok){ lock(); alert('이메일이 인증되었습니다.'); }
+        else { btnVerify.disabled=false; vmsg.textContent=d.error||'코드를 다시 확인하세요.'; vmsg.className='verify-msg err'; }
+      }).catch(function(){ btnVerify.disabled=false; vmsg.textContent='인증 오류. 잠시 후 다시 시도해 주세요.'; vmsg.className='verify-msg err'; });
+  });
+
+  form.addEventListener('submit', function(e){
+    var v=inp.value.trim().toLowerCase();
+    if(v!==orig && !verified){ e.preventDefault(); alert('이메일을 변경하려면 새 이메일 인증을 완료해 주세요. (인증하지 않으려면 원래 이메일로 되돌려 주세요)'); inp.focus(); }
+  });
+})();
+</script>
 
 <!-- 다음(카카오) 우편번호 서비스: 도로명 주소 검색 -->
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>

@@ -808,8 +808,18 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   router.post("/mypage/edit", requireMember, verifyCsrf, (req, res) => {
     const m = db.prepare("SELECT * FROM members WHERE id = ?").get(req.session.member.id);
     if (!m) { delete req.session.member; return res.redirect("/login"); }
+    const editErr = (msg) => res.status(400).render("mypage-edit", { ...res.locals, title: "내 정보 수정", m, error: msg, pwError: null, done: null, hasPassword: hasPw(m), welcome: false });
     if (hasPw(m) && !bcrypt.compareSync(req.body.current || "", m.password_hash)) {
-      return res.status(400).render("mypage-edit", { ...res.locals, title: "내 정보 수정", m, error: "현재 비밀번호가 올바르지 않습니다.", pwError: null, done: null, hasPassword: hasPw(m), welcome: false });
+      return editErr("현재 비밀번호가 올바르지 않습니다.");
+    }
+    // 이메일 변경 — 새 이메일이면 인증(session.emailVerified) 필수 + 중복 검사
+    let emailToSet = m.email;
+    const newEmail = (req.body.email || "").trim().toLowerCase();
+    if (newEmail && newEmail !== m.email) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) return editErr("유효한 이메일을 입력해 주세요.");
+      if (req.session.emailVerified !== newEmail) return editErr("새 이메일 인증을 완료해 주셔야 변경됩니다.");
+      if (db.prepare("SELECT id FROM members WHERE email = ? AND id <> ?").get(newEmail, m.id)) return editErr("이미 사용 중인 이메일입니다.");
+      emailToSet = newEmail;
     }
     const name = (req.body.name || "").trim() || m.name;
     const memberType = MEMBER_TYPES.includes(req.body.member_type) ? req.body.member_type : m.member_type;
@@ -825,9 +835,10 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const eduLevel = eduLevels.includes(req.body.edu_level) ? req.body.edu_level : "";
     const major = (req.body.major || "").trim();
     const specialty = (req.body.specialty || "").trim();
-    db.prepare("UPDATE members SET name = ?, member_type = ?, phone = ?, org_name = ?, position = ?, job = ?, interest = ?, address = ?, address_detail = ?, education = ?, edu_level = ?, major = ?, specialty = ? WHERE id = ?")
-      .run(name, memberType, phone, orgName, position, job, interest, address, addressDetail, education, eduLevel, major, specialty, m.id);
+    db.prepare("UPDATE members SET email = ?, name = ?, member_type = ?, phone = ?, org_name = ?, position = ?, job = ?, interest = ?, address = ?, address_detail = ?, education = ?, edu_level = ?, major = ?, specialty = ? WHERE id = ?")
+      .run(emailToSet, name, memberType, phone, orgName, position, job, interest, address, addressDetail, education, eduLevel, major, specialty, m.id);
     req.session.member.name = name;
+    if (emailToSet !== m.email) delete req.session.emailVerified; // 변경 완료 후 인증상태 소거
     const m2 = db.prepare("SELECT * FROM members WHERE id = ?").get(m.id);
     res.render("mypage-edit", { ...res.locals, title: "내 정보 수정", m: m2, error: null, pwError: null, done: "정보가 저장되었습니다.", hasPassword: hasPw(m2), welcome: false });
   });
