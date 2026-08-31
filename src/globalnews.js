@@ -567,15 +567,48 @@ function msUntilWeekly(weekday, hour, minute) {
   return t.getTime() - now.getTime();
 }
 
+// 이번 주 월요일 hour:minute 시각(서버 로컬)
+function thisWeekMonday(hour, minute) {
+  const t = new Date();
+  t.setHours(hour, minute, 0, 0);
+  const day = t.getDay();            // 0=일 … 6=토
+  const back = day === 0 ? 6 : day - 1; // 이번 주 월요일까지 되돌릴 일수
+  t.setDate(t.getDate() - back);
+  return t;
+}
+
 function startScheduler() {
   const WD = 1, H = 7, M = 0; // 월요일 07:00
+  let running = false; // 정시/캐치업 동시 실행 방지
+
+  const publishIfDue = async (reason) => {
+    if (running) return;
+    running = true;
+    try {
+      const r = await collectOnce();               // 주 단위 멱등: 이미 발행됐으면 no-op
+      if (r && r.published) console.log(`[report] 주간 발행 완료 (${reason})`);
+    } catch (e) {
+      console.error(`[report] 주간 발행 오류 (${reason}):`, e.message);
+    } finally { running = false; }
+  };
+
+  // 1) 정시 실행: 매주 월요일 07:00
   const run = async () => {
-    try { await collectOnce(); } catch (e) { console.error("[report] 주간 발행 오류:", e.message); }
+    await publishIfDue("정시");
     setTimeout(run, msUntilWeekly(WD, H, M));
   };
   setTimeout(run, msUntilWeekly(WD, H, M));
+
+  // 2) 안전망: 매시간 점검 — 재시작 등으로 정시를 놓쳤어도, 이번 주 월요일 07:00이 지났는데
+  //    이번 주 리포트가 없으면 즉시 캐치업 발행(멱등이라 중복 없음)
+  const safety = () => {
+    if (Date.now() >= thisWeekMonday(H, M).getTime()) publishIfDue("캐치업");
+  };
+  safety();                                  // 시작 즉시 1회(재시작 캐치업)
+  setInterval(safety, 60 * 60 * 1000);       // 매시간 재점검
+
   const next = new Date(Date.now() + msUntilWeekly(WD, H, M));
-  console.log(`[report] 주간 스케줄러 시작 — 다음 발행: ${next.toLocaleString()}`);
+  console.log(`[report] 주간 스케줄러 시작 — 정시 발행: ${next.toLocaleString()} · 안전망(매시간 캐치업) 활성`);
 }
 
 module.exports = { collectOnce, startScheduler, THEMES, AUTHOR, PERSONA, BOARD };

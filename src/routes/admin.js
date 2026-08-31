@@ -798,7 +798,7 @@ module.exports = function adminRoutes({ verifyCsrf }) {
   // ---------- 햇빛소득마을 지역 현황 관리 ----------
   const SOLAR_STATUSES = ["준비중", "추진중", "운영중"];
   // ---------- 지구촌소식 AI기자: 수동 리포트 발행 ----------
-  // 스케줄러가 매주 월요일 08:30 에 자동 발행하지만, 관리자가 즉시 새 리포트를 낼 수도 있게 한다.
+  // 스케줄러가 매주 월요일 07:00 에 자동 발행(+재시작 시 캐치업)하지만, 관리자가 즉시 새 리포트를 낼 수도 있게 한다.
   router.post("/global/collect", requireAdmin, verifyCsrf, (req, res) => {
     try {
       const { collectOnce } = require("../globalnews");
