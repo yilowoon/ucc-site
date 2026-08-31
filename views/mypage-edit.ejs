@@ -72,6 +72,25 @@
             <% }); %>
           </select>
         </div>
+
+        <input type="hidden" name="convert" id="convertFlag" value="0" />
+        <input type="hidden" name="paid" id="mpPaid" value="0" />
+        <input type="hidden" name="pay_method" id="mpPayMethod" value="" />
+
+        <% if ((m.grade || '준회원') !== '정회원') { %>
+          <div class="mp-convert" id="mpConvert">
+            <p class="mp-convert-q">정회원으로 전환하시겠습니까?</p>
+            <p class="mp-convert-sub">정회원은 정기총회 의결권·명단 등재 등 정식 회원 혜택을 받습니다. 아래 회비 납부에 동의하고 저장하면 결제 절차가 진행됩니다.</p>
+            <button type="button" class="btn btn-neutral" id="convertBtn">정회원으로 전환</button>
+            <div class="mp-convert-agree" id="mpConvertAgree" hidden>
+              <div class="su-fee-row" id="feeRow">
+                <input type="checkbox" id="fee_agree" name="fee_agree" value="1" />
+                <label for="fee_agree" id="feeLabel">회비 납부에 동의합니다.</label>
+              </div>
+              <button type="button" class="linkbtn" id="convertCancel">전환 취소</button>
+            </div>
+          </div>
+        <% } %>
         <div class="field"><label for="name">이름 <span class="field-hint">기업/단체는 담당자명</span></label><input type="text" id="name" name="name" value="<%= esc(m.name) %>" autocomplete="name" required /></div>
         <div class="field"><label for="phone">연락처 <span class="field-hint">숫자만 입력</span></label><input type="tel" id="phone" name="phone" value="<%= esc(m.phone || '') %>" autocomplete="off" inputmode="numeric" pattern="[0-9]{9,11}" maxlength="11" placeholder="숫자만 입력 (예: 01012345678)" oninput="this.value=this.value.replace(/[^0-9]/g,'')" /></div>
         <div class="field"><label for="org_name">소속 <span class="field-hint">소속기관이 없으면 '도시공동체본부'</span></label><input type="text" id="org_name" name="org_name" value="<%= esc(m.org_name || '') %>" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="소속기관·단체명 (없으면 도시공동체본부)" /></div>
@@ -129,7 +148,66 @@
   <p style="text-align:center;margin-top:18px"><a class="btn btn-ghost btn-sm" href="/mypage">← 마이페이지로</a></p>
 </div>
 
+<!-- 정회원 전환 결제 모달 (회원가입과 동일) -->
+<div class="su-modal" id="mpModal" role="dialog" aria-modal="true" aria-label="회비 납부">
+  <div class="su-modal-card">
+    <button type="button" class="su-x" id="mpPayCancel" aria-label="닫기">&times;</button>
+    <h3>회비 납부</h3>
+    <div class="su-pay-sum"><span id="mpPayType">개인회원</span><b id="mpPayAmt">10,000원</b></div>
+    <div class="su-tabs">
+      <button type="button" class="su-tab active" data-m="bank">무통장 입금</button>
+      <button type="button" class="su-tab" data-m="toss">카드·간편결제</button>
+    </div>
+    <div class="su-pane" id="mpPaneBank">
+      <p class="su-warn">신청 후 <b>1주일 이내</b>에 회비가 납부되어야 정상 처리됩니다.</p>
+      <div class="su-acct">
+        <div><span>은행</span> 하나은행</div>
+        <div><span>계좌</span> <b>602-910286-92405</b><button type="button" class="su-copy" data-copy="602-910286-92405">복사</button></div>
+        <div><span>예금주</span> 사단법인 도시공동체본부</div>
+      </div>
+      <img class="su-acct-img" src="/img/account-copy.jpg" alt="사단법인 도시공동체본부 법인 계좌 사본" loading="lazy" />
+      <button type="button" class="btn btn-primary btn-block" id="mpBankDone">무통장 입금으로 신청 완료</button>
+    </div>
+    <div class="su-pane" id="mpPaneToss" hidden>
+      <div class="su-pay-line total"><span>결제 금액</span><span id="mpPayAmt2">10,000원</span></div>
+      <p class="su-pay-note">※ 현재는 <b>데모 결제</b>입니다. 실제 청구되지 않으며, PG 연동 시 이 창에서 카드·간편결제로 실제 납부가 진행됩니다.</p>
+      <button type="button" class="btn btn-primary btn-block" id="mpPayNow">결제하기</button>
+    </div>
+  </div>
+</div>
+
 <style>
+  /* 정회원 전환 UI */
+  .mp-convert{border:1px solid var(--gold-500);background:var(--paper-warm);border-radius:12px;padding:16px 18px;margin:2px 0 6px}
+  .mp-convert-q{font-weight:800;color:var(--green-800);margin:0 0 4px;font-size:1rem}
+  .mp-convert-sub{font-size:.86rem;color:var(--ink-soft);line-height:1.6;margin:0 0 12px}
+  .mp-convert-agree{margin-top:12px}
+  .mp-convert.is-on #convertBtn{display:none}
+  .su-fee-row{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);background:#fff;border-radius:10px;padding:12px 14px;margin:0 0 8px}
+  .su-fee-row input{margin-top:3px;width:18px;height:18px;accent-color:var(--green-700);flex:none}
+  .su-fee-row label{font-size:.94rem;color:var(--ink);line-height:1.6;cursor:pointer}
+  /* 결제 모달(회원가입과 동일) */
+  .su-modal{position:fixed;inset:0;z-index:9999;background:rgba(13,33,28,.55);display:none;align-items:center;justify-content:center;padding:20px}
+  .su-modal.open{display:flex}
+  .su-modal-card{position:relative;background:#fff;border-radius:16px;max-width:420px;width:100%;padding:22px;box-shadow:0 24px 60px -18px rgba(14,42,32,.5);max-height:90vh;overflow:auto}
+  .su-modal-card h3{margin:0 0 12px;font-size:1.15rem;color:var(--green-800)}
+  .su-x{position:absolute;top:12px;right:14px;border:none;background:none;font-size:22px;line-height:1;color:var(--muted);cursor:pointer}
+  .su-pay-sum{display:flex;justify-content:space-between;align-items:baseline;background:var(--paper-warm);border-radius:10px;padding:10px 14px;margin:0 0 14px;font-size:.92rem}
+  .su-pay-sum b{color:var(--green-800);font-size:1.25rem;font-weight:800}
+  .su-tabs{display:flex;gap:6px;margin-bottom:14px}
+  .su-tab{flex:1;padding:9px 6px;border:1px solid var(--line);background:#fff;border-radius:9px;font-size:.88rem;font-weight:700;color:var(--muted);cursor:pointer}
+  .su-tab.active{background:linear-gradient(150deg,var(--green-800),var(--green-900));color:#fff;border-color:var(--green-800)}
+  .su-warn{background:#fff6e6;border:1px solid var(--gold-500);border-radius:9px;padding:10px 12px;font-size:.85rem;color:#7a5a1a;margin:0 0 12px;line-height:1.6}
+  .su-acct{border:1px solid var(--line);border-radius:9px;padding:8px 14px;font-size:.9rem;margin-bottom:12px}
+  .su-acct>div{display:flex;align-items:center;gap:8px;padding:5px 0}
+  .su-acct>div span{color:var(--muted);width:42px;flex-shrink:0;font-size:.8rem}
+  .su-acct b{color:var(--ink);font-weight:700}
+  .su-copy{margin-left:auto;border:1px solid var(--line);background:var(--paper-warm);border-radius:6px;font-size:.72rem;padding:3px 9px;cursor:pointer;color:var(--green-800)}
+  .su-acct-img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:9px;margin-bottom:14px}
+  .su-pay-line{display:flex;justify-content:space-between;padding:10px 0;font-size:.95rem}
+  .su-pay-line.total{border-top:2px solid var(--green-800);font-weight:800;color:var(--green-800);font-size:1.1rem}
+  .su-pay-note{font-size:.82rem;color:var(--muted);background:var(--paper-alt);border-radius:8px;padding:10px 12px;margin:6px 0 14px;line-height:1.6}
+
   /* 회비 안내 플로팅 레이어 — 스크롤해도 따라다님(position:fixed) */
   .mp-fee-float{position:fixed;top:120px;right:24px;width:250px;z-index:40;border:1px solid var(--gold-500);background:var(--paper-warm);border-radius:14px;padding:18px 20px;box-shadow:0 16px 40px -14px rgba(14,42,32,.35)}
   .mp-fee-float h3{font-size:1rem;color:var(--gold-600);margin:0 0 8px;display:flex;align-items:center;gap:8px}
@@ -157,6 +235,52 @@
   function won(n){return n.toLocaleString('ko-KR')+'원';}
   function upd(){var t=sel.value,f=FEES[t]||0; amt.textContent=(f>0)?('연 '+won(f)):'무료'; msg.textContent=MSG[t]||'';}
   sel.addEventListener('change',upd); upd();
+})();
+</script>
+<script>
+// 정회원 전환 + 회비 결제(회원가입 흐름과 동일)
+(function(){
+  var convert=document.getElementById('mpConvert'); if(!convert) return; // 이미 정회원이면 없음
+  var sel=document.getElementById('member_type');
+  var btn=document.getElementById('convertBtn'), cancel=document.getElementById('convertCancel');
+  var agree=document.getElementById('mpConvertAgree'), feeChk=document.getElementById('fee_agree'), feeLabel=document.getElementById('feeLabel');
+  var flag=document.getElementById('convertFlag'), paidInput=document.getElementById('mpPaid'), methodInput=document.getElementById('mpPayMethod');
+  var editForm=feeChk.closest('form');
+  var FEES={"개인회원":10000,"기업회원":300000,"단체회원":0};
+  function won(n){return n.toLocaleString('ko-KR')+'원';}
+  function fee(){return FEES[sel.value]||0;}
+  function updLabel(){ var f=fee(); feeLabel.textContent = f>0 ? (sel.value+' 회비(연 '+won(f)+') 납부에 동의합니다.') : (sel.value+'은 현재 무료입니다. 정회원 전환에 동의합니다.'); }
+  sel.addEventListener('change', updLabel); updLabel();
+
+  var on=false, paymentConfirmed=false;
+  btn.addEventListener('click', function(){ on=true; flag.value='1'; agree.hidden=false; convert.classList.add('is-on'); });
+  cancel.addEventListener('click', function(){ on=false; flag.value='0'; agree.hidden=true; convert.classList.remove('is-on'); feeChk.checked=false; paidInput.value='0'; methodInput.value=''; paymentConfirmed=false; });
+
+  // 결제 모달
+  var modal=document.getElementById('mpModal');
+  var payType=document.getElementById('mpPayType'), payAmt=document.getElementById('mpPayAmt'), payAmt2=document.getElementById('mpPayAmt2');
+  var payNow=document.getElementById('mpPayNow'), payCancel=document.getElementById('mpPayCancel'), bankDone=document.getElementById('mpBankDone');
+  var tabs=modal.querySelectorAll('.su-tab'), paneBank=document.getElementById('mpPaneBank'), paneToss=document.getElementById('mpPaneToss');
+  function selectMethod(m){ tabs.forEach(function(t){t.classList.toggle('active',t.dataset.m===m);}); paneBank.hidden=(m!=='bank'); paneToss.hidden=(m!=='toss'); }
+  tabs.forEach(function(t){ t.addEventListener('click', function(){ selectMethod(t.dataset.m); }); });
+  function openModal(){ var f=fee(); payType.textContent=sel.value; payAmt.textContent=won(f); payAmt2.textContent=won(f); payNow.disabled=false; payNow.textContent='결제하기'; selectMethod('bank'); modal.classList.add('open'); }
+  function closeModal(){ modal.classList.remove('open'); }
+  payCancel.addEventListener('click', closeModal);
+  modal.addEventListener('click', function(e){
+    if(e.target===modal){ closeModal(); return; }
+    var b=e.target.closest('.su-copy'); if(b && navigator.clipboard){ navigator.clipboard.writeText(b.dataset.copy).then(function(){ b.textContent='복사됨'; setTimeout(function(){b.textContent='복사';},1200); }); }
+  });
+  bankDone.addEventListener('click', function(){ methodInput.value='bank'; paidInput.value='0'; paymentConfirmed=true; closeModal(); editForm.requestSubmit(); });
+  payNow.addEventListener('click', function(){ payNow.disabled=true; payNow.textContent='결제 처리 중…'; setTimeout(function(){ methodInput.value='toss'; paidInput.value='1'; paymentConfirmed=true; closeModal(); editForm.requestSubmit(); }, 1000); });
+
+  // 저장 시 전환 흐름 개입
+  editForm.addEventListener('submit', function(e){
+    if(!on) return; // 전환 안 하면 일반 저장
+    var f=fee();
+    if(f>0 && !feeChk.checked){ e.preventDefault(); alert('회비 납부에 동의해 주셔야 정회원 전환이 진행됩니다.'); feeChk.focus(); return; }
+    if(f>0 && !paymentConfirmed){ e.preventDefault(); openModal(); return; }
+    // 무료(단체) 또는 결제 완료 → 그대로 제출
+  });
 })();
 </script>
 <script>

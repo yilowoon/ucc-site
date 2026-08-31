@@ -823,6 +823,10 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     }
     const name = (req.body.name || "").trim() || m.name;
     const memberType = MEMBER_TYPES.includes(req.body.member_type) ? req.body.member_type : m.member_type;
+    // 정회원 전환 신청(회원가입 회비 흐름과 동일) — 준회원만 대상
+    const wantConvert = req.body.convert === "1" && (m.grade || "준회원") !== "정회원";
+    const CONV_FEE = { "개인회원": 10000, "기업회원": 300000, "단체회원": 0 }[memberType] || 0;
+    if (wantConvert && CONV_FEE > 0 && !req.body.fee_agree) return editErr("정회원 전환은 회비 납부 동의가 필요합니다.");
     const phone = (req.body.phone || "").replace(/[^0-9]/g, ""); // 숫자만 저장
     const orgName = (req.body.org_name || "").trim() || "도시공동체본부";
     const position = (req.body.position || "").trim();
@@ -839,8 +843,21 @@ module.exports = function siteRoutes({ verifyCsrf }) {
       .run(emailToSet, name, memberType, phone, orgName, position, job, interest, address, addressDetail, education, eduLevel, major, specialty, m.id);
     req.session.member.name = name;
     if (emailToSet !== m.email) delete req.session.emailVerified; // 변경 완료 후 인증상태 소거
+
+    // 정회원 전환 신청 처리 — 회비 납부(데모) 기록. 등급 전환은 관리자 승인(회원가입과 동일)
+    let convertMsg = "";
+    if (wantConvert) {
+      const feePaid = (CONV_FEE > 0 && req.body.paid === "1") ? 1 : 0;
+      const now = new Date().toISOString();
+      db.prepare("UPDATE members SET fee_paid = ?, fee_paid_at = ? WHERE id = ?")
+        .run(feePaid, feePaid ? now : (m.fee_paid_at || ""), m.id);
+      convertMsg = feePaid
+        ? " 회비 결제가 확인되어 정회원 전환 신청이 접수되었습니다. 관리자 승인 후 정회원으로 전환됩니다."
+        : " 정회원 전환 신청이 접수되었습니다. 회비(계좌 입금) 확인 후 관리자가 정회원으로 전환해 드립니다.";
+    }
+
     const m2 = db.prepare("SELECT * FROM members WHERE id = ?").get(m.id);
-    res.render("mypage-edit", { ...res.locals, title: "내 정보 수정", m: m2, error: null, pwError: null, done: "정보가 저장되었습니다.", hasPassword: hasPw(m2), welcome: false });
+    res.render("mypage-edit", { ...res.locals, title: "내 정보 수정", m: m2, error: null, pwError: null, done: "정보가 저장되었습니다." + convertMsg, hasPassword: hasPw(m2), welcome: false });
   });
 
   // 비밀번호 변경/설정 — 기존 비밀번호가 있으면 현재 비밀번호 확인, 없으면(소셜) 바로 설정
