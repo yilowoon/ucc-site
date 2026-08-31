@@ -1,12 +1,10 @@
 <%- include('partials/header') %>
 
 <style>
-  .su-grid{display:grid;grid-template-columns:1fr 330px;gap:32px;align-items:start;max-width:960px;margin:0 auto}
-  @media(max-width:820px){.su-grid{grid-template-columns:1fr}}
+  .su-grid{max-width:680px;margin:0 auto}
   .su-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius-lg);padding:clamp(22px,3vw,32px)}
-  /* 오른쪽 실시간 안내 박스 */
-  .su-aside{position:sticky;top:90px}
-  .su-info{border:1px solid var(--gold-500);background:var(--paper-warm);border-radius:var(--radius);padding:20px 22px}
+  /* 회비 안내 박스 — 회원유형 바로 아래, 항상 표시(모든 화면) */
+  .su-info{border:1px solid var(--gold-500);background:var(--paper-warm);border-radius:var(--radius);padding:18px 20px;margin:4px 0 22px}
   .su-info h3{font-size:1rem;color:var(--gold-600);margin:0 0 10px;display:flex;align-items:center;gap:8px}
   .su-info .amt{font-family:var(--mono,inherit);font-size:1.5rem;font-weight:800;color:var(--green-800);margin:2px 0 8px}
   .su-info .msg{font-size:.92rem;color:var(--ink-soft);line-height:1.7}
@@ -97,6 +95,13 @@
           </select>
         </div>
 
+        <!-- 회비 안내 (회원유형 바로 아래 · 항상 표시) -->
+        <div class="su-info" id="suInfo">
+          <h3>💳 회비 안내</h3>
+          <div class="amt" id="suAmt">연 10,000원</div>
+          <p class="msg" id="suMsg"></p>
+        </div>
+
         <div class="field" id="f_name"><label for="name"><span class="lbl-text">이름</span></label><input type="text" id="name" name="name" value="<%= esc(form.name || '') %>" autocomplete="name" required /></div>
 
         <div class="field" id="f_org"><label for="org_name"><span class="lbl-text">소속</span> <span class="field-hint" id="hintOrg">소속기관이 없으면 '도시공동체본부'라고 입력</span></label><input type="text" id="org_name" name="org_name" value="<%= esc(form.org_name || '') %>" placeholder="소속기관·단체명 (없으면 도시공동체본부)" /></div>
@@ -164,15 +169,6 @@
         <p class="admin-auth-hint">이미 회원이신가요? <a href="/login">로그인</a></p>
       </form>
     </div>
-
-    <!-- 오른쪽 실시간 안내 -->
-    <aside class="su-aside">
-      <div class="su-info">
-        <h3>💳 회비 안내</h3>
-        <div class="amt" id="suAmt">연 10,000원</div>
-        <p class="msg" id="suMsg"></p>
-      </div>
-    </aside>
   </div>
 </div>
 
