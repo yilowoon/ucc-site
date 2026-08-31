@@ -4,11 +4,16 @@
   <div class="container">
     <span class="page-banner-en">MY PAGE</span>
     <h1 class="page-banner-title">내 정보 수정</h1>
-    <p class="page-banner-desc">정보를 변경하려면 보안을 위해 현재 비밀번호를 입력해야 합니다.</p>
+    <p class="page-banner-desc"><%= hasPassword ? '정보를 변경하려면 보안을 위해 현재 비밀번호를 입력해야 합니다.' : '소셜 로그인 계정입니다. 아래에서 정보를 입력·완성해 주세요.' %></p>
   </div>
 </section>
 
 <div class="container page-wrap">
+  <% if (typeof welcome !== 'undefined' && welcome) { %>
+    <div class="mypage-notice" style="max-width:920px;margin:0 auto 18px">
+      <b>환영합니다!</b> 간편로그인으로 가입되었습니다. <b>정회원 승인</b>을 위해 아래 정보를 입력·완성해 주세요. (특히 연락처·소속)
+    </div>
+  <% } %>
   <% if (done) { %><p class="form-alert ok" style="max-width:560px;margin:0 auto 18px"><%= done %></p><% } %>
 
   <div class="mypage-edit-grid">
@@ -19,8 +24,15 @@
       <form method="post" action="/mypage/edit" class="admin-form-fields" autocomplete="off">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
         <div class="field"><label>이메일</label><input type="email" value="<%= esc(m.email) %>" disabled /><span class="field-hint">이메일은 변경할 수 없습니다. 변경이 필요하면 사무처로 문의해 주세요.</span></div>
-        <div class="field"><label>회원 등급</label><input type="text" value="<%= esc(m.grade || '준회원') %> · <%= esc(m.member_type) %>" disabled /></div>
-        <div class="field"><label for="name">이름</label><input type="text" id="name" name="name" value="<%= esc(m.name) %>" autocomplete="name" required /></div>
+        <div class="field"><label>회원 등급</label><input type="text" value="<%= esc(m.grade || '준회원') %>" disabled /><span class="field-hint">정회원 전환은 회비 확인 후 관리자가 처리합니다.</span></div>
+        <div class="field"><label for="member_type">회원 유형</label>
+          <select id="member_type" name="member_type">
+            <% ['개인회원','기업회원','단체회원'].forEach(function(t){ %>
+              <option value="<%= t %>" <%= (m.member_type === t) ? 'selected' : '' %>><%= t %></option>
+            <% }); %>
+          </select>
+        </div>
+        <div class="field"><label for="name">이름 <span class="field-hint">기업/단체는 담당자명</span></label><input type="text" id="name" name="name" value="<%= esc(m.name) %>" autocomplete="name" required /></div>
         <div class="field"><label for="phone">연락처 <span class="field-hint">숫자만 입력</span></label><input type="tel" id="phone" name="phone" value="<%= esc(m.phone || '') %>" autocomplete="off" inputmode="numeric" pattern="[0-9]{9,11}" maxlength="11" placeholder="숫자만 입력 (예: 01012345678)" oninput="this.value=this.value.replace(/[^0-9]/g,'')" /></div>
         <div class="field"><label for="org_name">소속 <span class="field-hint">소속기관이 없으면 '도시공동체본부'</span></label><input type="text" id="org_name" name="org_name" value="<%= esc(m.org_name || '') %>" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="소속기관·단체명 (없으면 도시공동체본부)" /></div>
         <div class="field"><label for="position">직급 <span class="field-hint">선택</span></label><input type="text" id="position" name="position" value="<%= esc(m.position || '') %>" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="예: 대표, 팀장, 연구원" /></div>
@@ -48,21 +60,28 @@
         </div>
         <div class="field"><label for="major">최종전공 <span class="field-hint">선택</span></label><input type="text" id="major" name="major" value="<%= esc(m.major || '') %>" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="예: 도시공학" /></div>
         <div class="field"><label for="specialty">전문분야 <span class="field-hint">선택</span></label><input type="text" id="specialty" name="specialty" value="<%= esc(m.specialty || '') %>" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="예: ESG 경영·지역개발 컨설팅" /></div>
-        <div class="field field--gate"><label for="current">현재 비밀번호 <span class="field-hint">보안 확인</span></label><input type="password" id="current" name="current" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" required /></div>
+        <% if (hasPassword) { %>
+          <div class="field field--gate"><label for="current">현재 비밀번호 <span class="field-hint">보안 확인</span></label><input type="password" id="current" name="current" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" required /></div>
+        <% } %>
         <button type="submit" class="btn btn-primary btn-block">정보 저장</button>
       </form>
     </div>
 
-    <!-- 비밀번호 변경 -->
+    <!-- 비밀번호 변경/설정 -->
     <div class="mypage-card">
-      <h2 class="mypage-h">비밀번호 변경</h2>
+      <h2 class="mypage-h"><%= hasPassword ? '비밀번호 변경' : '비밀번호 설정' %></h2>
+      <% if (!hasPassword) { %>
+        <p class="mypage-notice" style="margin-bottom:18px">소셜 로그인 계정입니다. 비밀번호를 설정하면 <b>이메일+비밀번호로도 로그인</b>할 수 있습니다. (선택 사항)</p>
+      <% } %>
       <% if (pwError) { %><p class="form-alert err"><%= pwError %></p><% } %>
       <form method="post" action="/mypage/password" class="admin-form-fields">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <div class="field"><label for="pw_current">현재 비밀번호</label><input type="password" id="pw_current" name="current" autocomplete="current-password" required /></div>
+        <% if (hasPassword) { %>
+          <div class="field"><label for="pw_current">현재 비밀번호</label><input type="password" id="pw_current" name="current" autocomplete="current-password" required /></div>
+        <% } %>
         <div class="field"><label for="newpw">새 비밀번호 <span class="field-hint">8자 이상</span></label><input type="password" id="newpw" name="newpw" autocomplete="new-password" required minlength="8" /></div>
         <div class="field"><label for="pw_confirm">새 비밀번호 확인</label><input type="password" id="pw_confirm" name="confirm" autocomplete="new-password" required minlength="8" /></div>
-        <button type="submit" class="btn btn-neutral btn-block">비밀번호 변경</button>
+        <button type="submit" class="btn btn-neutral btn-block"><%= hasPassword ? '비밀번호 변경' : '비밀번호 설정' %></button>
       </form>
     </div>
   </div>

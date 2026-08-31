@@ -756,6 +756,7 @@ module.exports = function siteRoutes({ verifyCsrf }) {
       }
 
       // 3) 신규 → 바로 회원가입(개인회원·준회원)
+      let isNew = false;
       if (!m) {
         const email = (prof.email || `${p}_${prof.providerId}@social.ucc`).toLowerCase();
         // 혹시 이메일 유니크 충돌 시 provider 기반 대체 이메일 사용
@@ -769,11 +770,14 @@ module.exports = function siteRoutes({ verifyCsrf }) {
           "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         ).run(prof.name || "회원", finalEmail, "", "개인회원", "도시공동체본부", "", "", "", "", p, prof.providerId, now);
         m = db.prepare("SELECT * FROM members WHERE id = ?").get(info.lastInsertRowid);
+        isNew = true;
         console.log(`[oauth] 신규 회원 가입(${p}): #${m.id} ${m.email}`);
       }
 
       req.session.member = { id: m.id, name: m.name, loginAt: Date.now() };
-      return res.redirect(st.next || "/");
+      // 신규 가입 또는 정보 미완성(연락처 없음) → 마이페이지로 이동해 정보 입력 유도
+      const incomplete = isNew || !String(m.phone || "").trim();
+      return res.redirect(incomplete ? "/mypage/edit?welcome=1" : (st.next || "/"));
     } catch (e) {
       console.error(`[oauth] ${p} 콜백 오류:`, e.message);
       return oauthFail("소셜 로그인 처리 중 오류가 발생했습니다.");
@@ -792,21 +796,23 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     res.render("mypage", { ...res.locals, title: "마이페이지", m });
   });
 
+  const hasPw = (m) => !!(m && m.password_hash && m.password_hash.length > 0);
+
   router.get("/mypage/edit", requireMember, (req, res) => {
     const m = db.prepare("SELECT * FROM members WHERE id = ?").get(req.session.member.id);
     if (!m) { delete req.session.member; return res.redirect("/login"); }
-    res.render("mypage-edit", { ...res.locals, title: "내 정보 수정", m, error: null, pwError: null, done: null });
+    res.render("mypage-edit", { ...res.locals, title: "내 정보 수정", m, error: null, pwError: null, done: null, hasPassword: hasPw(m), welcome: req.query.welcome === "1" });
   });
 
-  // 정보 수정 — 현재 비밀번호 재확인(보안 게이트)
+  // 정보 수정 — 비밀번호 있는 계정만 현재 비밀번호 재확인(소셜 계정은 세션 인증으로 충분)
   router.post("/mypage/edit", requireMember, verifyCsrf, (req, res) => {
     const m = db.prepare("SELECT * FROM members WHERE id = ?").get(req.session.member.id);
     if (!m) { delete req.session.member; return res.redirect("/login"); }
-    const view = (extra) => res.render("mypage-edit", { ...res.locals, title: "내 정보 수정", m, error: null, pwError: null, done: null, ...extra });
-    if (!bcrypt.compareSync(req.body.current || "", m.password_hash)) {
-      return res.status(400).render("mypage-edit", { ...res.locals, title: "내 정보 수정", m, error: "현재 비밀번호가 올바르지 않습니다.", pwError: null, done: null });
+    if (hasPw(m) && !bcrypt.compareSync(req.body.current || "", m.password_hash)) {
+      return res.status(400).render("mypage-edit", { ...res.locals, title: "내 정보 수정", m, error: "현재 비밀번호가 올바르지 않습니다.", pwError: null, done: null, hasPassword: hasPw(m), welcome: false });
     }
     const name = (req.body.name || "").trim() || m.name;
+    const memberType = MEMBER_TYPES.includes(req.body.member_type) ? req.body.member_type : m.member_type;
     const phone = (req.body.phone || "").replace(/[^0-9]/g, ""); // 숫자만 저장
     const orgName = (req.body.org_name || "").trim() || "도시공동체본부";
     const position = (req.body.position || "").trim();
@@ -819,24 +825,25 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const eduLevel = eduLevels.includes(req.body.edu_level) ? req.body.edu_level : "";
     const major = (req.body.major || "").trim();
     const specialty = (req.body.specialty || "").trim();
-    db.prepare("UPDATE members SET name = ?, phone = ?, org_name = ?, position = ?, job = ?, interest = ?, address = ?, address_detail = ?, education = ?, edu_level = ?, major = ?, specialty = ? WHERE id = ?")
-      .run(name, phone, orgName, position, job, interest, address, addressDetail, education, eduLevel, major, specialty, m.id);
+    db.prepare("UPDATE members SET name = ?, member_type = ?, phone = ?, org_name = ?, position = ?, job = ?, interest = ?, address = ?, address_detail = ?, education = ?, edu_level = ?, major = ?, specialty = ? WHERE id = ?")
+      .run(name, memberType, phone, orgName, position, job, interest, address, addressDetail, education, eduLevel, major, specialty, m.id);
     req.session.member.name = name;
     const m2 = db.prepare("SELECT * FROM members WHERE id = ?").get(m.id);
-    res.render("mypage-edit", { ...res.locals, title: "내 정보 수정", m: m2, error: null, pwError: null, done: "정보가 수정되었습니다." });
+    res.render("mypage-edit", { ...res.locals, title: "내 정보 수정", m: m2, error: null, pwError: null, done: "정보가 저장되었습니다.", hasPassword: hasPw(m2), welcome: false });
   });
 
-  // 비밀번호 변경 — 현재 비밀번호 확인 + 새 비밀번호
+  // 비밀번호 변경/설정 — 기존 비밀번호가 있으면 현재 비밀번호 확인, 없으면(소셜) 바로 설정
   router.post("/mypage/password", requireMember, verifyCsrf, (req, res) => {
     const m = db.prepare("SELECT * FROM members WHERE id = ?").get(req.session.member.id);
     if (!m) { delete req.session.member; return res.redirect("/login"); }
     const cur = req.body.current || "", np = req.body.newpw || "", cf = req.body.confirm || "";
-    const back = (pwError, done) => res.render("mypage-edit", { ...res.locals, title: "내 정보 수정", m, error: null, pwError, done });
-    if (!bcrypt.compareSync(cur, m.password_hash)) return back("현재 비밀번호가 올바르지 않습니다.", null);
+    const back = (pwError, done) => res.render("mypage-edit", { ...res.locals, title: "내 정보 수정", m, error: null, pwError, done, hasPassword: hasPw(m), welcome: false });
+    if (hasPw(m) && !bcrypt.compareSync(cur, m.password_hash)) return back("현재 비밀번호가 올바르지 않습니다.", null);
     if (np.length < 8) return back("새 비밀번호는 8자 이상이어야 합니다.", null);
     if (np !== cf) return back("새 비밀번호 확인이 일치하지 않습니다.", null);
     db.prepare("UPDATE members SET password_hash = ? WHERE id = ?").run(bcrypt.hashSync(np, 10), m.id);
-    back(null, "비밀번호가 변경되었습니다.");
+    const m2 = db.prepare("SELECT * FROM members WHERE id = ?").get(m.id);
+    res.render("mypage-edit", { ...res.locals, title: "내 정보 수정", m: m2, error: null, pwError: null, done: hasPw(m) ? "비밀번호가 변경되었습니다." : "비밀번호가 설정되었습니다. 이제 이메일로도 로그인할 수 있습니다.", hasPassword: true, welcome: false });
   });
 
   return router;
