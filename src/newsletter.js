@@ -28,11 +28,15 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 function stripTags(s) { return String(s || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(); }
 function decodeEntities(s) {
   const once = (v) => v
-    .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"')
-    .replace(/&#0*39;/g, "'").replace(/&apos;/g, "'").replace(/&nbsp;/g, " ")
+    .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/gi, '"')
+    .replace(/&#0*39;/g, "'").replace(/&apos;/gi, "'").replace(/&nbsp;/gi, " ")
     .replace(/&#(\d+);/g, (m, n) => { try { return String.fromCodePoint(+n); } catch (e) { return m; } })
+    .replace(/&#x([0-9a-fA-F]+);/g, (m, n) => { try { return String.fromCodePoint(parseInt(n, 16)); } catch (e) { return m; } })
     .replace(/&amp;/g, "&");
-  let x = String(s || ""); x = once(x); x = once(x); return x;
+  // 여러 번 인코딩(&amp;quot; 등)돼도 안정될 때까지 반복 디코딩
+  let x = String(s || "");
+  for (let i = 0; i < 6; i++) { const y = once(x); if (y === x) break; x = y; }
+  return x;
 }
 async function fetchText(url, ms = 10000, headers = {}) {
   const ctrl = new AbortController();
@@ -43,11 +47,13 @@ async function fetchText(url, ms = 10000, headers = {}) {
   } finally { clearTimeout(to); }
 }
 function metaTag(h, prop) {
+  const p = String(prop).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // content=(따옴표)(내용)(같은 따옴표) — 여는 따옴표와 동일한 종류가 나올 때까지 전체 캡처
   const m =
-    h.match(new RegExp('<meta[^>]+property=["\']' + prop + '["\'][^>]+content=["\']([^"\']*)', "i")) ||
-    h.match(new RegExp('<meta[^>]+content=["\']([^"\']*)["\'][^>]+property=["\']' + prop + '["\']', "i")) ||
-    h.match(new RegExp('<meta[^>]+name=["\']' + prop + '["\'][^>]+content=["\']([^"\']*)', "i"));
-  return m ? decodeEntities(m[1]).trim() : "";
+    h.match(new RegExp('<meta[^>]+property=["\']' + p + '["\'][^>]*?content=(["\'])([\\s\\S]*?)\\1', "i")) ||
+    h.match(new RegExp('<meta[^>]+content=(["\'])([\\s\\S]*?)\\1[^>]*?property=["\']' + p + '["\']', "i")) ||
+    h.match(new RegExp('<meta[^>]+name=["\']' + p + '["\'][^>]*?content=(["\'])([\\s\\S]*?)\\1', "i"));
+  return m ? decodeEntities(m[2]).trim() : "";
 }
 
 // ---------- 소스: Daum 뉴스 검색 → 기사 크롤링 ----------
