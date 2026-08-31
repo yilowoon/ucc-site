@@ -123,6 +123,7 @@ function baseLocals(req) {
     fmtDate: cfg.formatDate,
     fmtDateTime: cfg.formatDateTime,
     csrfToken: req.session ? req.session.csrf : "",
+    kakaoKey: process.env.KAKAO_JS_KEY || "", // 설정 시 카카오톡 리치 공유(SDK) 활성화
     path: req.path,
     baseUrl: req.protocol + "://" + req.get("host"), // OG 절대 URL용
   };

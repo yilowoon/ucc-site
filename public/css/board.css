@@ -271,6 +271,23 @@
 .reg-table .reg-date { color: var(--muted); white-space: nowrap; }
 .reg-table .reg-empty { text-align: center; color: var(--muted); padding: 28px 16px; }
 
+/* ── 공유바 (알림마당 상세 상단) ── */
+.share-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 22px; padding: 0 0 18px; border-bottom: 1px solid var(--line); }
+.share-label { font-size: .85rem; font-weight: 700; color: var(--muted); margin-right: 4px; }
+.share-btn { width: 38px; height: 38px; border: none; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; transition: transform .12s ease, filter .12s ease; padding: 0; }
+.share-btn[hidden] { display: none; }
+.share-btn:hover { transform: translateY(-2px); filter: brightness(1.06); }
+.share-btn:active { transform: translateY(0); }
+.share-btn svg { width: 20px; height: 20px; }
+.share-copy { background: var(--paper-warm); color: var(--green-800); border: 1px solid var(--line); }
+.share-kakao { background: #FEE500; color: #3C1E1E; }
+.share-fb { background: #1877F2; }
+.share-x { background: #111; }
+.share-ig { background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285AEB 90%); }
+.share-more { background: var(--paper-warm); color: var(--green-800); border: 1px solid var(--line); }
+.share-toast { position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%); background: var(--green-900); color: #fff; padding: 11px 20px; border-radius: 999px; font-size: .9rem; box-shadow: 0 10px 30px -8px rgba(14,42,32,.5); z-index: 9999; }
+@media (max-width: 480px) { .share-btn { width: 42px; height: 42px; } }
+
 /* ── 개인회원 정회원/준회원 명단 탭 ── */
 .mi-members { margin-top: 34px; }
 .mi-tabs { display: inline-flex; gap: 4px; background: var(--paper-warm); border: 1px solid var(--line); border-radius: 999px; padding: 4px; margin-bottom: 16px; }

@@ -23,6 +23,8 @@
       </div>
     </header>
 
+    <%- include('partials/share-bar', { shareTitle: n.title }) %>
+
     <div class="post-images nl-view-imgs">
       <figure class="post-image"><span class="nl-view-img" style="background-image:url('<%= encodeURI(n.image1) %>')"></span></figure>
       <figure class="post-image"><span class="nl-view-img" style="background-image:url('<%= encodeURI(n.image2) %>')"></span></figure>

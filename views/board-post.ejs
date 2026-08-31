@@ -24,6 +24,8 @@
       </div>
     </header>
 
+    <%- include('partials/share-bar', { shareTitle: post.title }) %>
+
     <% if (images.length) { %>
       <div class="post-images">
         <% images.forEach(function(img){ %>
