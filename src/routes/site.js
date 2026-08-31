@@ -613,6 +613,7 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     res.render("member-form", {
       ...res.locals, title: "로그인", mode: "login",
       error: null, joined: req.query.joined === "1", form: {}, next: safeNext(req.query.next),
+      oauthProviders: require("../oauth").enabled(),
     });
   });
 
@@ -686,6 +687,71 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     // 개발환경(SMTP 미설정): 화면에서 임시 비밀번호 확인 + 비번 교체
     db.prepare("UPDATE members SET password_hash = ? WHERE id = ?").run(bcrypt.hashSync(tempPw, 10), m.id);
     return done({ devPw: tempPw });
+  });
+
+  // ---------- SNS 간편로그인 (카카오·네이버·구글) ----------
+  const oauth = require("../oauth");
+
+  router.get("/auth/:provider", (req, res) => {
+    const p = req.params.provider;
+    if (!oauth.isEnabled(p)) return res.redirect("/login");
+    const state = crypto.randomBytes(16).toString("hex");
+    req.session.oauthState = { p, state, next: safeNext(req.query.next) };
+    res.redirect(oauth.authorizeUrl(p, state, oauth.callbackUrl(req, p)));
+  });
+
+  router.get("/auth/:provider/callback", async (req, res) => {
+    const p = req.params.provider;
+    const st = req.session.oauthState;
+    const oauthFail = (msg) => res.status(400).render("message", {
+      ...res.locals, title: "로그인 오류", heading: "소셜 로그인에 실패했습니다",
+      body: msg || "잠시 후 다시 시도해 주세요.", backUrl: "/login",
+    });
+    if (!oauth.isEnabled(p)) return oauthFail("지원하지 않는 로그인입니다.");
+    if (!st || st.p !== p || !req.query.code || !req.query.state || req.query.state !== st.state) {
+      return oauthFail("인증 정보가 올바르지 않습니다. 다시 시도해 주세요.");
+    }
+    delete req.session.oauthState;
+
+    try {
+      const prof = await oauth.exchange(p, req.query.code, oauth.callbackUrl(req, p), st.state);
+      if (!prof || !prof.providerId) return oauthFail("프로필 정보를 가져오지 못했습니다.");
+
+      // 1) provider+id 로 기존 연동 회원 조회
+      let m = db.prepare("SELECT * FROM members WHERE provider = ? AND provider_id = ?").get(p, prof.providerId);
+
+      // 2) 이메일이 같은 기존(일반) 회원이 있으면 소셜 계정 연동
+      if (!m && prof.email) {
+        const byEmail = db.prepare("SELECT * FROM members WHERE email = ?").get(prof.email);
+        if (byEmail) {
+          db.prepare("UPDATE members SET provider = ?, provider_id = ? WHERE id = ?").run(p, prof.providerId, byEmail.id);
+          m = byEmail;
+        }
+      }
+
+      // 3) 신규 → 바로 회원가입(개인회원·준회원)
+      if (!m) {
+        const email = (prof.email || `${p}_${prof.providerId}@social.ucc`).toLowerCase();
+        // 혹시 이메일 유니크 충돌 시 provider 기반 대체 이메일 사용
+        let finalEmail = email;
+        if (db.prepare("SELECT id FROM members WHERE email = ?").get(finalEmail)) {
+          finalEmail = `${p}_${prof.providerId}@social.ucc`;
+        }
+        const now = new Date().toISOString();
+        const info = db.prepare(
+          "INSERT INTO members (name, email, phone, member_type, org_name, position, job, interest, password_hash, provider, provider_id, created_at) " +
+          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        ).run(prof.name || "회원", finalEmail, "", "개인회원", "도시공동체본부", "", "", "", "", p, prof.providerId, now);
+        m = db.prepare("SELECT * FROM members WHERE id = ?").get(info.lastInsertRowid);
+        console.log(`[oauth] 신규 회원 가입(${p}): #${m.id} ${m.email}`);
+      }
+
+      req.session.member = { id: m.id, name: m.name, loginAt: Date.now() };
+      return res.redirect(st.next || "/");
+    } catch (e) {
+      console.error(`[oauth] ${p} 콜백 오류:`, e.message);
+      return oauthFail("소셜 로그인 처리 중 오류가 발생했습니다.");
+    }
   });
 
   // ---------- 마이페이지 (회원 전용) ----------

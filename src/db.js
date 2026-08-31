@@ -211,6 +211,10 @@ try { db.exec("ALTER TABLE members ADD COLUMN biz_website TEXT NOT NULL DEFAULT 
 try { db.exec("ALTER TABLE members ADD COLUMN biz_logo TEXT NOT NULL DEFAULT ''"); } catch (e) {}     // 로고(CI) 파일
 try { db.exec("ALTER TABLE members ADD COLUMN biz_profile TEXT NOT NULL DEFAULT ''"); } catch (e) {}  // 기업소개자료 파일
 try { db.exec("ALTER TABLE members ADD COLUMN biz_profile_name TEXT NOT NULL DEFAULT ''"); } catch (e) {} // 소개자료 원본파일명
+// SNS 간편로그인 연동(카카오/네이버/구글)
+try { db.exec("ALTER TABLE members ADD COLUMN provider TEXT NOT NULL DEFAULT ''"); } catch (e) {}    // '' | kakao | naver | google
+try { db.exec("ALTER TABLE members ADD COLUMN provider_id TEXT NOT NULL DEFAULT ''"); } catch (e) {} // 제공사 고유 사용자 ID
+try { db.exec("CREATE INDEX IF NOT EXISTS idx_members_provider ON members(provider, provider_id)"); } catch (e) {}
 // contacts: 문의 확인용 4자리 PIN 해시 · 회원 연동 · 관리자 답변
 try { db.exec("ALTER TABLE contacts ADD COLUMN pw_hash TEXT NOT NULL DEFAULT ''"); } catch (e) {}     // 4자리 PIN(bcrypt)
 try { db.exec("ALTER TABLE contacts ADD COLUMN member_id INTEGER NOT NULL DEFAULT 0"); } catch (e) {} // 회원이 작성한 경우
