@@ -287,6 +287,21 @@
 .reg-table .reg-date { color: var(--muted); white-space: nowrap; }
 .reg-table .reg-empty { text-align: center; color: var(--muted); padding: 28px 16px; }
 
+/* ── 마이페이지: 간편로그인 안내 블록 ── */
+.mp-guide { max-width: 920px; margin: 0 auto 26px; border: 1px solid var(--gold-500); background: var(--paper-warm); border-radius: 16px; padding: 24px 26px; }
+.mp-guide-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.mp-guide-badge { font-size: .72rem; font-weight: 800; letter-spacing: .05em; color: #fff; background: var(--ci-green-d); border-radius: 999px; padding: 4px 12px; }
+.mp-guide-title { font-size: 1.25rem; font-weight: 800; color: var(--green-900); margin: 0; }
+.mp-guide-lead { font-size: .95rem; color: var(--ink-soft); line-height: 1.75; margin: 0 0 18px; }
+.mp-guide-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.mp-guide-card { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.mp-guide-card h3 { font-size: 1.02rem; font-weight: 800; color: var(--green-800); margin: 0; }
+.mp-guide-card p { font-size: .9rem; color: var(--ink-soft); line-height: 1.65; margin: 0; }
+.mp-guide-card .btn { align-self: flex-start; margin-top: 2px; }
+.mp-guide-card.is-hi { border-color: var(--ci-green-d); border-top: 3px solid var(--ci-green-d); }
+.mp-guide-arrow { font-size: .85rem; font-weight: 700; color: var(--gold-600); margin-top: auto; }
+@media (max-width: 720px) { .mp-guide-cards { grid-template-columns: 1fr; } }
+
 /* ── 공유바 (알림마당 상세 상단) ── */
 .share-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 22px; padding: 0 0 18px; border-bottom: 1px solid var(--line); }
 .share-label { font-size: .85rem; font-weight: 700; color: var(--muted); margin-right: 4px; }

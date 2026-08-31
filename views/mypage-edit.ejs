@@ -10,9 +10,28 @@
 
 <div class="container page-wrap">
   <% if (typeof welcome !== 'undefined' && welcome) { %>
-    <div class="mypage-notice" style="max-width:920px;margin:0 auto 18px">
-      <b>환영합니다!</b> 간편로그인으로 가입되었습니다. <b>정회원 승인</b>을 위해 아래 정보를 입력·완성해 주세요. (특히 연락처·소속)
-    </div>
+    <section class="mp-guide">
+      <div class="mp-guide-head">
+        <span class="mp-guide-badge">간편로그인 완료</span>
+        <h2 class="mp-guide-title">환영합니다! 소셜 계정으로 가입되었어요</h2>
+      </div>
+      <p class="mp-guide-lead">
+        현재 회원님은 <b>준회원</b>입니다. 준회원만으로도 사이트의 대부분 서비스를 <b>바로 이용</b>하실 수 있어요.
+        아래 두 가지 중 편한 쪽을 선택하시면 됩니다 — <b>지금 굳이 정보를 입력하지 않으셔도 됩니다.</b>
+      </p>
+      <div class="mp-guide-cards">
+        <div class="mp-guide-card">
+          <h3>① 준회원으로 계속 이용</h3>
+          <p>추가 정보 입력 없이 지금 바로 공지·소식·프로젝트 등 서비스를 이용하실 수 있습니다. 정보는 <b>언제든</b> 마이페이지에서 보완할 수 있어요.</p>
+          <a class="btn btn-neutral btn-sm" href="/">지금은 건너뛰고 둘러보기 →</a>
+        </div>
+        <div class="mp-guide-card is-hi">
+          <h3>② 정회원으로 전환하기</h3>
+          <p>정회원은 정기총회 의결권, 정회원 명단 등재 등 정식 회원 혜택을 받습니다. 전환하려면 아래 정보(특히 <b>이름·연락처·소속</b>)를 채워 저장한 뒤, <b>회비 납부가 확인되면 관리자가 정회원으로 승인</b>합니다.</p>
+          <span class="mp-guide-arrow">↓ 아래 폼에서 정보를 입력해 주세요</span>
+        </div>
+      </div>
+    </section>
   <% } %>
   <% if (done) { %><p class="form-alert ok" style="max-width:560px;margin:0 auto 18px"><%= done %></p><% } %>
 
