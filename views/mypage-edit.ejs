@@ -9,6 +9,14 @@
 </section>
 
 <div class="container page-wrap">
+  <!-- 회비 안내 플로팅(스크롤 따라다님) — 회원유형에 따라 실시간 갱신 -->
+  <aside class="mp-fee-float" id="mpFeeFloat" aria-label="회비 안내">
+    <h3>💳 회비 안내</h3>
+    <div class="amt" id="mpFeeAmt">연 10,000원</div>
+    <p class="msg" id="mpFeeMsg"></p>
+    <p class="mp-fee-note">정회원 전환 시 위 회비가 적용됩니다. (회비 납부 확인 후 관리자 승인)</p>
+  </aside>
+
   <% if (typeof welcome !== 'undefined' && welcome) { %>
     <section class="mp-guide">
       <div class="mp-guide-head">
@@ -122,6 +130,13 @@
 </div>
 
 <style>
+  /* 회비 안내 플로팅 레이어 — 스크롤해도 따라다님(position:fixed) */
+  .mp-fee-float{position:fixed;top:120px;right:24px;width:250px;z-index:40;border:1px solid var(--gold-500);background:var(--paper-warm);border-radius:14px;padding:18px 20px;box-shadow:0 16px 40px -14px rgba(14,42,32,.35)}
+  .mp-fee-float h3{font-size:1rem;color:var(--gold-600);margin:0 0 8px;display:flex;align-items:center;gap:8px}
+  .mp-fee-float .amt{font-size:1.4rem;font-weight:800;color:var(--green-800);margin:2px 0 8px}
+  .mp-fee-float .msg{font-size:.9rem;color:var(--ink-soft);line-height:1.65;margin:0}
+  .mp-fee-note{font-size:.8rem;color:var(--muted);margin:10px 0 0;padding-top:10px;border-top:1px dashed var(--line);line-height:1.5}
+  @media(max-width:1240px){.mp-fee-float{display:none}} /* 좁은 화면에선 본문과 겹치지 않도록 숨김 */
   #emailVerify{margin-top:10px}
   .code-row{display:flex;gap:8px;margin-top:8px}
   .code-row input{flex:1;letter-spacing:4px;font-weight:700;text-align:center}
@@ -132,6 +147,18 @@
   .verify-msg{font-size:.82rem;margin:8px 0 0;min-height:1em}
   .verify-msg.ok{color:var(--green-700);font-weight:600} .verify-msg.err{color:#b53a2e}
 </style>
+<script>
+// 회비 안내 플로팅 — 회원유형 선택에 따라 실시간 갱신
+(function(){
+  var sel=document.getElementById('member_type'), amt=document.getElementById('mpFeeAmt'), msg=document.getElementById('mpFeeMsg');
+  if(!sel||!amt) return;
+  var FEES={"개인회원":10000,"기업회원":300000,"단체회원":0};
+  var MSG={"개인회원":"개인회원 회비는 연 1만원입니다.","기업회원":"기업회원 회비는 연 30만원입니다.","단체회원":"단체회원은 현재(2026년) 규정상 무료로 운영합니다."};
+  function won(n){return n.toLocaleString('ko-KR')+'원';}
+  function upd(){var t=sel.value,f=FEES[t]||0; amt.textContent=(f>0)?('연 '+won(f)):'무료'; msg.textContent=MSG[t]||'';}
+  sel.addEventListener('change',upd); upd();
+})();
+</script>
 <script>
 (function(){
   var inp=document.getElementById('email'); if(!inp) return;
