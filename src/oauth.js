@@ -16,7 +16,9 @@ const PROVIDERS = {
     authUrl: "https://kauth.kakao.com/oauth/authorize",
     tokenUrl: "https://kauth.kakao.com/oauth/token",
     userUrl: "https://kapi.kakao.com/v2/user/me",
-    scope: "account_email profile_nickname",
+    // 카카오 scope는 쉼표(,)로 구분. 닉네임만 요청(가장 기본, 검수 불필요).
+    // 이메일까지 받으려면 동의항목에서 account_email 을 '사용'으로 켠 뒤 "profile_nickname,account_email" 로 변경.
+    scope: "profile_nickname",
   },
   naver: {
     label: "네이버",
