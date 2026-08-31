@@ -1,0 +1,31 @@
+<%- include('partials/header') %>
+<div class="container admin-auth-wrap">
+  <div class="admin-auth-card">
+    <h1>비밀번호 찾기</h1>
+    <p class="admin-auth-sub">가입하신 이메일로 <b>임시 비밀번호</b>를 보내드립니다.</p>
+
+    <% if (done) { %>
+      <p class="form-alert ok">입력하신 이메일이 가입되어 있다면, 임시 비밀번호를 발송했습니다. 메일함(스팸함 포함)을 확인해 주세요.</p>
+      <% if (typeof devPw !== 'undefined' && devPw) { %><p class="form-alert" style="background:#fff6e6;border:1px solid #e6c877;color:#7a5a1a">[개발 확인용] 임시 비밀번호: <b><%= devPw %></b></p><% } %>
+      <p class="admin-auth-hint" style="margin-top:16px">임시 비밀번호로 로그인한 뒤, <a href="/mypage/edit">마이페이지</a>에서 새 비밀번호로 변경해 주세요.</p>
+      <div style="margin-top:18px"><a class="btn btn-primary btn-block" href="/login">로그인하러 가기</a></div>
+    <% } else { %>
+      <% if (error) { %><p class="form-alert err"><%= error %></p><% } %>
+      <form method="post" action="/login/forgot" class="admin-form-fields" autocomplete="off">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <div class="field">
+          <label for="email">이메일</label>
+          <input type="email" id="email" name="email" value="<%= esc(form.email || '') %>" placeholder="가입 시 등록한 이메일" autocomplete="email" required autofocus />
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">비밀번호 초기화</button>
+      </form>
+      <p class="admin-auth-hint">
+        <a href="/login">로그인</a>
+        <span class="admin-auth-sep">·</span>
+        <a href="/signup">회원가입</a>
+      </p>
+      <p class="panel-note" style="margin-top:16px">※ 보안을 위해 초기화한 임시 비밀번호는 로그인 후 반드시 변경해 주세요.</p>
+    <% } %>
+  </div>
+</div>
+<%- include('partials/footer') %>

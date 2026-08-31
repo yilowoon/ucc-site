@@ -637,6 +637,57 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     res.redirect("/");
   });
 
+  // ---------- 비밀번호 찾기(임시 비밀번호 발송) ----------
+  const forgotHits = new Map();
+  function forgotAllowed(key) {
+    const now = Date.now(), win = 10 * 60 * 1000, max = 3;
+    const arr = (forgotHits.get(key) || []).filter((t) => now - t < win);
+    if (arr.length >= max) { forgotHits.set(key, arr); return false; }
+    arr.push(now); forgotHits.set(key, arr); return true;
+  }
+  function genTempPassword() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789"; // 혼동 문자 제외
+    const buf = crypto.randomBytes(10);
+    let s = ""; for (let i = 0; i < 10; i++) s += chars[buf[i] % chars.length];
+    return s;
+  }
+
+  router.get("/login/forgot", (req, res) => {
+    if (req.session.member) return res.redirect("/");
+    res.render("member-forgot", { ...res.locals, title: "비밀번호 찾기", error: null, done: false, form: {} });
+  });
+
+  router.post("/login/forgot", verifyCsrf, async (req, res) => {
+    const email = (req.body.email || "").trim().toLowerCase();
+    const form = { email: (req.body.email || "").trim() };
+    const fail = (msg) => res.status(400).render("member-forgot", { ...res.locals, title: "비밀번호 찾기", error: msg, done: false, form });
+    const done = (extra) => res.render("member-forgot", { ...res.locals, title: "비밀번호 찾기", error: null, done: true, form, ...(extra || {}) });
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("유효한 이메일을 입력해 주세요.");
+    if (!forgotAllowed(chatClientIp(req) + "|" + email)) return fail("요청이 많습니다. 잠시 후 다시 시도해 주세요.");
+
+    const m = db.prepare("SELECT id, name, email FROM members WHERE email = ?").get(email);
+    if (!m) return done(); // 사용자 열거 방지: 가입 여부와 무관하게 동일한 성공 화면
+
+    // 임시 비밀번호 생성 → 메일 발송 성공 시에만 비밀번호를 교체(발송 실패로 계정이 잠기는 것 방지)
+    const tempPw = genTempPassword();
+    const tpl = require("../mail-templates").resetPasswordMail(m, tempPw);
+    let r = { sent: false, reason: "" };
+    try { r = await mailer.sendMail(m.email, tpl.subject, tpl.text, tpl.html); }
+    catch (e) { console.error("[forgot] 메일 오류:", e.message); }
+
+    if (r.sent) {
+      db.prepare("UPDATE members SET password_hash = ? WHERE id = ?").run(bcrypt.hashSync(tempPw, 10), m.id);
+      return done();
+    }
+    // 발송 실패
+    console.error("[forgot] 메일 발송 실패:", r.reason || "unknown");
+    if (IS_PROD) return fail("메일 발송에 실패했습니다. 사무처(1670-9678)로 문의해 주세요.");
+    // 개발환경(SMTP 미설정): 화면에서 임시 비밀번호 확인 + 비번 교체
+    db.prepare("UPDATE members SET password_hash = ? WHERE id = ?").run(bcrypt.hashSync(tempPw, 10), m.id);
+    return done({ devPw: tempPw });
+  });
+
   // ---------- 마이페이지 (회원 전용) ----------
   function requireMember(req, res, next) {
     if (req.session && req.session.member) return next();
