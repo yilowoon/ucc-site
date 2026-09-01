@@ -691,26 +691,13 @@ module.exports = function siteRoutes({ verifyCsrf }) {
 
   // ---------- SNS 간편로그인 (카카오·네이버·구글) ----------
   const oauth = require("../oauth");
-  const OAUTH_COOKIE = "ucc_oauth";
-  function readCookie(req, name) {
-    const m = (req.headers.cookie || "").match(new RegExp("(?:^|; )" + name + "=([^;]*)"));
-    return m ? decodeURIComponent(m[1]) : "";
-  }
 
   router.get("/auth/:provider", (req, res) => {
     const p = req.params.provider;
     if (!oauth.isEnabled(p)) return res.redirect("/login");
-    const state = crypto.randomBytes(16).toString("hex");
-    const payload = { p, state, next: safeNext(req.query.next) };
-    // 세션 + 전용 쿠키 이중 저장(리다이렉트 왕복 중 세션 유실 대비)
-    // 모바일에서 네이버/구글은 앱 전환 후 돌아올 때 SameSite=Lax 쿠키가 유실됨 →
-    // state 쿠키는 SameSite=None(HTTPS)로 두어 앱 전환/외부 컨텍스트에서도 살아남게 함.
-    req.session.oauthState = payload;
-    const cookieVal = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
-    const secure = !!req.secure;
-    res.cookie(OAUTH_COOKIE, cookieVal, { maxAge: 10 * 60 * 1000, httpOnly: true, sameSite: secure ? "none" : "lax", secure, path: "/" });
-    // 세션 저장 완료 후 리다이렉트
-    req.session.save(() => res.redirect(oauth.authorizeUrl(p, state, oauth.callbackUrl(req, p))));
+    // 서명된 state(HMAC) — 쿠키/세션 없이 URL만으로 검증(모바일 앱 전환·컨텍스트 유실 대응)
+    const state = oauth.signState({ p, next: safeNext(req.query.next) });
+    res.redirect(oauth.authorizeUrl(p, state, oauth.callbackUrl(req, p)));
   });
 
   router.get("/auth/:provider/callback", async (req, res) => {
@@ -721,29 +708,19 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     });
     if (!oauth.isEnabled(p)) return oauthFail("지원하지 않는 로그인입니다.");
 
-    // state 복원: 세션 우선, 없으면 전용 쿠키
-    let st = req.session.oauthState;
-    const fromSession = !!st;
-    if (!st) {
-      const raw = readCookie(req, OAUTH_COOKIE);
-      if (raw) { try { st = JSON.parse(Buffer.from(raw, "base64url").toString("utf8")); } catch (e) {} }
-    }
-    const fromCookie = !fromSession && !!st;
-    res.clearCookie(OAUTH_COOKIE, { path: "/" });
-    delete req.session.oauthState;
-
-    if (!st || st.p !== p || !req.query.code || !req.query.state || req.query.state !== st.state) {
+    // 서명 검증(쿠키/세션 불필요) — state 서명·만료·provider 일치 확인
+    const st = oauth.verifyState(req.query.state, p);
+    if (!req.query.code || !st) {
       console.warn("[oauth] state 검증 실패:", JSON.stringify({
-        provider: p, hasState: !!st, hasCode: !!req.query.code,
-        qState: String(req.query.state || "").slice(0, 8), stState: String((st && st.state) || "").slice(0, 8),
-        fromSession, fromCookie, hadCookie: !!readCookie(req, OAUTH_COOKIE), sid: (req.sessionID || "").slice(0, 6),
+        provider: p, hasCode: !!req.query.code, hasState: !!req.query.state,
+        qState: String(req.query.state || "").slice(0, 10),
       }));
       return oauthFail("인증 정보가 올바르지 않습니다. 다시 시도해 주세요.");
     }
     if (fromCookie) console.log("[oauth] 쿠키로 state 복원 성공(세션 유실):", p);
 
     try {
-      const prof = await oauth.exchange(p, req.query.code, oauth.callbackUrl(req, p), st.state);
+      const prof = await oauth.exchange(p, req.query.code, oauth.callbackUrl(req, p), req.query.state);
       if (!prof || !prof.providerId) return oauthFail("프로필 정보를 가져오지 못했습니다.");
 
       // 1) provider+id 로 기존 연동 회원 조회

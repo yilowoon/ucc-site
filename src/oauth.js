@@ -8,6 +8,30 @@
  */
 "use strict";
 
+const crypto = require("crypto");
+function stateSecret() { return process.env.SESSION_SECRET || "ucc-dev-secret-change-me"; }
+
+// state를 서버 비밀키로 서명(HMAC) — 쿠키/세션 없이 URL만으로 검증(모바일 앱 전환 대응)
+function signState(obj) {
+  const body = Buffer.from(JSON.stringify({ ...(obj || {}), ts: Date.now() }), "utf8").toString("base64url");
+  const sig = crypto.createHmac("sha256", stateSecret()).update(body).digest("base64url");
+  return body + "." + sig;
+}
+function verifyState(state, provider, maxAgeMs) {
+  const MAX = maxAgeMs || 15 * 60 * 1000;
+  if (!state || typeof state !== "string" || state.indexOf(".") < 0) return null;
+  const i = state.indexOf(".");
+  const body = state.slice(0, i), sig = state.slice(i + 1);
+  const expect = crypto.createHmac("sha256", stateSecret()).update(body).digest("base64url");
+  let a, b;
+  try { a = Buffer.from(sig); b = Buffer.from(expect); } catch { return null; }
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  let obj; try { obj = JSON.parse(Buffer.from(body, "base64url").toString("utf8")); } catch { return null; }
+  if (!obj || obj.p !== provider) return null;
+  if (!obj.ts || (Date.now() - obj.ts) > MAX) return null;
+  return obj;
+}
+
 const PROVIDERS = {
   kakao: {
     label: "카카오",
@@ -132,4 +156,4 @@ async function exchange(p, code, redirectUri, state) {
   };
 }
 
-module.exports = { PROVIDERS, isEnabled, enabled, baseUrl, callbackUrl, authorizeUrl, exchange };
+module.exports = { PROVIDERS, isEnabled, enabled, baseUrl, callbackUrl, authorizeUrl, exchange, signState, verifyState };
