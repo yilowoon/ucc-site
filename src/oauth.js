@@ -96,7 +96,7 @@ function authorizeUrl(p, state, redirectUri) {
   return `${c.authUrl}?${q.toString()}`;
 }
 
-async function fetchJson(url, opts, ms = 10000) {
+async function fetchJson(url, opts, ms = 8000) {
   const ctrl = new AbortController();
   const to = setTimeout(() => ctrl.abort(), ms);
   try {
@@ -104,6 +104,9 @@ async function fetchJson(url, opts, ms = 10000) {
     const t = await r.text();
     let j = null; try { j = JSON.parse(t); } catch {}
     return { ok: r.ok, status: r.status, json: j, text: t };
+  } catch (e) {
+    // 타임아웃/네트워크 오류를 던지지 않고 결과로 반환 → 콜백이 504로 매달리지 않게
+    return { ok: false, status: 0, json: null, text: "", error: (e && e.name === "AbortError") ? "timeout" : ((e && e.message) || "network-error") };
   } finally { clearTimeout(to); }
 }
 
@@ -125,11 +128,11 @@ async function exchange(p, code, redirectUri, state) {
     body: body.toString(),
   });
   const accessToken = tok.json && tok.json.access_token;
-  if (!accessToken) throw new Error(`토큰 교환 실패(${p}): ${tok.status} ${(tok.text || "").slice(0, 120)}`);
+  if (!accessToken) throw new Error(`토큰 교환 실패(${p}): status=${tok.status} ${tok.error || ""} ${(tok.text || "").slice(0, 160)}`);
 
   // 2) 사용자 정보
   const info = await fetchJson(c.userUrl, { headers: { Authorization: "Bearer " + accessToken } });
-  if (!info.ok || !info.json) throw new Error(`프로필 조회 실패(${p}): ${info.status}`);
+  if (!info.ok || !info.json) throw new Error(`프로필 조회 실패(${p}): status=${info.status} ${info.error || ""}`);
   const d = info.json;
 
   if (p === "kakao") {

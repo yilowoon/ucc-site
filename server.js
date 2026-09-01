@@ -7,6 +7,9 @@ const crypto = require("crypto");
 const express = require("express");
 const session = require("express-session");
 
+// 외부 API 아웃바운드(네이버 로그인·Gemini 등)가 IPv6 경로 문제로 지연/멈추는 것을 방지 — IPv4 우선
+try { require("dns").setDefaultResultOrder("ipv4first"); } catch (e) {}
+
 // .env 로더(무의존): 프로젝트 루트에 .env 가 있으면 process.env 에 채운다.
 // 이미 설정된 실제 환경변수는 덮어쓰지 않는다(export/pm2 env 우선).
 (function loadDotEnv() {
