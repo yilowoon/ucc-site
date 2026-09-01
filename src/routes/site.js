@@ -278,6 +278,22 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     return { full: rows.filter((m) => m.grade === "정회원"), assoc: rows.filter((m) => m.grade !== "정회원") };
   }
 
+  // '준회원 유지' — 메일의 서명 토큰으로 로그인 없이 안내메일 옵트아웃
+  router.get("/members/keep-associate", (req, res) => {
+    const t = require("../tokens").verify(req.query.token);
+    if (!t || t.k !== "keep" || !t.id) {
+      return res.status(400).render("message", {
+        ...res.locals, title: "링크 오류", heading: "유효하지 않은 링크입니다",
+        body: "메일의 버튼을 다시 눌러 주세요. 문제가 계속되면 사무처(1670-9678)로 문의해 주세요.", backUrl: "/",
+      });
+    }
+    db.prepare("UPDATE members SET reminder_optout = 1 WHERE id = ?").run(parseInt(t.id, 10));
+    res.render("message", {
+      ...res.locals, title: "준회원 유지", heading: "준회원으로 유지됩니다",
+      body: "안내 메일을 더 이상 보내지 않습니다. 언제든 마이페이지에서 정회원으로 전환하실 수 있습니다.", backUrl: "/",
+    });
+  });
+
   // 개인회원 — 안내 + 정회원/준회원 명단 탭
   router.get("/members/individual", (req, res) => {
     const page = PAGES.individual;

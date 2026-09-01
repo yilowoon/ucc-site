@@ -109,4 +109,51 @@ function resetPasswordMail(m, tempPw) {
   return { subject, text, html };
 }
 
-module.exports = { welcomeMemberMail, resetPasswordMail, MEMBER_FEE, dateKo };
+// 준회원 → 정회원 전환 안내 메일(가입 1주일 경과, 회비 미확인) — { subject, text, html }
+function associateReminderMail(m, joinUrl, keepUrl) {
+  const name = m.name || "회원";
+  const fee = MEMBER_FEE[m.member_type] || 0;
+  const feeLine = fee > 0
+    ? `${m.member_type} 회비는 연 ${fee.toLocaleString()}원입니다.`
+    : `${m.member_type}은 현재 회비가 없습니다(무료).`;
+
+  const subject = "[사단법인 도시공동체본부] 정회원 전환 안내 — 회비 납부를 확인해 주세요";
+  const text =
+    `${name}님, 사단법인 도시공동체본부 회원가입 후 일주일이 지났습니다.\n\n` +
+    `현재 준회원으로, 아직 회비 납부가 확인되지 않았습니다. ${feeLine}\n` +
+    `정회원이 되시면 정기총회 의결권, 정회원 명단 등재, 교육·행사 우대 등 정식 회원 혜택을 받으실 수 있습니다.\n\n` +
+    `▶ 정회원 가입하기: ${joinUrl}\n` +
+    `▶ 준회원으로 유지(안내 메일 그만 받기): ${keepUrl}\n\n` +
+    `준회원으로 계속 이용하셔도 대부분의 서비스는 그대로 이용하실 수 있습니다.\n\n` +
+    `사단법인 도시공동체본부 사무처 · 대표전화 1670-9678 · https://ucc.or.kr`;
+
+  const html =
+    '<div style="font-family:\'Malgun Gothic\',AppleSDGothicNeo,sans-serif;background:#eef1ec;padding:28px 14px">' +
+    '<div style="max-width:520px;margin:0 auto;background:#fff;border:1px solid #e4e2da;border-radius:14px;overflow:hidden">' +
+      '<div style="background:#123a2e;color:#fff;padding:22px 26px">' +
+        '<div style="font-size:13px;letter-spacing:1px;color:#d8b25f;font-weight:700;margin-bottom:4px">URBAN COMMUNITY CENTER</div>' +
+        '<div style="font-size:19px;font-weight:800">정회원 전환 안내</div>' +
+      '</div>' +
+      '<div style="padding:26px">' +
+        `<p style="font-size:15px;color:#16211c;margin:0 0 6px"><b>${esc(name)}</b>님, 안녕하세요.</p>` +
+        '<p style="font-size:14px;color:#3a463f;line-height:1.75;margin:0 0 16px">' +
+        '회원가입 후 일주일이 지났지만 아직 <b>회비 납부가 확인되지 않아</b> 준회원 상태입니다. ' +
+        `${esc(feeLine)} 정회원이 되시면 <b style="color:#123a2e">정기총회 의결권·정회원 명단 등재·교육/행사 우대</b> 등 정식 회원 혜택을 받으실 수 있습니다.</p>` +
+        '<div style="background:#f8f6f0;border:1px solid #eee7d6;border-radius:10px;padding:14px 16px;margin:0 0 20px;font-size:13px;color:#6b766f;line-height:1.6">' +
+        '아래에서 하나를 선택해 주세요. <b>준회원으로 유지</b>를 누르시면 이 안내 메일을 더 이상 보내지 않습니다.</div>' +
+        '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 6px"><tr>' +
+          `<td style="padding-right:10px"><a href="${joinUrl}" style="display:inline-block;background:#123a2e;color:#fff;text-decoration:none;font-weight:800;font-size:15px;padding:13px 26px;border-radius:9px">정회원 가입하기</a></td>` +
+          `<td><a href="${keepUrl}" style="display:inline-block;background:#fff;color:#123a2e;text-decoration:none;font-weight:700;font-size:14px;padding:12px 22px;border-radius:9px;border:1px solid #cdd5cf">준회원 유지</a></td>` +
+        '</tr></table>' +
+        '<p style="font-size:12px;color:#9aa39c;margin:16px 0 0;line-height:1.6">준회원으로 계속 이용하셔도 공지·소식 등 대부분의 서비스를 그대로 이용하실 수 있습니다.</p>' +
+      '</div>' +
+      '<div style="background:#f4f5f1;border-top:1px solid #e4e2da;padding:16px 26px;color:#6b766f;font-size:12px;line-height:1.6">' +
+        '<b style="color:#16211c">사단법인 도시공동체본부</b> 사무처<br>' +
+        '대표전화 1670-9678 · <a href="https://ucc.or.kr" style="color:#123a2e;text-decoration:none">ucc.or.kr</a>' +
+      '</div>' +
+    '</div></div>';
+
+  return { subject, text, html };
+}
+
+module.exports = { welcomeMemberMail, resetPasswordMail, associateReminderMail, MEMBER_FEE, dateKo };

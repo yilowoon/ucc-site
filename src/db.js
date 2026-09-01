@@ -211,6 +211,10 @@ try { db.exec("ALTER TABLE members ADD COLUMN biz_website TEXT NOT NULL DEFAULT 
 try { db.exec("ALTER TABLE members ADD COLUMN biz_logo TEXT NOT NULL DEFAULT ''"); } catch (e) {}     // 로고(CI) 파일
 try { db.exec("ALTER TABLE members ADD COLUMN biz_profile TEXT NOT NULL DEFAULT ''"); } catch (e) {}  // 기업소개자료 파일
 try { db.exec("ALTER TABLE members ADD COLUMN biz_profile_name TEXT NOT NULL DEFAULT ''"); } catch (e) {} // 소개자료 원본파일명
+// 준회원 → 정회원 전환 안내 메일(가입 1주일 경과)
+try { db.exec("ALTER TABLE members ADD COLUMN reminder_sent INTEGER NOT NULL DEFAULT 0"); } catch (e) {}     // 1주일 안내 메일 발송 여부
+try { db.exec("ALTER TABLE members ADD COLUMN reminder_sent_at TEXT NOT NULL DEFAULT ''"); } catch (e) {}
+try { db.exec("ALTER TABLE members ADD COLUMN reminder_optout INTEGER NOT NULL DEFAULT 0"); } catch (e) {}   // '준회원 유지' 선택 → 더 안 보냄
 // SNS 간편로그인 연동(카카오/네이버/구글)
 try { db.exec("ALTER TABLE members ADD COLUMN provider TEXT NOT NULL DEFAULT ''"); } catch (e) {}    // '' | kakao | naver | google
 try { db.exec("ALTER TABLE members ADD COLUMN provider_id TEXT NOT NULL DEFAULT ''"); } catch (e) {} // 제공사 고유 사용자 ID

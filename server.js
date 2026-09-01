@@ -368,4 +368,6 @@ app.listen(PORT, () => {
   try { require("./src/newsletter").startScheduler(); } catch (e) { console.error("[newsletter] 스케줄러 시작 실패:", e.message); }
   // 지구촌소식브리프 주간 리포트 자동 발행 (매주 월요일 07:00)
   try { require("./src/globalnews").startScheduler(); } catch (e) { console.error("[globalnews] 스케줄러 시작 실패:", e.message); }
+  // 준회원 정회원전환 안내 메일 (가입 1주일 경과, 회비 미확인) — 매시간 점검
+  try { require("./src/member-reminder").startScheduler(); } catch (e) { console.error("[reminder] 스케줄러 시작 실패:", e.message); }
 });
