@@ -717,7 +717,6 @@ module.exports = function siteRoutes({ verifyCsrf }) {
       }));
       return oauthFail("인증 정보가 올바르지 않습니다. 다시 시도해 주세요.");
     }
-    if (fromCookie) console.log("[oauth] 쿠키로 state 복원 성공(세션 유실):", p);
 
     try {
       const prof = await oauth.exchange(p, req.query.code, oauth.callbackUrl(req, p), req.query.state);
