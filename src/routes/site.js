@@ -703,9 +703,12 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const state = crypto.randomBytes(16).toString("hex");
     const payload = { p, state, next: safeNext(req.query.next) };
     // 세션 + 전용 쿠키 이중 저장(리다이렉트 왕복 중 세션 유실 대비)
+    // 모바일에서 네이버/구글은 앱 전환 후 돌아올 때 SameSite=Lax 쿠키가 유실됨 →
+    // state 쿠키는 SameSite=None(HTTPS)로 두어 앱 전환/외부 컨텍스트에서도 살아남게 함.
     req.session.oauthState = payload;
     const cookieVal = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
-    res.cookie(OAUTH_COOKIE, cookieVal, { maxAge: 10 * 60 * 1000, httpOnly: true, sameSite: "lax", secure: !!req.secure, path: "/" });
+    const secure = !!req.secure;
+    res.cookie(OAUTH_COOKIE, cookieVal, { maxAge: 10 * 60 * 1000, httpOnly: true, sameSite: secure ? "none" : "lax", secure, path: "/" });
     // 세션 저장 완료 후 리다이렉트
     req.session.save(() => res.redirect(oauth.authorizeUrl(p, state, oauth.callbackUrl(req, p))));
   });
