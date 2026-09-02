@@ -335,4 +335,4 @@ function startScheduler() {
 }
 
 // fromDaum / fromGoogle 은 지구촌소식 AI기자(globalnews.js)에서도 재사용한다.
-module.exports = { collectOnce, startScheduler, buildGenSvg, KEYWORDS, fromDaum, fromGoogle };
+module.exports = { collectOnce, startScheduler, buildGenSvg, KEYWORDS, fromDaum, fromGoogle, decodeEntities };

@@ -120,7 +120,11 @@ function baseLocals(req) {
     adminName: req.session && req.session.admin ? req.session.admin.username : null,
     isMember: !!(req.session && req.session.member),
     memberName: req.session && req.session.member ? req.session.member.name : null,
-    esc: cfg.escapeHtml,
+    // 주의: EJS의 <%= %> 는 이미 HTML 이스케이프한다. 템플릿의 모든 esc() 호출은 <%= %> 안에 있으므로
+    // esc 를 실제 이스케이프 함수로 두면 이중 이스케이프(&#39; → &amp;#39; → 화면에 "&#39;")가 발생한다.
+    // 따라서 esc 는 항등(passthrough)로 두어 <%= esc(x) %> 가 <%= x %> 와 동일하게 한 번만 이스케이프되게 한다.
+    // (raw <%- %> 컨텍스트에서 esc 를 쓰는 곳은 없음 — 전수 확인)
+    esc: (s) => String(s == null ? "" : s),
     nl2br: cfg.nl2br,
     nl2brLink: cfg.nl2brLink,
     fmtDate: cfg.formatDate,
