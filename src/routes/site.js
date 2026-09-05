@@ -495,7 +495,12 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   // 안내 페이지(소개만)
   router.get("/signup", (req, res) => {
     if (req.session.member) return res.redirect("/");
-    res.render("signup", { ...res.locals, title: "회원가입 안내" });
+    res.render("signup", {
+      ...res.locals, title: "회원가입 안내",
+      ogTitle: "회원가입 안내 | 사단법인 도시공동체본부",
+      ogDescription: "지역이 스스로 회복하는 힘을, 함께 만듭니다. 정회원·준회원 상시 모집 — 지금 회원으로 함께하세요.",
+      ogImage: "/img/og-signup.png?v=1",
+    });
   });
   // 신청 폼 페이지(별도)
   router.get("/signup/apply", (req, res) => {
