@@ -795,6 +795,84 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     res.redirect("/admin/newsletter" + (req.body.page ? "?page=" + encodeURIComponent(req.body.page) : ""));
   });
 
+  // ---------- 네이버 블로그 원고 ----------
+  // 네이버는 2020-05-06 블로그 글쓰기 오픈API를 종료했다(광고성 글 대량 게재 문제).
+  // 따라서 서버가 대신 발행할 수는 없고, '붙여넣기 직전 상태'까지만 자동화한다.
+  // 변환 규칙은 모두 src/naverblog.js 에 있다.
+  const naverblog = require("../naverblog");
+
+  // 원고로 만들 글 고르기 — 게시판별 최근 글 목록
+  router.get("/naver-blog", requireAdmin, (req, res) => {
+    const board = cfg.isBoard(req.query.board) ? req.query.board : "all";
+    const where = board === "all" ? "" : "WHERE p.board = ?";
+    const params = board === "all" ? [] : [board];
+    const rows = db
+      .prepare(
+        `SELECT p.id, p.board, p.title, p.created_at,
+                (SELECT COUNT(*) FROM attachments a WHERE a.post_id = p.id) AS attach_count
+           FROM posts p ${where} ORDER BY p.id DESC LIMIT 50`
+      )
+      .all(...params);
+
+    res.render("admin-naverblog", {
+      ...res.locals,
+      title: "네이버 블로그 원고",
+      posts: rows,
+      filterBoard: board,
+      blogHome: naverblog.blogHomeUrl(),
+      writeUrl: naverblog.blogWriteUrl(),
+    });
+  });
+
+  // 원고 미리보기 — 복사 버튼 · 이미지 목록 · 발행 전 점검
+  router.get("/naver-blog/:id", requireAdmin, (req, res, next) => {
+    const post = loadPostForDraft(req.params.id);
+    if (!post) return next();
+    const draft = makeDraft(post, res.locals.baseUrl);
+
+    res.render("admin-naverblog-draft", {
+      ...res.locals,
+      title: "네이버 블로그 원고 — " + post.title,
+      post,
+      draft,
+      boardName: cfg.BOARDS[post.board] ? cfg.BOARDS[post.board].name : post.board,
+      blogHome: naverblog.blogHomeUrl(),
+      writeUrl: naverblog.blogWriteUrl(),
+    });
+  });
+
+  // 원고 내려받기 — 복사 버튼을 못 쓰는 환경(구형 브라우저·사내망)용 대비책
+  router.get("/naver-blog/:id/draft.txt", requireAdmin, (req, res, next) => {
+    const post = loadPostForDraft(req.params.id);
+    if (!post) return next();
+    const draft = makeDraft(post, res.locals.baseUrl);
+    const text = `${draft.title}\n\n${draft.body}\n`;
+
+    // 파일명은 영문·숫자로만 만든다(한글 파일명은 브라우저마다 깨져 내려받힌다).
+    const name = `naver-blog-${post.board}-${post.id}.txt`;
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${name}"`);
+    res.send(text);
+  });
+
+  function loadPostForDraft(rawId) {
+    const id = parseInt(rawId, 10);
+    if (!id) return null;
+    return db.prepare("SELECT * FROM posts WHERE id = ?").get(id) || null;
+  }
+
+  function makeDraft(post, baseUrl) {
+    const attachments = db
+      .prepare("SELECT * FROM attachments WHERE post_id = ? ORDER BY sort, id")
+      .all(post.id);
+    return naverblog.buildDraft({
+      post,
+      attachments,
+      baseUrl,
+      boardName: cfg.BOARDS[post.board] ? cfg.BOARDS[post.board].name : post.board,
+    });
+  }
+
   // ---------- 햇빛소득마을 지역 현황 관리 ----------
   const SOLAR_STATUSES = ["준비중", "추진중", "운영중"];
   // ---------- 지구촌소식 AI기자: 수동 리포트 발행 ----------
