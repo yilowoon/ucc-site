@@ -54,7 +54,8 @@
           ["전", "현대캐피탈 경영전략팀장"],
           ["전", "현대차서비스 과장"]
         ] },
-        { name: "박연수", photo: "/img/board/park-yeonsu.jpg", careers: [
+        // hidden: 위촉 확정 전 비공개. 공개하려면 hidden: true 를 제거(또는 false)하면 됩니다.
+        { name: "박연수", hidden: true, photo: "/img/board/park-yeonsu.jpg", careers: [
           ["수상", "홍조근정훈장"],
           ["현", "서강대학교 초빙교수"],
           ["전", "소방방재청장"],
@@ -62,7 +63,7 @@
           ["전", "인천직할시 동구청장"],
           ["전", "인천직할시 공영개발사업단장"]
         ] },
-        { name: "이경수", photo: "/img/board/lee-kyeongsu.jpg", careers: [
+        { name: "이경수", hidden: true, photo: "/img/board/lee-kyeongsu.jpg", careers: [
           ["수상", "과학기술훈장 웅비장"],
           ["수상", 'FPA "Leadership Award"'],
           ["현", "국가과학기술자문회의 부의장"],
@@ -72,7 +73,7 @@
           ["전", "국제핵융합실험로(ITER) 부총장"],
           ["전", "과기부 과학기술혁신본부장"]
         ] },
-        { name: "이광형", photo: "/img/board/lee-kwanghyeong.jpg", careers: [
+        { name: "이광형", hidden: true, photo: "/img/board/lee-kwanghyeong.jpg", careers: [
           ["석학", "SAE Fellow"],
           ["현", "한국전력공사 석좌교수"],
           ["전", "제17대 한국과학기술원 총장"],
@@ -97,7 +98,7 @@
       ];
     %>
     <div class="directors">
-      <% advisors.forEach(function(d, i){ var c = palette[i % 3]; %>
+      <% advisors.filter(function(d){ return !d.hidden; }).forEach(function(d, i){ var c = palette[i % 3]; %>
         <article class="dir-card">
           <% if (d.photo) { %>
             <div class="dir-photo"><img src="<%= d.photo %>" alt="자문위원 <%= d.name %>" width="600" height="800" /></div>
