@@ -44,7 +44,7 @@
 
     <div class="write-grid pt-grid">
       <div class="field">
-        <label for="logo">로고(CI) <span class="field-hint">이미지 파일</span></label>
+        <label for="logo">로고(CI) <span class="field-hint">이미지 파일 · 최대 20MB</span></label>
         <input type="file" id="logo" name="logo" accept="image/*" />
         <% if (p.logo) { %>
           <div class="pt-cur"><span class="pt-cur-tag">현재</span><img class="pt-cur-logo" src="<%= esc(p.logo) %>" alt="현재 로고" /></div>
@@ -52,7 +52,7 @@
         <% } %>
       </div>
       <div class="field">
-        <label for="profile">기업소개자료 <span class="field-hint">PDF/한글/워드/PPT 등</span></label>
+        <label for="profile">기업소개자료 <span class="field-hint">PDF/한글/워드/PPT 등 · 최대 20MB</span></label>
         <input type="file" id="profile" name="profile" accept=".pdf,.hwp,.hwpx,.doc,.docx,.ppt,.pptx,.zip,image/*" />
         <% if (p.profile_file) { %>
           <div class="pt-cur"><span class="pt-cur-tag">현재</span><a href="/uploads/<%= esc(p.profile_file) %>" target="_blank" rel="noopener"><%= esc(p.profile_name || p.profile_file) %></a></div>

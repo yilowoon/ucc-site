@@ -17,8 +17,9 @@ const ALLOWED_EXT = new Set([
   ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", // 이미지
   ".pdf", ".hwp", ".hwpx", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".zip", ".txt", // 문서
 ]);
-const MAX_FILE = 12 * 1024 * 1024; // 12MB
+const MAX_FILE = 12 * 1024 * 1024; // 12MB (게시판 첨부)
 const MAX_FILES = 12;
+const MAX_PARTNER_FILE = 20 * 1024 * 1024; // 20MB (임원사 로고(CI)·기업소개자료)
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
@@ -500,12 +501,15 @@ module.exports = function adminRoutes({ verifyCsrf }) {
   // ---------- 기업회원 > 임원사 관리 ----------
   const { generateIntro } = require("../partner-intro");
   // 로고(logo, 이미지) + 기업소개자료(profile) 업로드
+  // 로고(CI)·기업소개자료 업로드: 최대 20MB. 파일 오류 시 에러 페이지로 보내지 않고
+  // req.uploadError 로 넘겨, 핸들러에서 입력값을 보존한 채 폼을 다시 렌더한다(작성 내용 유실 방지).
+  const partnerFileMulter = multer({ storage, fileFilter, limits: { fileSize: MAX_PARTNER_FILE, files: 2 } });
   function partnerUpload(req, res, next) {
-    upload.fields([{ name: "logo", maxCount: 1 }, { name: "profile", maxCount: 1 }])(req, res, (err) => {
+    partnerFileMulter.fields([{ name: "logo", maxCount: 1 }, { name: "profile", maxCount: 1 }])(req, res, (err) => {
       if (err) {
-        err.status = err.code === "LIMIT_FILE_SIZE" ? 413 : (err.status || 400);
-        err.publicMessage = err.code === "LIMIT_FILE_SIZE" ? "파일 크기는 최대 12MB까지 가능합니다." : (err.publicMessage || "파일 업로드 오류입니다.");
-        return next(err);
+        req.uploadError = err.code === "LIMIT_FILE_SIZE"
+          ? "파일 크기는 최대 20MB까지 업로드할 수 있습니다."
+          : (err.publicMessage || "파일 업로드 오류입니다. 이미지 또는 문서 파일만 업로드할 수 있습니다.");
       }
       next();
     });
@@ -552,6 +556,7 @@ module.exports = function adminRoutes({ verifyCsrf }) {
 
   router.post("/partners", requireAdmin, partnerUpload, verifyCsrf, async (req, res) => {
     const f = partnerFields(req);
+    if (req.uploadError) return res.status(400).render("admin-partner-form", { ...res.locals, title: "임원사 등록", mode: "new", p: f, error: req.uploadError });
     if (!f.name) return res.status(400).render("admin-partner-form", { ...res.locals, title: "임원사 등록", mode: "new", p: f, error: "기업명을 입력해 주세요." });
     const files = req.files || {};
     const logo = files.logo && files.logo[0] ? "/uploads/" + files.logo[0].filename : "";
@@ -571,6 +576,7 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     const cur = db.prepare("SELECT * FROM partners WHERE id = ?").get(id);
     if (!cur) return res.redirect("/admin/partners");
     const f = partnerFields(req);
+    if (req.uploadError) return res.status(400).render("admin-partner-form", { ...res.locals, title: "임원사 수정", mode: "edit", p: { ...cur, ...f }, error: req.uploadError });
     if (!f.name) return res.status(400).render("admin-partner-form", { ...res.locals, title: "임원사 수정", mode: "edit", p: { ...cur, ...f }, error: "기업명을 입력해 주세요." });
     const files = req.files || {};
     // /uploads/ 실제 파일만 삭제(정적 /img/ 자산은 보존)
