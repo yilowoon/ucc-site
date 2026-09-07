@@ -337,4 +337,35 @@ function seedPartners() {
 }
 seedPartners();
 
+/* ---- 임원사: partners.js 에 있으나 DB에 아직 없는 항목만 추가(이름 기준).
+   배포 시 신규 임원사가 자동 노출되며, 관리자 화면에서 바로 수정 가능.
+   기존 행(관리자 수정값)은 절대 덮어쓰지 않음(INSERT-if-missing).
+   ※ partners.js 에 있는 임원사를 관리자에서 삭제하면 재시작 시 다시 추가되므로,
+     완전히 제거하려면 partners.js 에서도 해당 항목을 지울 것. ---- */
+function ensurePartners() {
+  let PARTNERS = [];
+  try { PARTNERS = require("./partners").PARTNERS || []; } catch (e) {}
+  if (!PARTNERS.length) return;
+  const now = new Date().toISOString();
+  const maxRow = db.prepare("SELECT COALESCE(MAX(sort_order), -1) AS m FROM partners").get();
+  let order = (maxRow.m | 0) + 1;
+  const findByName = db.prepare("SELECT id FROM partners WHERE name = ?");
+  const ins = db.prepare(
+    "INSERT INTO partners (name, logo, ceo, field, intro, address, phone, url, region, featured, sort_order, created_at) " +
+    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  );
+  let added = 0;
+  for (const p of PARTNERS) {
+    if (!p.name || findByName.get(p.name)) continue;
+    ins.run(
+      p.name, p.logo || "", p.ceo || "", p.field || "", p.intro || "",
+      p.address || "", p.phone || "", p.url || "", p.region || "",
+      p.featured ? 1 : 0, order++, now
+    );
+    added++;
+  }
+  if (added) console.log("[partners] 누락 임원사 자동 추가:", added + "건");
+}
+ensurePartners();
+
 module.exports = { db, DATA_DIR, UPLOAD_DIR, DB_PATH };
