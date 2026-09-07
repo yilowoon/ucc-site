@@ -60,6 +60,17 @@ const PARTNERS = [
     url: "",
     featured: true,
   },
+  {
+    name: "(주)에이씨케이",
+    ceo: "조선주",
+    field: "의료정보시스템, 헬스케어&뷰티테크",
+    intro: "(주)에이씨케이는 2000년 창립 이래 의료정보시스템 구축으로 의료전산화를 선도해 온 기업입니다. 진단검사의학과 정보시스템과 검사장비 인터페이스에서 축적된 기술로 최고의 솔루션을 제공하며, AI 기반 BEAU KIOSK와 모바일 헬스케어로 피부·정신건강, 당 지수 관리 등 스마트 헬스케어 서비스를 선보이고 있습니다.",
+    address: "경기도 고양시 덕양구 고양대로 1764 (삼송동, ACK빌딩)",
+    phone: "031-790-1561",
+    url: "https://ack.co.kr/",
+    region: "경기",
+    featured: true,
+  },
 ];
 
 module.exports = { PARTNERS };
