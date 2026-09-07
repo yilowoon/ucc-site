@@ -1,6 +1,13 @@
 <%
   // groups: [{ key, label, cls, note, list }]  — 1개면 탭 없이 단일 섹션, 2개면 정회원/준회원 탭
 %>
+<style>
+  .reg-detail-link{color:var(--green-600);font-weight:700;text-decoration:none}
+  .reg-detail-link:hover{text-decoration:underline}
+  .reg-detail-arrow{color:var(--gold-500);font-weight:800}
+  .reg-row-link{cursor:pointer}
+  .reg-row-link:hover{background:var(--paper-warm)}
+</style>
 <section class="mi-members">
   <% if (groups.length > 1) { %>
     <div class="seg mi-tabs" role="tablist">
@@ -25,10 +32,14 @@
               <tr><td colspan="7" class="reg-empty">해당하는 회원이 없습니다.</td></tr>
             <% } %>
             <% g.list.forEach(function(m){ %>
-              <tr>
+              <tr<% if (m.member_type === '기업회원') { %> class="reg-row-link" data-href="/members/company/<%= m.id %>"<% } %>>
                 <td><%= esc(m.member_type) %></td>
                 <td class="reg-name"><%= esc(m.name) %></td>
-                <td><%= esc(m.org_name || '-') %></td>
+                <td>
+                  <% if (m.member_type === '기업회원') { %>
+                    <a class="reg-detail-link" href="/members/company/<%= m.id %>"><%= esc(m.org_name || '(상세보기)') %> <span class="reg-detail-arrow" aria-hidden="true">›</span></a>
+                  <% } else { %><%= esc(m.org_name || '-') %><% } %>
+                </td>
                 <td><%= esc(m.position || '-') %></td>
                 <td><%= esc(m.interest || '-') %></td>
                 <td class="reg-date"><%= fmtDate(m.created_at) %></td>
@@ -44,6 +55,14 @@
 
 <script>
   (function(){
+    // 기업회원 행 클릭 시 상세로 이동(셀 안 링크·버튼 클릭은 제외)
+    document.querySelectorAll('.reg-row-link').forEach(function(tr){
+      tr.addEventListener('click', function(e){
+        if (e.target.closest('a,button')) return;
+        var href = tr.getAttribute('data-href');
+        if (href) window.location.href = href;
+      });
+    });
     var tabs = document.querySelectorAll('.mi-tabs .seg-btn');
     if (!tabs.length) return;
     tabs.forEach(function(btn){

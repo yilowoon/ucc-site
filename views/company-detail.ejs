@@ -1,0 +1,41 @@
+<%- include('partials/header') %>
+
+<section class="page-banner page-banner--sm">
+  <div class="container">
+    <span class="page-banner-en">CORPORATE MEMBER</span>
+    <h1 class="page-banner-title"><%= esc(m.org_name || m.name) %></h1>
+  </div>
+</section>
+
+<div class="container page-wrap">
+  <article class="page-content">
+    <p style="margin-bottom:18px"><a href="/members/corporate" class="btn btn-neutral">← 기업회원 목록</a></p>
+
+    <%
+      var web = m.biz_website ? (/^https?:\/\//i.test(m.biz_website) ? m.biz_website : 'https://' + m.biz_website) : '';
+      var addr = [m.address, m.address_detail].filter(Boolean).join(' ');
+    %>
+    <div class="partner-cards">
+      <div class="partner-card partner-card--std">
+        <div class="partner-logo-band">
+          <% if (m.biz_logo) { %><img class="partner-logo" src="<%= esc(m.biz_logo) %>" alt="<%= esc(m.org_name || m.name) %> 로고(CI)" loading="lazy" /><% } else { %><span class="partner-logo-ph">이미지 준비 중</span><% } %>
+        </div>
+        <h3 class="partner-name"><%= esc(m.org_name || m.name) %></h3>
+        <p class="partner-ceo"><% if (m.biz_ceo) { %>대표이사 <b><%= esc(m.biz_ceo) %></b><% } %></p>
+        <p class="partner-line"><% if (m.biz_sector) { %><span class="partner-line-label">주요사업분야</span> <%= esc(m.biz_sector) %><% } %></p>
+        <dl class="partner-info">
+          <div><dt>담당자</dt><dd><%= esc(m.name) %><% if (m.position) { %> (<%= esc(m.position) %>)<% } %></dd></div>
+          <% if (m.interest) { %><div><dt>관심분야</dt><dd><%= esc(m.interest) %></dd></div><% } %>
+          <% if (addr) { %><div><dt>주소</dt><dd><%= esc(addr) %></dd></div><% } %>
+          <div><dt>Home</dt><dd><% if (web) { %><a href="<%= esc(web) %>" target="_blank" rel="noopener"><%= esc(m.biz_website) %></a><% } else { %>-<% } %></dd></div>
+          <% if (m.biz_profile) { %><div><dt>소개자료</dt><dd><a href="/uploads/<%= esc(m.biz_profile) %>" download="<%= esc(m.biz_profile_name || m.biz_profile) %>"><%= esc(m.biz_profile_name || '기업소개자료 내려받기') %></a></dd></div><% } %>
+          <div><dt>회원등급</dt><dd><span class="grade-badge <%= m.grade === '정회원' ? 'grade-full' : 'grade-assoc' %>"><%= esc(m.grade || '준회원') %></span></dd></div>
+          <div><dt>가입일</dt><dd><%= fmtDate(m.created_at) %></dd></div>
+        </dl>
+        <% if (isAdmin) { %><a class="admin-edit" href="/admin/members/<%= m.id %>" style="display:inline-block;margin-top:12px;padding:5px 12px;border:1px solid var(--gold-500);border-radius:8px;color:var(--gold-600);font-size:.85rem;font-weight:700;text-decoration:none">✎ 회원 관리(수정)</a><% } %>
+      </div>
+    </div>
+  </article>
+</div>
+
+<%- include('partials/footer') %>

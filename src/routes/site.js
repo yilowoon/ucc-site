@@ -270,7 +270,7 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   ));
 
   // 회원유형별 명단 조회(회비납부일 제외, 링크 없음) — 정회원/준회원 분리
-  const MEMBER_LIST_COLS = "member_type, name, org_name, position, interest, grade, created_at";
+  const MEMBER_LIST_COLS = "id, member_type, name, org_name, position, interest, grade, created_at";
   function typeMembers(memberType) {
     const rows = db.prepare(
       "SELECT " + MEMBER_LIST_COLS + " FROM members WHERE member_type = ? ORDER BY created_at DESC, id DESC"
@@ -308,6 +308,18 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const partners = db.prepare("SELECT * FROM partners ORDER BY sort_order, id").all();
     const { full, assoc } = typeMembers("기업회원");
     res.render("members-corporate", { ...res.locals, title: "기업회원", partners, full, assoc });
+  });
+
+  // 기업회원 세부 정보 — 명단에서 가입 기업 클릭 시(개인정보 제외한 회사 정보 공개)
+  router.get("/members/company/:id", (req, res) => {
+    const m = db.prepare("SELECT * FROM members WHERE id = ? AND member_type = '기업회원'").get(parseInt(req.params.id, 10));
+    if (!m) {
+      return res.status(404).render("message", {
+        ...res.locals, title: "기업 정보 없음", heading: "기업 정보를 찾을 수 없습니다",
+        body: "삭제되었거나 잘못된 링크입니다.", backUrl: "/members/corporate",
+      });
+    }
+    res.render("company-detail", { ...res.locals, title: (m.org_name || m.name) + " · 기업회원", m });
   });
 
   // 단체회원 — 안내 + 정회원 명단(준회원 구분 없음)
