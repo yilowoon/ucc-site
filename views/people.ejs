@@ -36,67 +36,103 @@
   </div>
 </section>
 
-<!-- 자문위원 -->
-<section class="section section--alt" id="advisors">
+<%
+  const palette = ["green", "orange", "blue"];
+  // 고문(Senior Advisor). hidden: 위촉 확정 전 비공개 — 공개하려면 hidden: true 를 제거(또는 false)하면 됩니다.
+  const seniorAdvisors = [
+    { name: "박연수", hidden: true, photo: "/img/board/park-yeonsu.jpg", careers: [
+      ["수상", "홍조근정훈장"],
+      ["현", "서강대학교 초빙교수"],
+      ["전", "소방방재청장"],
+      ["전", "행정자치부 지방혁신인력개발원장"],
+      ["전", "인천직할시 동구청장"],
+      ["전", "인천직할시 공영개발사업단장"]
+    ] },
+    { name: "이경수", hidden: true, photo: "/img/board/lee-kyeongsu.jpg", careers: [
+      ["수상", "과학기술훈장 웅비장"],
+      ["수상", 'FPA "Leadership Award"'],
+      ["현", "국가과학기술자문회의 부의장"],
+      ["현", "인애이블퓨전 의장"],
+      ["전", "IAEA 국제핵융합연구평의회 의장"],
+      ["전", "국가핵융합연구소 소장"],
+      ["전", "국제핵융합실험로(ITER) 부총장"],
+      ["전", "과기부 과학기술혁신본부장"]
+    ] },
+    { name: "이광형", hidden: true, photo: "/img/board/lee-kwanghyeong.jpg", careers: [
+      ["석학", "SAE Fellow"],
+      ["현", "한국전력공사 석좌교수"],
+      ["전", "제17대 한국과학기술원 총장"],
+      ["전", "제7기 국가지식재산위원회 위원장"],
+      ["전", "Science Tokyo 특임교수"],
+      ["전", "Stanford University 초빙교수"],
+      ["전", "한국과학기술원 기계공학과 교수"],
+      ["전", "한국항공우주연구원 연구원"]
+    ] },
+    { name: "장인순", photo: "/img/board/jang-insun.jpg", careers: [
+      ["개발", "한국표준원자로, APR-1400"],
+      ["현", "세종시 전의마을도서관 관장"],
+      ["전", "IAEA 원자력에너지자문위원"],
+      ["전", "한국원자력연구소 소장"]
+    ] },
+    { name: "정용환", photo: "/img/board/jeong-yonghwan.jpg", careers: [
+      ["수상", "대한민국 최고과학기술인상"],
+      ["창립", "벽돌한장"],
+      ["현", "벽돌한장 명예회장"],
+      ["전", "한국원자력연구원 단장"]
+    ] }
+  ];
+  // 자문위원(Advisor)
+  const advisors = [
+    { name: "고동록", photo: "/img/board/ko-dongrok.jpg", careers: [
+      ["현", "퀀텀 브레인경영 네트워크 대표 컨설턴트"],
+      ["현", "플립온 코리아 경영고문"],
+      ["전", "현대모비스 인재개발실장"],
+      ["전", "현대오토넷 기획팀장"],
+      ["전", "현대캐피탈 경영전략팀장"],
+      ["전", "현대차서비스 과장"]
+    ] }
+  ];
+%>
+
+<!-- 고문 -->
+<section class="section section--alt" id="senior-advisors">
   <div class="container">
     <div class="section-head">
-      <div><h2 class="section-title c-orange">자문위원</h2><span class="section-en">ADVISORS</span></div>
+      <div><h2 class="section-title c-orange">고문</h2><span class="section-en">SENIOR ADVISOR</span></div>
     </div>
+    <div class="directors">
+      <% seniorAdvisors.filter(function(d){ return !d.hidden; }).forEach(function(d, i){ var c = palette[i % 3]; %>
+        <article class="dir-card">
+          <% if (d.photo) { %>
+            <div class="dir-photo"><img src="<%= d.photo %>" alt="고문 <%= d.name %>" width="600" height="800" /></div>
+          <% } else { %>
+            <div class="dir-photo dir-photo--ph av-<%= c %>" aria-hidden="true"><%= d.name.charAt(0) %></div>
+          <% } %>
+          <div class="dir-body">
+            <h3 class="dir-name"><%= d.name %> <span class="dir-title">고문</span></h3>
+            <% if (d.specialty) { %>
+              <p class="dir-spec"><span class="dir-spec-label">전문분야</span><%= d.specialty %></p>
+            <% } %>
+            <% if (d.careers) { %>
+              <ul class="dir-careers">
+                <% d.careers.forEach(function(c){ %>
+                  <li><span class="ec-when <%= c[0] === '현' ? 'ec-now' : '' %>"><%= c[0] %></span><span><%= c[1] %></span></li>
+                <% }); %>
+              </ul>
+            <% } %>
+          </div>
+        </article>
+      <% }); %>
+    </div>
+  </div>
+</section>
 
-    <%
-      const palette = ["green", "orange", "blue"];
-      const advisors = [
-        { name: "고동록", photo: "/img/board/ko-dongrok.jpg", careers: [
-          ["현", "퀀텀 브레인경영 네트워크 대표 컨설턴트"],
-          ["현", "플립온 코리아 경영고문"],
-          ["전", "현대모비스 인재개발실장"],
-          ["전", "현대오토넷 기획팀장"],
-          ["전", "현대캐피탈 경영전략팀장"],
-          ["전", "현대차서비스 과장"]
-        ] },
-        // hidden: 위촉 확정 전 비공개. 공개하려면 hidden: true 를 제거(또는 false)하면 됩니다.
-        { name: "박연수", hidden: true, photo: "/img/board/park-yeonsu.jpg", careers: [
-          ["수상", "홍조근정훈장"],
-          ["현", "서강대학교 초빙교수"],
-          ["전", "소방방재청장"],
-          ["전", "행정자치부 지방혁신인력개발원장"],
-          ["전", "인천직할시 동구청장"],
-          ["전", "인천직할시 공영개발사업단장"]
-        ] },
-        { name: "이경수", hidden: true, photo: "/img/board/lee-kyeongsu.jpg", careers: [
-          ["수상", "과학기술훈장 웅비장"],
-          ["수상", 'FPA "Leadership Award"'],
-          ["현", "국가과학기술자문회의 부의장"],
-          ["현", "인애이블퓨전 의장"],
-          ["전", "IAEA 국제핵융합연구평의회 의장"],
-          ["전", "국가핵융합연구소 소장"],
-          ["전", "국제핵융합실험로(ITER) 부총장"],
-          ["전", "과기부 과학기술혁신본부장"]
-        ] },
-        { name: "이광형", hidden: true, photo: "/img/board/lee-kwanghyeong.jpg", careers: [
-          ["석학", "SAE Fellow"],
-          ["현", "한국전력공사 석좌교수"],
-          ["전", "제17대 한국과학기술원 총장"],
-          ["전", "제7기 국가지식재산위원회 위원장"],
-          ["전", "Science Tokyo 특임교수"],
-          ["전", "Stanford University 초빙교수"],
-          ["전", "한국과학기술원 기계공학과 교수"],
-          ["전", "한국항공우주연구원 연구원"]
-        ] },
-        { name: "장인순", photo: "/img/board/jang-insun.jpg", careers: [
-          ["개발", "한국표준원자로, APR-1400"],
-          ["현", "세종시 전의마을도서관 관장"],
-          ["전", "IAEA 원자력에너지자문위원"],
-          ["전", "한국원자력연구소 소장"]
-        ] },
-        { name: "정용환", photo: "/img/board/jeong-yonghwan.jpg", careers: [
-          ["수상", "대한민국 최고과학기술인상"],
-          ["창립", "벽돌한장"],
-          ["현", "벽돌한장 명예회장"],
-          ["전", "한국원자력연구원 단장"]
-        ] }
-      ];
-    %>
+<!-- 자문위원 -->
+<section class="section" id="advisors">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-orange">자문위원</h2><span class="section-en">ADVISOR</span></div>
+    </div>
     <div class="directors">
       <% advisors.filter(function(d){ return !d.hidden; }).forEach(function(d, i){ var c = palette[i % 3]; %>
         <article class="dir-card">
@@ -125,7 +161,7 @@
 </section>
 
 <!-- 이사회 -->
-<section class="section" id="directors">
+<section class="section section--alt" id="directors">
   <div class="container">
     <div class="section-head">
       <div><h2 class="section-title c-blue">이사회</h2><span class="section-en">BOARD OF DIRECTORS</span></div>
