@@ -14,11 +14,14 @@
     <%
       var web = m.biz_website ? (/^https?:\/\//i.test(m.biz_website) ? m.biz_website : 'https://' + m.biz_website) : '';
       var addr = [m.address, m.address_detail].filter(Boolean).join(' ');
+      // 가입 시 biz_logo/biz_profile 은 파일명만 저장되므로 /uploads/ 접두어를 붙인다(이미 절대경로/URL이면 그대로).
+      var logoSrc = m.biz_logo ? (/^(https?:|\/)/i.test(m.biz_logo) ? m.biz_logo : '/uploads/' + m.biz_logo) : '';
+      var profileHref = m.biz_profile ? (/^(https?:|\/)/i.test(m.biz_profile) ? m.biz_profile : '/uploads/' + m.biz_profile) : '';
     %>
     <div class="partner-cards">
       <div class="partner-card partner-card--std">
         <div class="partner-logo-band">
-          <% if (m.biz_logo) { %><img class="partner-logo" src="<%= esc(m.biz_logo) %>" alt="<%= esc(m.org_name || m.name) %> 로고(CI)" loading="lazy" /><% } else { %><span class="partner-logo-ph">이미지 준비 중</span><% } %>
+          <% if (logoSrc) { %><img class="partner-logo" src="<%= esc(logoSrc) %>" alt="<%= esc(m.org_name || m.name) %> 로고(CI)" loading="lazy" /><% } else { %><span class="partner-logo-ph">이미지 준비 중</span><% } %>
         </div>
         <h3 class="partner-name"><%= esc(m.org_name || m.name) %></h3>
         <p class="partner-ceo"><% if (m.biz_ceo) { %>대표이사 <b><%= esc(m.biz_ceo) %></b><% } %></p>
@@ -28,7 +31,7 @@
           <% if (m.interest) { %><div><dt>관심분야</dt><dd><%= esc(m.interest) %></dd></div><% } %>
           <% if (addr) { %><div><dt>주소</dt><dd><%= esc(addr) %></dd></div><% } %>
           <div><dt>Home</dt><dd><% if (web) { %><a href="<%= esc(web) %>" target="_blank" rel="noopener"><%= esc(m.biz_website) %></a><% } else { %>-<% } %></dd></div>
-          <% if (m.biz_profile) { %><div><dt>소개자료</dt><dd><a href="/uploads/<%= esc(m.biz_profile) %>" download="<%= esc(m.biz_profile_name || m.biz_profile) %>"><%= esc(m.biz_profile_name || '기업소개자료 내려받기') %></a></dd></div><% } %>
+          <% if (profileHref) { %><div><dt>소개자료</dt><dd><a href="<%= esc(profileHref) %>" download="<%= esc(m.biz_profile_name || m.biz_profile) %>"><%= esc(m.biz_profile_name || '기업소개자료 내려받기') %></a></dd></div><% } %>
           <div><dt>회원등급</dt><dd><span class="grade-badge <%= m.grade === '정회원' ? 'grade-full' : 'grade-assoc' %>"><%= esc(m.grade || '준회원') %></span></dd></div>
           <div><dt>가입일</dt><dd><%= fmtDate(m.created_at) %></dd></div>
         </dl>
