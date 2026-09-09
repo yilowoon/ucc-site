@@ -49,38 +49,59 @@ const THEMES = [
     title: "해외 사회연대경제 정책의 최신 흐름",
     focus: "각국이 사회연대경제를 제도로 뒷받침하는 방식과 그 시사점",
     queries: ["해외 사회연대경제 정책", "유럽 사회적경제 법", "사회연대경제 국제 동향"],
+    match: ["사회적경제 기본법", "사회연대경제", "사회적경제 정책", "SSE"],
   },
   {
     key: "coops",
     title: "협동조합이 떠받치는 지역경제, 해외의 실험",
     focus: "노동자·소비자·플랫폼 협동조합이 지역 고용과 돌봄을 지탱하는 사례",
     queries: ["해외 협동조합 지역경제", "노동자협동조합 사례", "플랫폼 협동조합 해외"],
+    match: ["노동자협동조합", "소비자협동조합", "플랫폼 협동조합", "협동조합"],
   },
   {
     key: "community",
     title: "주민이 소유하는 공동체경제, 해외 사례",
     focus: "주민이 자원과 돌봄을 함께 소유·운영하는 공동체경제 모델",
     queries: ["해외 지역공동체 경제", "커뮤니티 자산 해외 사례", "주민참여 마을기업 해외"],
+    match: ["지역공동체", "공동체경제", "커뮤니티 자산", "마을기업", "공동체"],
   },
   {
     key: "energy",
     title: "주민참여 에너지전환과 연대경제",
     focus: "주민이 발전 수익을 나누는 에너지 공동체와 햇빛소득마을의 접점",
     queries: ["해외 에너지 협동조합", "주민참여 재생에너지 마을 해외", "커뮤니티 에너지 해외"],
+    match: ["에너지 협동조합", "커뮤니티 에너지", "재생에너지", "에너지전환", "태양광", "햇빛"],
   },
   {
     key: "care",
     title: "돌봄을 다시 짜는 사회적경제, 해외의 길",
     focus: "돌봄·복지 공백을 사회적경제가 메우는 해외 제도와 현장",
     queries: ["해외 사회적협동조합 돌봄", "돌봄 사회적경제 해외", "커뮤니티 케어 해외 사례"],
+    match: ["돌봄", "커뮤니티 케어", "커뮤니티케어", "사회서비스", "사회적협동조합"],
   },
   {
     key: "finance",
     title: "연대금융, 사회적경제를 지탱하는 돈의 구조",
     focus: "사회적경제 조직을 키우는 인내자본·연대금융·중간지원 생태계",
     queries: ["해외 연대금융 사례", "사회적금융 해외", "임팩트 금융 지역 해외"],
+    match: ["연대금융", "사회적금융", "임팩트투자", "임팩트금융", "인내자본", "마이크로파이낸스", "사회투자"],
   },
 ];
+
+// 주제 무관 기사(정치·정부일정·인기뉴스 등) 유입 방지용 공통 키워드.
+// 기사 제목+발췌에 아래(공통) 또는 해당 주제 match 키워드가 하나라도 있어야 채택.
+const CORE_KEYWORDS = [
+  "사회연대경제", "사회적경제", "연대경제", "협동조합", "사회적기업", "사회적협동조합",
+  "마을기업", "자활기업", "소셜벤처", "사회적가치", "사회적금융", "연대금융",
+  "임팩트투자", "임팩트금융", "공동체경제", "커뮤니티 자산",
+];
+
+/** 기사(제목+발췌)가 주제와 관련 있는지: 공통 또는 주제 키워드 포함 여부 */
+function isRelevant(item, theme) {
+  const hay = ((item.title || "") + " " + (item.excerpt || item.summary || "")).toLowerCase();
+  const kws = CORE_KEYWORDS.concat(theme.match || []);
+  return kws.some((k) => hay.includes(String(k).toLowerCase()));
+}
 
 const insertPost = db.prepare(
   `INSERT INTO posts (board, title, content, author, pinned, created_at, updated_at, source_guid)
@@ -151,13 +172,16 @@ async function researchSources(theme, { maxSources = 8 } = {}) {
       const key = (it.guid || it.url).split("?")[0];
       if (seen.has(key)) continue;
       seen.add(key);
-      sources.push({
+      const cand = {
         title: String(it.title).replace(/\s+/g, " ").trim(),
         source: it.source || "",
         url: it.url,
         date: fmtKst(it.published_at),
         excerpt: buildExcerpt(it),
-      });
+      };
+      // 관련성 필터: 주제와 무관한 정치·정부일정·인기뉴스 유입 차단
+      if (!isRelevant(cand, theme)) continue;
+      sources.push(cand);
     }
     await sleep(300);
   }
@@ -445,8 +469,20 @@ function buildContentSummary(report, subtitle) {
   return out;
 }
 
+/** [주요내용] fallback(비-AI) — 원문 덤프 대신, 관련 기사 제목 기반의 깔끔한 다이제스트 */
+function buildFallbackDigest(sources, subtitle, summary) {
+  const clean = (t) => String(t || "").replace(/\s+/g, " ").trim();
+  const lead = clean(subtitle) || clean(summary);
+  const titles = (sources || []).slice(0, 6).map((s) => clean(s.title)).filter(Boolean);
+  let out = lead ? lead + ". " : "";
+  out += `이번 호는 주제와 관련된 해외·국내 동향과 사례 ${sources.length}건을 모아 핵심 흐름과 시사점을 정리했습니다`;
+  if (titles.length) out += ` — 주요 다룸: ${titles.join(" · ")}`;
+  out += ".";
+  return out.length > 800 ? out.slice(0, 799).trim() + "…" : out;
+}
+
 /** 게시글 본문 — 순수 텍스트. 참고자료 URL 은 뷰에서 새 창 링크로 렌더된다. */
-function makePostBody(report, sources, weekKey) {
+function makePostBody(report, sources, weekKey, ai) {
   const lines = [];
   const dateStr = fmtKst(new Date().toISOString());
   const subtitle = String(report.subtitle || report.summary || "").trim();
@@ -458,8 +494,8 @@ function makePostBody(report, sources, weekKey) {
   lines.push(`발행번호  ·  ${weekKey}`);
   lines.push("");
 
-  // 1) 주요내용 — 보고서 내용 요약
-  const content = buildContentSummary(report, subtitle);
+  // 1) 주요내용 — AI 집필이면 보고서 요약, 아니면 제목 기반 다이제스트(원문 덤프 방지)
+  const content = ai ? buildContentSummary(report, subtitle) : buildFallbackDigest(sources, subtitle, report.summary);
   lines.push("[주요내용]");
   lines.push(content || subtitle || "자세한 내용은 첨부된 보고서를 확인해 주세요.");
   lines.push("");
@@ -492,12 +528,12 @@ function makePostBody(report, sources, weekKey) {
 
 /* --------------------------------------------- 4) 발행(글+첨부) */
 
-function publishReport(report, sources, weekKey, themeKey) {
+function publishReport(report, sources, weekKey, themeKey, ai) {
   const guid = `report:${weekKey}:${themeKey}`;
   const title = `[리포트] ${String(report.title || "사회연대경제 이슈리포트").replace(/\s+/g, " ").trim()}`.slice(0, 200);
   const now = new Date().toISOString();
 
-  const res = insertPost.run(BOARD, title, makePostBody(report, sources, weekKey), AUTHOR, now, now, guid);
+  const res = insertPost.run(BOARD, title, makePostBody(report, sources, weekKey, ai), AUTHOR, now, now, guid);
   const postId = Number(res.lastInsertRowid);
 
   try {
@@ -540,7 +576,13 @@ async function collectOnce({ force = false } = {}) {
 
   console.log(`[report] 리포트 작성 시작 — ${wk.key} / ${theme.title}`);
   const sources = await researchSources(theme, { maxSources: 12 });
-  console.log(`[report] 자료 ${sources.length}건 수집`);
+  console.log(`[report] 관련 자료 ${sources.length}건 수집(관련성 필터 적용)`);
+
+  // 주제와 관련된 소스가 하나도 없으면 저품질 발행을 막기 위해 이번 회차는 건너뜀
+  if (!sources.length) {
+    console.warn(`[report] 관련 자료 0건 → 발행 건너뜀 (${wk.key} / ${theme.title})`);
+    return { published: false, reason: "no-relevant-sources", weekKey: wk.key, theme: theme.key };
+  }
 
   let ai = true;
   let report = await writeFullReport(theme, sources);
@@ -550,7 +592,7 @@ async function collectOnce({ force = false } = {}) {
     ai = false;
   }
 
-  const out = publishReport(report, sources, wk.key, theme.key);
+  const out = publishReport(report, sources, wk.key, theme.key, ai);
   console.log(`[report] 발행 완료 — post ${out.postId} (${ai ? "AI집필" : "다이제스트"}, 첨부 ${out.attached})`);
   return { published: true, ai, weekKey: wk.key, theme: theme.key, ...out };
 }
