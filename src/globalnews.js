@@ -144,6 +144,24 @@ const insertAttach = db.prepare(
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// ── 무료 Gemini 분당 한도(503 과부하) 방지: 모든 호출을 직렬화하고 최소 간격을 강제한다 ──
+// 무료 티어는 '분당 요청 수'가 엄격해 짧은 시간에 몰아치면 503이 난다. 병렬 대신 한 줄로,
+// 호출 사이에 최소 간격(GEMINI_MIN_GAP_MS, 기본 5초 ≈ 12req/min)을 둔다.
+const GEMINI_MIN_GAP_MS = Number(process.env.GEMINI_MIN_GAP_MS || 5000);
+let _geminiChain = Promise.resolve();
+let _lastGeminiAt = 0;
+/** task(비동기)를 전역 직렬 큐에 넣고 직전 호출과 최소 간격을 둔 뒤 실행한다. */
+function throttleGemini(task) {
+  const run = _geminiChain.then(async () => {
+    const wait = _lastGeminiAt + GEMINI_MIN_GAP_MS - Date.now();
+    if (wait > 0) await sleep(wait);
+    try { return await task(); }
+    finally { _lastGeminiAt = Date.now(); }
+  });
+  _geminiChain = run.then(() => {}, () => {}); // 체인이 거부로 끊기지 않도록 흡수
+  return run;
+}
+
 /** 동시 실행 수를 제한하며 map(순서 보존) — 절 병렬 집필용 */
 async function mapLimit(items, limit, fn) {
   const results = new Array(items.length);
@@ -583,19 +601,21 @@ async function resolveModel() {
   return pick;
 }
 
-/** 저수준 1회 호출 → { ok, status, text, err } */
+/** 저수준 1회 호출(전역 직렬 큐·최소 간격 적용) → { ok, status, text, err } */
 async function geminiCallRaw(model, body, ms) {
   const key = GEMINI_KEY();
   if (!key) return { status: 0, err: "NO_KEY" };
-  const ctrl = new AbortController();
-  const to = setTimeout(() => ctrl.abort(), ms);
-  try {
-    const r = await fetch(`${GEMINI_BASE()}/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`,
-      { method: "POST", signal: ctrl.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    const text = await r.text();
-    return { ok: r.ok, status: r.status, text };
-  } catch (e) { return { status: 0, err: e.message }; }
-  finally { clearTimeout(to); }
+  return throttleGemini(async () => {
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), ms);
+    try {
+      const r = await fetch(`${GEMINI_BASE()}/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`,
+        { method: "POST", signal: ctrl.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const text = await r.text();
+      return { ok: r.ok, status: r.status, text };
+    } catch (e) { return { status: 0, err: e.message }; }
+    finally { clearTimeout(to); }
+  });
 }
 
 /** Gemini 사용 가능 여부 확인(모델 자동 선택 + 503 재시도). { ok, reason, detail, model } */
@@ -615,7 +635,7 @@ async function geminiJson(prompt, { ms = 90000, maxTokens = 8192, temperature = 
   if (!GEMINI_KEY()) return null;
   const body = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature, maxOutputTokens: maxTokens, responseMimeType: "application/json" } };
   let model = await resolveModel();
-  const MAX = 6; // 과부하(503) 대비 재시도 확대
+  const MAX = 7; // 과부하(503) 대비 재시도 확대
   for (let attempt = 0; attempt < MAX; attempt++) {
     const res = await geminiCallRaw(model, body, ms);
     if (res.ok) {
@@ -631,9 +651,14 @@ async function geminiJson(prompt, { ms = 90000, maxTokens = 8192, temperature = 
     }
     // 404: 모델명 문제 → 캐시 무효화 후 재해결(환경변수 미지정 시 1회)
     if (res.status === 404 && !process.env.GEMINI_TEXT_MODEL && attempt === 0) { _resolvedModel = null; model = await resolveModel(); continue; }
-    // 429/503/네트워크 타임아웃: 과부하 → 지수 백오프 후 재시도(최대 ~30초 대기)
+    // 429/503/네트워크 타임아웃: 무료 분당 한도 초과일 가능성이 큼 → 분 단위 회복을 노려 길게 대기 후 재시도
     if (res.status === 429 || res.status === 503 || res.status === 0) {
-      if (attempt < MAX - 1) { await sleep(Math.min(3000 * (attempt + 1), 12000)); continue; }
+      if (attempt < MAX - 1) {
+        const backoff = Math.min(8000 * (attempt + 1), 45000); // 8s → 최대 45s
+        console.warn(`[report] Gemini ${res.status || "NET"} 과부하 — ${Math.round(backoff / 1000)}초 후 재시도(${attempt + 1}/${MAX - 1})`);
+        await sleep(backoff);
+        continue;
+      }
     }
     console.error("[report] Gemini HTTP", res.status || "NET", (res.text || res.err || "").slice(0, 160));
     return null;
@@ -754,9 +779,10 @@ async function writeFullReport(theme, sources) {
   const oneLine = String(outline.oneLine || "").trim();
 
   const plan = sectionPlan(outline);
-  console.log(`[report]  · 개요 완료 → ${plan.length}개 절 병렬 집필 시작`);
-  // 절을 동시 2개씩 병렬 집필(과부하 503 완화 + 속도 절충). 각 절 최대 2회 시도, 호출당 60초.
-  const written = await mapLimit(plan, 2, async (spec, i) => {
+  console.log(`[report]  · 개요 완료 → ${plan.length}개 절 순차 집필 시작`);
+  // 무료 Gemini 과부하(503) 방지를 위해 절을 1개씩 순차 집필한다(전역 스로틀이 호출 간격도 보장).
+  // 각 절 최대 2회 시도, 호출당 60초.
+  const written = await mapLimit(plan, 1, async (spec, i) => {
     let paras = [];
     for (let attempt = 0; attempt < 2 && paras.length === 0; attempt++) {
       const r = await llm(buildSectionPrompt(theme, sources, outline, spec, i, plan.length), { maxTokens: 8192, temperature: 0.5, ms: 60000 });
@@ -942,7 +968,22 @@ function publishReport(report, sources, dayKey, theme, ai, guidOverride) {
  * 같은 날·주제 글이 이미 있으면(수동/자동 중복 실행) 건너뛴다.
  * force:true 면 오늘 이미 발행돼도 다음 주제로 강제 발행(관리자 '지금 발행'용).
  */
+let _collectRunning = false; // 발행 작업 동시 실행 방지(스케줄러+수동 '지금 발행' 중복 → 과부하/중복 충돌 차단)
+
 async function collectOnce({ force = false } = {}) {
+  if (_collectRunning) {
+    console.log("[report] 이미 리포트 발행 작업이 진행 중 → 이번 요청은 건너뜀(중복 실행 방지)");
+    return { published: false, reason: "busy" };
+  }
+  _collectRunning = true;
+  try {
+    return await _collectOnceInner({ force });
+  } finally {
+    _collectRunning = false;
+  }
+}
+
+async function _collectOnceInner({ force = false } = {}) {
   const seq = daySeq(new Date());
   let idx = (seq.dayOfYear - 1) % THEMES.length;
   if (force) {
