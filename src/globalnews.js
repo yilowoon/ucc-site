@@ -307,7 +307,7 @@ function buildHighlight(report, refs, ai) {
 }
 
 /** 요약 발췌(원문 전문 방지) — LLM 근거용이라 넉넉히, 단 전문 저장은 피한다 */
-function buildExcerpt(item, maxChars = 1000) {
+function buildExcerpt(item, maxChars = 2800) {
   const raw = String(item.content || item.summary || "").replace(/\s+/g, " ").trim();
   if (raw.length < 20) return String(item.summary || "").replace(/\s+/g, " ").trim();
   if (raw.length <= maxChars) return raw;
@@ -366,7 +366,7 @@ async function fromBingNews(keyword, lang = "en") {
 }
 
 /** 기사 HTML에서 본문 텍스트 추출(<p> 우선, 실패 시 태그 제거) */
-function extractMainText(html, maxChars = 1800) {
+function extractMainText(html, maxChars = 3000) {
   let h = String(html || "")
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
@@ -411,9 +411,11 @@ async function enrichIntlSources(sources, limit = 8) {
 
 /** 영문(intl) 출처의 발췌를 한국어로 번역·정리한다(완결 문장). 한 번의 Gemini 호출로 일괄 처리. */
 async function translateSourcesToKorean(sources) {
-  const targets = (sources || []).filter((s) => s.intl && s.excerpt && /[A-Za-z]{40,}/.test(s.excerpt));
+  // 영문 알파벳이 40자 이상 포함된 발췌는 번역 대상으로 본다(제목이 영문이어도 포함)
+  const hasEnglish = (t) => (String(t || "").match(/[A-Za-z]/g) || []).length >= 40;
+  const targets = (sources || []).filter((s) => s.intl && (hasEnglish(s.excerpt) || hasEnglish(s.title)));
   if (!targets.length || !GEMINI_KEY()) return 0;
-  const block = targets.map((s, i) => `[${i + 1}] TITLE: ${s.title}\nBODY: ${String(s.excerpt).slice(0, 1800)}`).join("\n\n");
+  const block = targets.map((s, i) => `[${i + 1}] TITLE: ${s.title}\nBODY: ${String(s.excerpt || "").slice(0, 2800)}`).join("\n\n");
   const prompt = [
     "다음은 해외 영문 기사들의 제목과 본문(또는 스니펫)이다.",
     "각 기사의 핵심 내용을 한국어로 자연스럽고 정확하게 번역·정리하라.",
@@ -430,6 +432,47 @@ async function translateSourcesToKorean(sources) {
     const idx = (parseInt(it.i, 10) || 0) - 1;
     const ko = completeSentences(String(it.ko || "").trim());
     if (idx >= 0 && idx < targets.length && ko.length >= 40) { targets[idx].excerpt = ko; targets[idx].translated = true; n++; }
+  }
+  return n;
+}
+
+/** 최종 안전망: 완성된 보고서 절 문단 중 영문이 남은 것을 한국어로 재작성(완결 문장). */
+async function koreanizeReport(report) {
+  if (!GEMINI_KEY() || !report || !Array.isArray(report.sections)) return 0;
+  const isEng = (t) => (String(t || "").match(/[A-Za-z]/g) || []).length >= 40;
+  const items = [];
+  for (const sec of report.sections) {
+    const arr = sec.paragraphs || [];
+    for (let i = 0; i < arr.length; i++) {
+      const p = arr[i];
+      if (typeof p === "string") { if (isEng(p)) items.push({ arr, i, key: "str", text: p }); }
+      else if (p && typeof p === "object") {
+        for (const key of ["lead", "text", "bullet"]) {
+          if (isEng(p[key])) { items.push({ arr, i, key, text: p[key] }); break; }
+        }
+      }
+    }
+  }
+  if (!items.length) return 0;
+  const block = items.map((it, n) => `[${n + 1}] ${String(it.text).slice(0, 1500)}`).join("\n\n");
+  const prompt = [
+    "다음 문단들에는 영어가 섞여 있다. 각 문단을 자연스럽고 완결된 한국어 문장으로 다시 써라.",
+    "- 사실은 그대로 유지하고 추가하지 말 것. 고유명사는 한글(원어) 병기. 중간에 끊지 말고 완결할 것.",
+    '다음 JSON만 출력(설명 없이): { "items": [ { "i": 1, "ko": "..." } ] }',
+    "",
+    block,
+  ].join("\n");
+  const j = await geminiJson(prompt, { maxTokens: 8192, temperature: 0.3 });
+  if (!j || !Array.isArray(j.items)) return 0;
+  let n = 0;
+  for (const r of j.items) {
+    const idx = (parseInt(r.i, 10) || 0) - 1;
+    const ko = completeSentences(String(r.ko || "").trim());
+    if (idx < 0 || idx >= items.length || ko.length < 20) continue;
+    const it = items[idx];
+    if (it.key === "str") it.arr[it.i] = ko;
+    else it.arr[it.i] = { ...it.arr[it.i], [it.key]: ko };
+    n++;
   }
   return n;
 }
@@ -596,7 +639,8 @@ function buildSectionPrompt(theme, sources, outline, spec, index, total) {
     "",
     "요구 수준:",
     "- 박사급 연구자의 깊이로, '무슨 일이 있었나 → 왜 → 어떻게 작동하나 → 무엇이 달라지나' 흐름에 맞춰 구체적 사실·메커니즘·인과·비교를 서술합니다.",
-    "- 이 절 하나의 분량이 최소 1,500자, 가능하면 2,200자 이상이 되도록 충실히 씁니다(A4 약 1~1.5쪽).",
+    "- ★전부 한국어로만 작성합니다. 영어 문장·구절을 그대로 쓰지 말고, 영문 자료의 내용은 자연스러운 한국어로 옮겨 서술합니다(고유명사만 한글(원어) 병기).",
+    "- 이 절 하나의 분량이 최소 1,500자, 가능하면 2,200자 이상이 되도록 충실히 씁니다. 분량 상한(페이지 제한)은 없으니 필요하면 더 길게 써도 됩니다.",
     "- 2~3개의 소제목(h3)으로 논리적으로 구조화하고, 핵심 항목은 불릿으로 정리합니다.",
     "- ★반드시 모든 문장을 완결해서 끝맺으세요. 문장·문단을 중간에 끊거나 '…', '등'으로 생략하지 마세요. 분량이 모자라면 근거 있는 설명을 더해 채우되, 출처에 없는 사실은 지어내지 마세요.",
     spec.isCase
@@ -883,6 +927,8 @@ async function collectOnce({ force = false } = {}) {
     report = fallbackReport(theme, sources);
     ai = false;
   }
+  // 최종 안전망: 보고서에 남은 영문 문단을 한국어로 재작성
+  try { const k = await koreanizeReport(report); if (k) console.log(`[report] 잔여 영문 문단 한국어화 ${k}건`); } catch (e) {}
 
   const out = publishReport(report, sources, seq.key, theme, ai);
   console.log(`[report] 발행 완료 — post ${out.postId} (${ai ? "AI집필" : "다이제스트"}, 첨부 ${out.attached})`);
