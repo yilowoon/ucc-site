@@ -546,49 +546,90 @@ async function researchSources(theme, { maxSources = 12 } = {}) {
 
 /* --------------------------------------------- 2) Gemini 집필 호출 */
 
-/** Gemini 사용 가능 여부 확인(키·모델·네트워크). { ok, reason, detail } */
-async function geminiPing() {
-  const key = GEMINI_KEY();
-  if (!key) return { ok: false, reason: "NO_KEY" };
+// ── 모델 자동 선택(404 회피) + 저수준 호출/재시도(503·429 대응) ──
+let _resolvedModel = null;
+
+/** 이 키로 generateContent 가능한 모델 목록 */
+async function listModels(key) {
   try {
-    const url = `${GEMINI_BASE()}/v1beta/models/${GEMINI_TEXT_MODEL()}:generateContent?key=${encodeURIComponent(key)}`;
     const ctrl = new AbortController();
-    const to = setTimeout(() => ctrl.abort(), 15000);
-    const r = await fetch(url, { method: "POST", signal: ctrl.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: "핑" }] }] }) });
+    const to = setTimeout(() => ctrl.abort(), 12000);
+    const r = await fetch(`${GEMINI_BASE()}/v1beta/models?key=${encodeURIComponent(key)}&pageSize=200`, { signal: ctrl.signal });
     clearTimeout(to);
-    if (r.ok) return { ok: true };
-    const t = await r.text();
-    return { ok: false, reason: `HTTP ${r.status}`, detail: t.slice(0, 200) };
-  } catch (e) { return { ok: false, reason: e.message }; }
+    if (!r.ok) return [];
+    const d = await r.json();
+    return (d.models || []).filter((m) => (m.supportedGenerationMethods || []).includes("generateContent")).map((m) => String(m.name || "").replace(/^models\//, ""));
+  } catch (e) { return []; }
 }
 
-async function geminiJson(prompt, { ms = 90000, maxTokens = 8192, temperature = 0.5 } = {}) {
+/** 사용할 모델명 결정: 환경변수 우선 → ListModels에서 flash 계열 자동 선택 → 기본값 */
+async function resolveModel() {
+  if (process.env.GEMINI_TEXT_MODEL) return process.env.GEMINI_TEXT_MODEL; // 사용자가 지정하면 신뢰
+  if (_resolvedModel) return _resolvedModel;
+  const avail = GEMINI_KEY() ? await listModels(GEMINI_KEY()) : [];
+  const pick = avail.find((n) => /flash/i.test(n) && !/(vision|thinking|exp|image|tts|live)/i.test(n))
+    || avail.find((n) => /flash/i.test(n))
+    || avail.find((n) => /gemini/i.test(n))
+    || "gemini-flash-latest";
+  _resolvedModel = pick;
+  console.log(`[report] Gemini 모델 자동 선택: ${pick} (사용가능 ${avail.length}종)`);
+  return pick;
+}
+
+/** 저수준 1회 호출 → { ok, status, text, err } */
+async function geminiCallRaw(model, body, ms) {
   const key = GEMINI_KEY();
-  if (!key) return null;
-  const url = `${GEMINI_BASE()}/v1beta/models/${GEMINI_TEXT_MODEL()}:generateContent?key=${encodeURIComponent(key)}`;
-  const body = {
-    contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { temperature, maxOutputTokens: maxTokens, responseMimeType: "application/json" },
-  };
+  if (!key) return { status: 0, err: "NO_KEY" };
   const ctrl = new AbortController();
   const to = setTimeout(() => ctrl.abort(), ms);
   try {
-    const r = await fetch(url, { method: "POST", signal: ctrl.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    const t = await r.text();
-    if (!r.ok) { console.error("[report] Gemini HTTP", r.status, t.slice(0, 200)); return null; }
-    let data; try { data = JSON.parse(t); } catch { return null; }
-    const parts = data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
-    const txt = (parts && parts.map((p) => p.text || "").join("")) || "";
-    if (!txt) return null;
-    try { return JSON.parse(txt); } catch {
-      const m = txt.match(/\{[\s\S]*\}/);
-      if (m) { try { return JSON.parse(m[0]); } catch {} }
-      return null;
+    const r = await fetch(`${GEMINI_BASE()}/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`,
+      { method: "POST", signal: ctrl.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const text = await r.text();
+    return { ok: r.ok, status: r.status, text };
+  } catch (e) { return { status: 0, err: e.message }; }
+  finally { clearTimeout(to); }
+}
+
+/** Gemini 사용 가능 여부 확인(모델 자동 선택 + 503 재시도). { ok, reason, detail, model } */
+async function geminiPing() {
+  if (!GEMINI_KEY()) return { ok: false, reason: "NO_KEY" };
+  const model = await resolveModel();
+  for (let a = 0; a < 2; a++) {
+    const res = await geminiCallRaw(model, { contents: [{ parts: [{ text: "핑" }] }] }, 20000);
+    if (res.ok) return { ok: true, model };
+    if (res.status === 429 || res.status === 503) { await sleep(2000); continue; }
+    return { ok: false, reason: `HTTP ${res.status || "NET"}`, detail: (res.text || res.err || "").slice(0, 160), model };
+  }
+  return { ok: false, reason: "HTTP 503(과부하) 재시도 실패", model };
+}
+
+async function geminiJson(prompt, { ms = 90000, maxTokens = 8192, temperature = 0.5 } = {}) {
+  if (!GEMINI_KEY()) return null;
+  const body = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature, maxOutputTokens: maxTokens, responseMimeType: "application/json" } };
+  let model = await resolveModel();
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await geminiCallRaw(model, body, ms);
+    if (res.ok) {
+      let data; try { data = JSON.parse(res.text); } catch { return null; }
+      const parts = data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
+      const txt = (parts && parts.map((p) => p.text || "").join("")) || "";
+      if (!txt) return null;
+      try { return JSON.parse(txt); } catch {
+        const m = txt.match(/\{[\s\S]*\}/);
+        if (m) { try { return JSON.parse(m[0]); } catch {} }
+        return null;
+      }
     }
-  } catch (e) {
-    console.error("[report] Gemini 호출 오류:", e.message);
+    // 404: 모델명 문제 → 캐시 무효화 후 재해결(환경변수 미지정 시 1회)
+    if (res.status === 404 && !process.env.GEMINI_TEXT_MODEL && attempt === 0) { _resolvedModel = null; model = await resolveModel(); continue; }
+    // 429/503: 과부하 → 백오프 후 재시도
+    if (res.status === 429 || res.status === 503) { await sleep(1500 * (attempt + 1)); continue; }
+    console.error("[report] Gemini HTTP", res.status || "NET", (res.text || res.err || "").slice(0, 160));
     return null;
-  } finally { clearTimeout(to); }
+  }
+  console.error("[report] Gemini 재시도 실패(과부하/타임아웃)");
+  return null;
 }
 
 /** 출처 자료를 프롬프트용 텍스트 블록으로 */
@@ -890,8 +931,8 @@ function makePostBody(report, sources, refs, dayKey, ai) {
 
 /* --------------------------------------------- 4) 발행(글+첨부) */
 
-function publishReport(report, sources, dayKey, theme, ai) {
-  const guid = `report:${dayKey}:${theme.key}`;
+function publishReport(report, sources, dayKey, theme, ai, guidOverride) {
+  const guid = guidOverride || `report:${dayKey}:${theme.key}`;
   const title = `[리포트] ${String(report.title || "사회연대경제 이슈리포트").replace(/\s+/g, " ").trim()}`.slice(0, 200);
   const now = new Date().toISOString();
 
@@ -932,11 +973,14 @@ async function collectOnce({ force = false } = {}) {
     }
   }
   const theme = THEMES[idx];
-  const guid = `report:${seq.key}:${theme.key}`;
-
-  if (!force && existsGuid.get(guid)) {
-    console.log(`[report] 오늘자 리포트 이미 발행됨: ${guid}`);
-    return { published: false, reason: "exists", dayKey: seq.key, theme: theme.key };
+  let guid = `report:${seq.key}:${theme.key}`;
+  if (existsGuid.get(guid)) {
+    if (!force) {
+      console.log(`[report] 오늘자 리포트 이미 발행됨: ${guid}`);
+      return { published: false, reason: "exists", dayKey: seq.key, theme: theme.key };
+    }
+    // 강제 발행: 오늘 모든 주제가 이미 발행된 경우 등 — 유니크 접미사로 중복 충돌 방지
+    guid = `${guid}:${Date.now().toString(36)}`;
   }
 
   const t0 = Date.now();
@@ -945,11 +989,11 @@ async function collectOnce({ force = false } = {}) {
   // Gemini 사용 불가 시: 영문·축약 fallback 문서를 발행하지 않고 건너뜀(원인은 로그로 노출)
   const gp = await geminiPing();
   if (!gp.ok) {
-    console.error(`[report] ⚠ Gemini 사용 불가 → 발행 건너뜀. 사유: ${gp.reason}${gp.detail ? " / " + gp.detail : ""}`);
+    console.error(`[report] ⚠ Gemini 사용 불가 → 발행 건너뜀. 사유: ${gp.reason}${gp.detail ? " / " + gp.detail : ""} (모델 ${gp.model || "?"})`);
     console.error(`[report]   .env 의 GEMINI_API_KEY 확인, 필요 시 GEMINI_TEXT_MODEL 지정 후 'pm2 restart ucc'`);
     return { published: false, reason: "gemini-unavailable", detail: gp.reason, dayKey: seq.key, theme: theme.key };
   }
-  console.log(`[report] Gemini 사용 가능 ✅ (모델 ${GEMINI_TEXT_MODEL()})`);
+  console.log(`[report] Gemini 사용 가능 ✅ (모델 ${gp.model})`);
 
   const sources = await researchSources(theme, { maxSources: 12 });
   console.log(`[report] 관련 자료 ${sources.length}건 수집(관련성 필터 적용)`);
@@ -974,7 +1018,7 @@ async function collectOnce({ force = false } = {}) {
   // 최종 안전망: 보고서에 남은 영문 문단을 한국어로 재작성
   try { const k = await koreanizeReport(report); if (k) console.log(`[report] 잔여 영문 문단 한국어화 ${k}건`); } catch (e) {}
 
-  const out = publishReport(report, sources, seq.key, theme, ai);
+  const out = publishReport(report, sources, seq.key, theme, ai, guid);
   console.log(`[report] 발행 완료 — post ${out.postId} (${ai ? "AI집필" : "다이제스트"}, 첨부 ${out.attached}, ${Math.round((Date.now() - t0) / 1000)}초 소요)`);
   return { published: true, ai, dayKey: seq.key, theme: theme.key, ...out };
 }
