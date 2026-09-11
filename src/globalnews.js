@@ -1,9 +1,9 @@
 /* 지구촌소식브리프 — 일일 '사회연대경제 전환' 이슈 브리프 자동 발행
  *
  * 단순 기사 수집이 아니라, 매일 하나의 주제를 정해 관련 자료를 조사하고
- * '무슨 일이 있었나 → 왜 → 무엇이 달라지나' 구조의 분석형 브리프로 재구성해 발행한다.
+ * '무슨 일이 있었나 → 왜 → 무엇이 달라지나' 흐름의 심층 보고서(A4 약 10쪽)로 재구성해 발행한다.
  *   1) 주제 선정(일자별 로테이션) → 2) 관련 자료 리서치(Daum→Google)+관련성 필터
- *   3) Gemini 로 분석형 브리프 집필(5문단·핵심수치·한줄요약, 출처 자료 기반)
+ *   3) Gemini 로 설계안+절별 심층 집필(완결 문장, 한줄요약·핵심수치, 출처 자료 기반)
  *   4) docx 로 세련되게 조판(표지·발행정보·판권) + 요약을 게시글 본문으로
  *   5) 'global' 게시판에 글 등록 + docx 첨부 (완전 자동, 매일 07:00)
  *
@@ -378,28 +378,22 @@ const RULES = [
   "- 홍보성·평가성 수식을 피하고, 사실→의미의 순서로 담백하게 씁니다.",
 ].join("\n");
 
-/** 분석형 브리프 1회 생성 프롬프트.
- *  스크랩이 아니라 '무슨 일이 있었나 → 왜 → 무엇이 달라지나' 순서로 재구성한다. */
-function buildBriefPrompt(theme, sources) {
+/** 1단계: 보고서 설계안(제목·한줄요약·개요·핵심수치 + 심층 소개할 해외 사례 3~4개) */
+function buildOutlinePrompt(theme, sources) {
   return [
     PERSONA_PROMPT,
-    `오늘의 주제 영역: "${theme.title}" — ${theme.focus}`,
-    "아래 [출처] 기사들을 근거로, 기사 스크랩이 아니라 '분석형 브리프'를 작성하세요.",
-    "구성 원칙: ① 핵심 사건(무엇이 일어났나) → ② 발생 배경(왜 지금) → ③ 작동 구조(어떻게 연결되나) → ④ 의미와 영향(무엇이 달라지나) → ⑤ 향후 관전점(무엇을 확인해야 하나).",
-    "각 문단은 2문장이 기본입니다(총 5문단·약 10문장). 근거가 없는 문단·문장은 빈 배열/빈 문자열로 두세요.",
-    "문장 골격 예시 — 사실:'[주체]는 [시점] [대상]에 대해 [행동]했다.' / 규모:'[수치]는 [기준] 대비 [차이]에 해당한다.' / 배경:'이에 앞서 [상황]이 이어졌으며 [계기]가 배경으로 제시됐다.' / 구조:'[A]가 [행동]하면 [B]의 [조건]이 달라지는 구조다.' / 의미:'이 변화는 [근거]라는 점에서 [의미]를 갖는다.' / 전망:'향후 [조건]이 충족되면 [변화]로 이어질 수 있다.' / 확인:'다만 [미확인]은 확인되지 않아 [지표]를 지켜볼 필요가 있다.'",
+    `주제: "${theme.title}" — ${theme.focus}`,
+    "아래 [출처] 자료를 검토해, A4 약 10쪽 분량의 '심층 이슈 보고서' 설계안을 만드세요.",
+    "본문에서 '자세히 소개할 해외 사례'를 국가/제도 단위로 3~4개 선정하세요(가능하면 서로 다른 나라).",
     RULES,
     "",
     "다음 JSON만 출력(설명·코드블록 없이):",
     "{",
-    '  "title": "핵심 사건+주요 변화 중심의 제목(25~40자, 평가보다 정보 우선)",',
+    '  "title": "보고서 제목(25~40자, 핵심 주제+변화, 평가보다 정보)",',
     '  "oneLine": "가장 중요한 사실과 의미를 압축한 한 줄 요약(50~90자)",',
+    '  "summary": "게시글용 개요 4~6문장(핵심 논지와 결론 요지, 완결된 문장)",',
     '  "keyFigures": ["판단에 필요한 핵심 수치 2~3개(단위·시점 명시). 없으면 []"],',
-    '  "event": ["① 핵심사건 1문장", "2문장"],',
-    '  "background": ["② 발생배경 3문장", "4문장"],',
-    '  "structure": ["③ 작동구조 5문장", "6문장"],',
-    '  "impact": ["④ 의미와 영향 7문장", "8문장"],',
-    '  "outlook": ["⑤ 향후 관전점 9문장", "10문장"]',
+    '  "cases": [ { "country": "국가", "name": "제도/사례명", "angle": "특히 조명할 점 한 줄" } ]',
     "}",
     "",
     "=== 출처 자료 ===",
@@ -407,39 +401,88 @@ function buildBriefPrompt(theme, sources) {
   ].join("\n");
 }
 
-/** 분석형 브리프 1회 생성 → 보고서 객체. 실패 시 null(→ fallback). */
+/** 설계안 → 절(section) 집필 계획(약 10쪽 분량이 되도록 구성) */
+function sectionPlan(outline) {
+  const cases = Array.isArray(outline.cases) ? outline.cases.slice(0, 4) : [];
+  const plan = [
+    { heading: "1. 개요", brief: "보고서 전체의 핵심 논지·문제의식과 결론의 요지를 제시. 왜 지금 이 주제가 중요한지(무슨 일이 있었나→왜 중요한가)를 설득력 있게." },
+    { heading: "2. 문제의식과 구조적 배경", brief: "저성장·양극화·인구감소·돌봄공백 등 구조적 맥락에서 이 주제가 부상하는 배경을 이론적·실증적으로 심층 분석(왜 지금 일어나는가)." },
+    { heading: "3. 국제 담론과 정책 동향", brief: "UN·ILO·OECD·EU 등 국제사회의 의제화와 각국 정부 정책 흐름을, 검증된 사실 위주로 정리(어떤 논의가 어떻게 전개돼 왔는가)." },
+  ];
+  cases.forEach((c, i) => {
+    plan.push({
+      heading: `${4 + i}. 해외 사례 | ${c.country || "해외"} — ${c.name || "사례"}`,
+      brief: `${c.country || ""}의 '${c.name || "사례"}'를 ①역사적 배경 ②제도·거버넌스 구조 ③실제 작동 방식과 재원 ④성과와 한계 ⑤한국에의 함의 순으로 매우 구체적으로. 특히 조명할 점: ${c.angle || "지역경제·공동체에 준 효과"}.`,
+      isCase: true,
+    });
+  });
+  const base = 4 + cases.length;
+  plan.push({ heading: `${base}. 국내 현황과 국제 비교`, brief: "한국의 현황·제도·규모를 앞의 해외 사례와 비교해 강점과 격차를 분석(무엇이 같고 다른가)." });
+  plan.push({ heading: `${base + 1}. 시사점과 정책 제언`, brief: "제도·금융(연대금융)·중간지원·인력양성 등 층위별로 구체적·실행가능한 제언(무엇을 해야 하나). 근거 있는 해석만." });
+  plan.push({ heading: `${base + 2}. 도시공동체본부의 전략적 방향`, brief: "본부의 햇빛소득마을(주민참여 재생에너지)·커뮤니티 사업과 연결한 실천 전략을 단계적으로 제안." });
+  plan.push({ heading: `${base + 3}. 결론`, brief: "핵심 논지를 응축하고, 확정된 후속 과제와 향후 관전점(무엇을 확인해야 하나)을 제시." });
+  return plan;
+}
+
+/** 2단계: 개별 절을 심층·완결 집필 */
+function buildSectionPrompt(theme, sources, outline, spec, index, total) {
+  return [
+    PERSONA_PROMPT,
+    `[보고서] ${outline.title} — ${outline.oneLine || outline.subtitle || ""}`,
+    `[집필할 절] ${spec.heading}  (전체 ${total}개 절 중 ${index + 1}번째)`,
+    `[이 절에서 다룰 내용] ${spec.brief}`,
+    "",
+    "요구 수준:",
+    "- 박사급 연구자의 깊이로, '무슨 일이 있었나 → 왜 → 어떻게 작동하나 → 무엇이 달라지나' 흐름에 맞춰 구체적 사실·메커니즘·인과·비교를 서술합니다.",
+    "- 이 절 하나의 분량이 최소 1,500자, 가능하면 2,200자 이상이 되도록 충실히 씁니다(A4 약 1~1.5쪽).",
+    "- 2~3개의 소제목(h3)으로 논리적으로 구조화하고, 핵심 항목은 불릿으로 정리합니다.",
+    "- ★반드시 모든 문장을 완결해서 끝맺으세요. 문장·문단을 중간에 끊거나 '…', '등'으로 생략하지 마세요. 분량이 모자라면 근거 있는 설명을 더해 채우되, 출처에 없는 사실은 지어내지 마세요.",
+    spec.isCase
+      ? "- 이 절은 특정 해외 사례의 심층 분석입니다. 배경→제도→작동방식→성과와 한계→한국 함의가 모두 온전한 문단으로 드러나야 합니다."
+      : "- 균형 잡힌 시각으로 반대 논거나 한계도 함께 다룹니다.",
+    RULES,
+    "",
+    "다음 JSON만 출력(설명·코드블록 없이):",
+    '{ "paragraphs": [ "완결된 문단", {"h3":"소제목"}, "완결된 문단", {"bullet":"항목"}, {"label":"핵심","text":"..."} ] }',
+    "paragraphs 항목은 문자열 또는 {\"h3\":..},{\"bullet\":..},{\"lead\":..},{\"label\":..,\"text\":..} 중 하나입니다. 각 문단은 길고 밀도 있게, 완결된 문장으로 쓰세요.",
+    "",
+    "=== 출처 자료 ===",
+    sourceBlock(sources),
+  ].join("\n");
+}
+
+/** 설계안 + 절별 심층 집필 → A4 약 10쪽 보고서 객체. 실패 절은 재시도 후 건너뛴다. */
 async function writeFullReport(theme, sources) {
-  const j = await geminiJson(buildBriefPrompt(theme, sources), { maxTokens: 4096, temperature: 0.4 });
-  if (!j || !(j.title || j.oneLine)) return null;
+  const outline = await geminiJson(buildOutlinePrompt(theme, sources), { maxTokens: 2048, temperature: 0.5 });
+  if (!outline || !outline.title) return null;
 
   const arr = (v) => (Array.isArray(v) ? v.map((x) => String(x || "").trim()).filter(Boolean) : (v ? [String(v).trim()] : []));
-  const event = arr(j.event), background = arr(j.background), structure = arr(j.structure);
-  const impact = arr(j.impact), outlook = arr(j.outlook), keyFigures = arr(j.keyFigures);
+  const keyFigures = arr(outline.keyFigures);
+  const oneLine = String(outline.oneLine || "").trim();
 
-  // 본문(사실)과 시사점(의미·전망)을 분리 저장 → [주요내용]/[시사점] 중첩 방지
-  const factual = [...event, ...background, ...structure];
-  const implications = [...impact, ...outlook];
-  if (!factual.length && !implications.length) return null; // 알맹이 없으면 fallback
-
+  const plan = sectionPlan(outline);
   const sections = [];
-  const addSec = (heading, paras) => { if (paras.length) sections.push({ heading, paragraphs: paras }); };
-  addSec("① 핵심 사건", event);
-  addSec("② 발생 배경", background);
-  addSec("③ 작동 구조", structure);
-  addSec("④ 의미와 영향", impact);
-  addSec("⑤ 향후 관전점", outlook);
+  for (let i = 0; i < plan.length; i++) {
+    const spec = plan[i];
+    let paras = [];
+    for (let attempt = 0; attempt < 3 && paras.length === 0; attempt++) {
+      const r = await geminiJson(buildSectionPrompt(theme, sources, outline, spec, i, plan.length), { maxTokens: 8192, temperature: 0.5 });
+      paras = normParas(r && r.paragraphs);
+      if (paras.length === 0) await sleep(600);
+    }
+    if (paras.length === 0) { console.warn(`[report]  · 절 집필 실패(건너뜀): ${spec.heading}`); continue; }
+    sections.push({ heading: spec.heading, paragraphs: paras });
+    console.log(`[report]  · 절 ${i + 1}/${plan.length} 집필: ${spec.heading} (${paras.length}문단)`);
+    await sleep(400);
+  }
+  if (!sections.length) return null;
 
-  const oneLine = String(j.oneLine || "").trim();
-  const title = String(j.title || theme.title).trim();
-  console.log(`[report]  · 분석형 브리프 집필 완료 (본문 ${factual.length}문장, 시사점 ${implications.length}문장, 수치 ${keyFigures.length})`);
   return {
-    title,
+    title: String(outline.title || theme.title).trim(),
     subtitle: oneLine || theme.focus,
-    summary: oneLine || theme.focus,
+    summary: String(outline.summary || oneLine || theme.focus).trim(),
     oneLine,
     keyFigures,
-    _factual: factual,
-    _implications: implications,
     sections,
   };
 }
