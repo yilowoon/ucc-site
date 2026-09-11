@@ -1,11 +1,11 @@
-/* 지구촌소식브리프 — 주간 '사회연대경제 전환' 이슈 브리프 자동 발행
+/* 지구촌소식브리프 — 일일 '사회연대경제 전환' 이슈 브리프 자동 발행
  *
- * 단순 기사 수집이 아니라, 매주 하나의 의미 있는 주제를 정해 관련 자료를 조사하고
- * 그 전체를 한 편의 '수준 높은 보고서'로 종합해 발행한다.
- *   1) 주제 선정(주차별 로테이션) → 2) 관련 자료 리서치(Daum→Google)
- *   3) Gemini 로 보고서 원고 집필(출처 자료 기반, 해외사례 심층)
+ * 단순 기사 수집이 아니라, 매일 하나의 주제를 정해 관련 자료를 조사하고
+ * '무슨 일이 있었나 → 왜 → 무엇이 달라지나' 구조의 분석형 브리프로 재구성해 발행한다.
+ *   1) 주제 선정(일자별 로테이션) → 2) 관련 자료 리서치(Daum→Google)+관련성 필터
+ *   3) Gemini 로 분석형 브리프 집필(5문단·핵심수치·한줄요약, 출처 자료 기반)
  *   4) docx 로 세련되게 조판(표지·발행정보·판권) + 요약을 게시글 본문으로
- *   5) 'global' 게시판에 글 등록 + docx 첨부 (완전 자동, 주 1회)
+ *   5) 'global' 게시판에 글 등록 + docx 첨부 (완전 자동, 매일 07:00)
  *
  * 발행: 도시공동체본부 / 발간물명: 지구촌소식브리프.
  * 저작권: 원문 전문을 저장하지 않는다. 우리가 쓴 분석·요약 + 출처 링크만 남긴다.
@@ -22,7 +22,8 @@ const { db, UPLOAD_DIR } = require("./db");
 const { fromDaum, fromGoogle } = require("./newsletter");
 const { buildDocx } = require("./docx");
 
-const AUTHOR = "도시공동체본부";        // 발행인(게시글 작성자 표기)
+const AUTHOR = "도시공동체본부";        // 발행 기관(게시글 작성자 표기)
+const PUBLISHER_NAME = "이형구";         // 발행인(대표)
 const PERSONA = "지구촌소식브리프";      // 발간물 브랜드
 const BOARD = "global";
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
@@ -31,13 +32,13 @@ const COLOPHON = [
   "사단법인 도시공동체본부  ·  행정안전부 소관 비영리법인",
   "대전광역시 서구 대덕대로242번길 15, 501호-G19",
   "Tel. 1670-9678   ·   E-mail. contact@ucc.or.kr",
-  `본 자료는 도시공동체본부가 공개자료를 바탕으로 주간 정리한 '${PERSONA}'이며, 인용 원문의 저작권은 각 매체에 있습니다.`,
+  `본 자료는 도시공동체본부가 공개자료를 바탕으로 매일 정리한 '${PERSONA}'이며, 인용 원문의 저작권은 각 매체에 있습니다.`,
 ];
 
 /* Gemini(Generative Language API) — 텍스트 집필 */
 const GEMINI_KEY = () => process.env.GEMINI_API_KEY || "";
 const GEMINI_BASE = () => (process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com").replace(/\/+$/, "");
-const GEMINI_TEXT_MODEL = () => process.env.GEMINI_TEXT_MODEL || "gemini-2.0-flash";
+const GEMINI_TEXT_MODEL = () => process.env.GEMINI_TEXT_MODEL || "gemini-flash-latest";
 
 /**
  * 주간 주제. 모두 해외 사례를 중심으로 사회연대경제(사회적경제·공동체·협동조합)로의
@@ -228,14 +229,17 @@ function buildHighlight(report, refs, ai) {
   };
   const enough = () => curLen() >= TARGET || sents.length >= MAX_SENTS;
 
-  // 1) 리드 문장
-  if (ai && clean(report.summary).length >= 30 && !/자동 다이제스트/.test(report.summary)) push(report.summary);
+  // 1) 리드 문장 — 분석형 브리프면 한 줄 요약(oneLine)을 리드로
+  if (ai && clean(report.oneLine).length >= 20) push(report.oneLine);
+  else if (ai && clean(report.summary).length >= 30 && !/자동 다이제스트/.test(report.summary)) push(report.summary);
   else push(`이번 호는 ${focus} 관련 동향과 사례 ${(refs || []).length}건을 정리했습니다.`);
 
-  // 2) 내용 문장 — 시사점/제언 절은 제외(중첩 방지). 소스당 2~3문장씩 뽑아 목표 분량까지 채운다.
-  if (ai) {
+  // 2) 내용 문장 — 사실(핵심사건·배경·구조)만. 의미·전망은 [시사점]으로 분리(중첩 방지).
+  if (ai && Array.isArray(report._factual) && report._factual.length) {
+    for (const t of report._factual) { push(t); if (enough()) break; }
+  } else if (ai) {
     for (const sec of report.sections || []) {
-      if (/시사점|제언|함의|참고자료/.test(sec.heading || "")) continue;
+      if (/시사점|제언|함의|의미|영향|관전|전망|참고자료/.test(sec.heading || "")) continue;
       for (const p of sec.paragraphs || []) {
         if (enough()) break;
         const t = typeof p === "string" ? p : (p && (p.lead || p.text || p.h3 || p.bullet)) || "";
@@ -365,28 +369,37 @@ const PERSONA_PROMPT =
 
 const RULES = [
   "엄격한 원칙:",
-  "- 제공된 [출처] 자료와 널리 알려진 검증된 사실만 사용합니다. 출처에 없는 구체적 수치·인명·기관명·연도를 지어내지 마세요.",
-  "- 불확실한 사실은 단정하지 말고 '~로 알려져 있다', '~로 평가된다' 식으로 신중하게 표현합니다.",
-  "- 과장·홍보성 표현을 피하고, 근거와 인과관계를 명료하게 제시하는 학술적·분석적 문체를 씁니다.",
-  "- 추상적 일반론에 그치지 말고 제도의 작동 방식, 주체, 재원, 성과와 한계를 구체적으로 설명합니다.",
-  "- '참고자료' 목록은 작성하지 마세요(코드가 실제 링크로 자동 추가합니다).",
+  "- 제공된 [출처] 자료에 실제로 있는 사실만 사용합니다. 출처에 없는 수치·인명·기관명·연도·인과관계를 지어내지 마세요.",
+  "- 분량을 채우려고 원문에 없는 원인이나 결과를 만들지 마세요. 근거가 없으면 해당 문장을 비웁니다(빈 문자열).",
+  "- '때문이다'는 원인이 출처에서 확인될 때만, '이어졌다'는 결과가 확인될 때만 씁니다. 불확실하면 '~로 알려졌다/평가된다'로 신중히.",
+  "- 당사자 주장·설명은 발언 주체를 남깁니다: '○○ 측은 ~라고 설명했다'.",
+  "- 기사 발행일과 실제 사건 발생일을 구분하고, 여러 기사의 같은 사실은 하나로 묶습니다.",
+  "- 한 문장에는 하나의 중심 주장, 한 문단에는 하나의 역할. 원문 표현을 바꿔 쓰기보다 사실을 구조에 맞게 새로 서술합니다.",
+  "- 홍보성·평가성 수식을 피하고, 사실→의미의 순서로 담백하게 씁니다.",
 ].join("\n");
 
-/** 1단계: 보고서 개요(제목·부제·요약 + 심층 소개할 해외 사례 3~4개) */
-function buildOutlinePrompt(theme, sources) {
+/** 분석형 브리프 1회 생성 프롬프트.
+ *  스크랩이 아니라 '무슨 일이 있었나 → 왜 → 무엇이 달라지나' 순서로 재구성한다. */
+function buildBriefPrompt(theme, sources) {
   return [
     PERSONA_PROMPT,
-    `주제: "${theme.title}" — ${theme.focus}`,
-    "아래 [출처] 자료를 검토해, A4 약 10쪽 분량의 심층 이슈리포트를 위한 설계안을 만드세요.",
-    "특히 본문에서 '자세히 소개할 해외 사례'를 국가/제도 단위로 3~4개 선정하세요(가능하면 서로 다른 나라).",
+    `오늘의 주제 영역: "${theme.title}" — ${theme.focus}`,
+    "아래 [출처] 기사들을 근거로, 기사 스크랩이 아니라 '분석형 브리프'를 작성하세요.",
+    "구성 원칙: ① 핵심 사건(무엇이 일어났나) → ② 발생 배경(왜 지금) → ③ 작동 구조(어떻게 연결되나) → ④ 의미와 영향(무엇이 달라지나) → ⑤ 향후 관전점(무엇을 확인해야 하나).",
+    "각 문단은 2문장이 기본입니다(총 5문단·약 10문장). 근거가 없는 문단·문장은 빈 배열/빈 문자열로 두세요.",
+    "문장 골격 예시 — 사실:'[주체]는 [시점] [대상]에 대해 [행동]했다.' / 규모:'[수치]는 [기준] 대비 [차이]에 해당한다.' / 배경:'이에 앞서 [상황]이 이어졌으며 [계기]가 배경으로 제시됐다.' / 구조:'[A]가 [행동]하면 [B]의 [조건]이 달라지는 구조다.' / 의미:'이 변화는 [근거]라는 점에서 [의미]를 갖는다.' / 전망:'향후 [조건]이 충족되면 [변화]로 이어질 수 있다.' / 확인:'다만 [미확인]은 확인되지 않아 [지표]를 지켜볼 필요가 있다.'",
     RULES,
     "",
     "다음 JSON만 출력(설명·코드블록 없이):",
     "{",
-    '  "title": "보고서 제목(35자 내외, 구체적)",',
-    '  "subtitle": "한 줄 부제",',
-    '  "summary": "게시글 본문용 개요 4~6문장(핵심 논지와 결론 요지)",',
-    '  "cases": [ { "country": "국가", "name": "제도/사례명", "angle": "이 사례에서 특히 조명할 점 한 줄" } ]',
+    '  "title": "핵심 사건+주요 변화 중심의 제목(25~40자, 평가보다 정보 우선)",',
+    '  "oneLine": "가장 중요한 사실과 의미를 압축한 한 줄 요약(50~90자)",',
+    '  "keyFigures": ["판단에 필요한 핵심 수치 2~3개(단위·시점 명시). 없으면 []"],',
+    '  "event": ["① 핵심사건 1문장", "2문장"],',
+    '  "background": ["② 발생배경 3문장", "4문장"],',
+    '  "structure": ["③ 작동구조 5문장", "6문장"],',
+    '  "impact": ["④ 의미와 영향 7문장", "8문장"],',
+    '  "outlook": ["⑤ 향후 관전점 9문장", "10문장"]',
     "}",
     "",
     "=== 출처 자료 ===",
@@ -394,76 +407,41 @@ function buildOutlinePrompt(theme, sources) {
   ].join("\n");
 }
 
-/** 개요를 받아 절(section) 집필 계획을 만든다 */
-function sectionPlan(outline) {
-  const cases = Array.isArray(outline.cases) ? outline.cases.slice(0, 4) : [];
-  const plan = [
-    { heading: "1. 개요", brief: "보고서 전체의 핵심 논지·문제의식과 결론의 요지를 제시. 왜 지금 이 주제가 중요한지 설득력 있게." },
-    { heading: "2. 문제의식과 구조적 배경", brief: "저성장·양극화·인구감소·돌봄공백 등 구조적 맥락에서 사회연대경제가 부상하는 배경을 이론적·실증적으로 심층 분석." },
-    { heading: "3. 국제 담론과 정책 동향", brief: "UN·ILO·OECD·EU 등 국제사회의 사회연대경제 의제화와 각국 정부 정책의 흐름을, 널리 알려진 사실 위주로 정리." },
-  ];
-  cases.forEach((c, i) => {
-    plan.push({
-      heading: `${4 + i}. 해외 사례 | ${c.country || "해외"} — ${c.name || "사례"}`,
-      brief: `${c.country || ""}의 '${c.name || "사례"}'를 ①역사적 배경 ②제도·거버넌스 구조 ③실제 작동 방식과 재원 ④성과와 한계 ⑤한국에의 함의 순으로 매우 구체적으로. 특히 조명할 점: ${c.angle || "지역경제·공동체에 준 효과"}.`,
-      isCase: true,
-    });
-  });
-  const base = 4 + cases.length;
-  plan.push({ heading: `${base}. 국내 현황과 국제 비교`, brief: "한국 사회연대경제의 현황·제도·규모를 앞의 해외 사례와 비교해 강점과 격차를 분석." });
-  plan.push({ heading: `${base + 1}. 시사점과 정책 제언`, brief: "제도·금융(연대금융)·중간지원·인력양성 등 층위별로 구체적이고 실행가능한 제언을 제시." });
-  plan.push({ heading: `${base + 2}. 도시공동체본부의 전략적 방향`, brief: "본부의 햇빛소득마을(주민참여 재생에너지)·커뮤니티 사업과 연결한 실천 전략을 단계적으로 제안." });
-  plan.push({ heading: `${base + 3}. 결론`, brief: "핵심 논지를 응축하고, 향후 과제와 전망을 제시." });
-  return plan;
-}
-
-/** 2단계: 개별 절을 심층 집필 */
-function buildSectionPrompt(theme, sources, outline, spec, index, total) {
-  return [
-    PERSONA_PROMPT,
-    `[보고서] ${outline.title} — ${outline.subtitle}`,
-    `[집필할 절] ${spec.heading}  (전체 ${total}개 절 중 ${index + 1}번째)`,
-    `[이 절에서 다룰 내용] ${spec.brief}`,
-    "",
-    "요구 수준:",
-    "- 박사급 연구자의 깊이로, 구체적 사실·메커니즘·인과관계·비교를 담아 서술합니다.",
-    `- 이 절 하나의 분량이 최소 1,800자, 가능하면 2,400자 이상이 되도록 충실히 씁니다(A4 약 1~1.5쪽).`,
-    "- 2~3개의 소제목(h3)으로 논리적으로 구조화하고, 핵심 항목은 불릿으로 정리합니다.",
-    spec.isCase
-      ? "- 이 절은 특정 해외 사례의 심층 분석입니다. 배경→제도→작동방식→성과와 한계→한국 함의가 모두 드러나야 합니다."
-      : "- 균형 잡힌 시각으로 반대 논거나 한계도 함께 다룹니다.",
-    RULES,
-    "",
-    "다음 JSON만 출력(설명·코드블록 없이):",
-    '{ "paragraphs": [ "문단", {"h3":"소제목"}, "문단", {"bullet":"항목"}, {"label":"핵심","text":"..."} ] }',
-    "paragraphs 항목은 문자열 또는 {\"h3\":..},{\"bullet\":..},{\"lead\":..},{\"label\":..,\"text\":..} 중 하나입니다. 문단은 길고 밀도 있게 쓰세요.",
-    "",
-    "=== 출처 자료 ===",
-    sourceBlock(sources),
-  ].join("\n");
-}
-
-/** 개요 + 절별 집필을 묶어 완성 보고서 객체를 만든다. 실패 절은 건너뛴다. */
+/** 분석형 브리프 1회 생성 → 보고서 객체. 실패 시 null(→ fallback). */
 async function writeFullReport(theme, sources) {
-  const outline = await geminiJson(buildOutlinePrompt(theme, sources), { maxTokens: 2048, temperature: 0.5 });
-  if (!outline || !outline.title) return null;
+  const j = await geminiJson(buildBriefPrompt(theme, sources), { maxTokens: 4096, temperature: 0.4 });
+  if (!j || !(j.title || j.oneLine)) return null;
 
-  const plan = sectionPlan(outline);
+  const arr = (v) => (Array.isArray(v) ? v.map((x) => String(x || "").trim()).filter(Boolean) : (v ? [String(v).trim()] : []));
+  const event = arr(j.event), background = arr(j.background), structure = arr(j.structure);
+  const impact = arr(j.impact), outlook = arr(j.outlook), keyFigures = arr(j.keyFigures);
+
+  // 본문(사실)과 시사점(의미·전망)을 분리 저장 → [주요내용]/[시사점] 중첩 방지
+  const factual = [...event, ...background, ...structure];
+  const implications = [...impact, ...outlook];
+  if (!factual.length && !implications.length) return null; // 알맹이 없으면 fallback
+
   const sections = [];
-  for (let i = 0; i < plan.length; i++) {
-    const spec = plan[i];
-    let paras = [];
-    for (let attempt = 0; attempt < 2 && paras.length === 0; attempt++) {
-      const r = await geminiJson(buildSectionPrompt(theme, sources, outline, spec, i, plan.length), { maxTokens: 8192, temperature: 0.55 });
-      paras = normParas(r && r.paragraphs);
-      if (paras.length === 0) await sleep(500);
-    }
-    if (paras.length === 0) paras = [{ note: "(이 절은 자료 부족으로 생략되었습니다.)" }];
-    sections.push({ heading: spec.heading, paragraphs: paras });
-    console.log(`[report]  · 절 ${i + 1}/${plan.length} 집필: ${spec.heading} (${paras.length}문단)`);
-    await sleep(400);
-  }
-  return { title: outline.title, subtitle: outline.subtitle || theme.focus, summary: outline.summary || theme.focus, sections };
+  const addSec = (heading, paras) => { if (paras.length) sections.push({ heading, paragraphs: paras }); };
+  addSec("① 핵심 사건", event);
+  addSec("② 발생 배경", background);
+  addSec("③ 작동 구조", structure);
+  addSec("④ 의미와 영향", impact);
+  addSec("⑤ 향후 관전점", outlook);
+
+  const oneLine = String(j.oneLine || "").trim();
+  const title = String(j.title || theme.title).trim();
+  console.log(`[report]  · 분석형 브리프 집필 완료 (본문 ${factual.length}문장, 시사점 ${implications.length}문장, 수치 ${keyFigures.length})`);
+  return {
+    title,
+    subtitle: oneLine || theme.focus,
+    summary: oneLine || theme.focus,
+    oneLine,
+    keyFigures,
+    _factual: factual,
+    _implications: implications,
+    sections,
+  };
 }
 
 /** LLM 실패 시: 수집 자료로 만든 기본 다이제스트 리포트 */
@@ -526,18 +504,26 @@ function referencesSection(sources) {
 }
 
 function makeReportDocx(report, refs, dayKey) {
-  const sections = (report.sections || []).map((s) => ({
+  const sections = [];
+  // 한 줄 요약(있으면 맨 앞에)
+  if (report.oneLine) sections.push({ heading: "한 줄 요약", paragraphs: [{ lead: String(report.oneLine) }] });
+  // 핵심 수치(있으면)
+  if (Array.isArray(report.keyFigures) && report.keyFigures.length) {
+    sections.push({ heading: "핵심 수치", paragraphs: report.keyFigures.map((f) => ({ bullet: String(f) })) });
+  }
+  // 본문 5문단(①~⑤)
+  (report.sections || []).forEach((s) => sections.push({
     heading: String(s.heading || "").trim(),
     paragraphs: normParas(s.paragraphs),
   }));
   sections.push(referencesSection(refs));
 
   return buildDocx({
-    title: report.title || "사회연대경제 이슈리포트",
-    subtitle: report.subtitle || "",
+    title: report.title || "지구촌소식브리프",
+    subtitle: report.oneLine || report.subtitle || "",
     publisher: AUTHOR,
     date: fmtKst(new Date().toISOString()),
-    meta: [`${PERSONA}  ·  주간 이슈 브리프`, `발행  ${AUTHOR}  ·  ${dayKey}`],
+    meta: [`${PERSONA}, 일일 이슈 브리프`, `발행 ${AUTHOR}  ·  발행인 ${PUBLISHER_NAME}  ·  ${dayKey}`],
     sections,
     colophon: COLOPHON,
   });
@@ -545,8 +531,15 @@ function makeReportDocx(report, refs, dayKey) {
 
 /** 보고서에서 '주요 시사점'을 뽑는다(시사점/제언 절의 불릿·문단 우선) */
 function extractImplications(report, max = 5) {
+  // 분석형 브리프: 의미·영향/향후 관전점을 시사점으로(본문과 분리)
+  if (Array.isArray(report._implications) && report._implications.length) {
+    return report._implications.slice(0, max).map((t) => {
+      const s = String(t).replace(/\s+/g, " ").trim();
+      return s.length > 200 ? s.slice(0, 199).trim() + "…" : s;
+    });
+  }
   const secs = report.sections || [];
-  const pick = secs.find((s) => /시사점|제언|함의/.test(String(s.heading || "")))
+  const pick = secs.find((s) => /시사점|제언|함의|의미|영향|관전|전망/.test(String(s.heading || "")))
     || secs.find((s) => /결론/.test(String(s.heading || "")));
   const out = [];
   const take = (arr) => {
@@ -609,10 +602,9 @@ function makePostBody(report, sources, refs, dayKey, ai) {
   const seq = daySeq(new Date());
 
   // 0) 머리글
-  lines.push(`발행:${AUTHOR}`);
-  lines.push(`발행일 ${dateDot}`);
-  lines.push(`지구촌소식 · 주간 이슈 브리프`);
-  lines.push(`발행번호 : ${dayKey}`);
+  lines.push(`발행 ${AUTHOR}   발행일 ${dateDot}`);
+  lines.push(`${PERSONA}, 일일 이슈 브리프`);
+  lines.push(`발행인 ${PUBLISHER_NAME}.  ${dayKey}`);
   lines.push("");
 
   // 1) 주요내용 — "이번 호는 …" 정돈된 요약(중복 문구 정리)
@@ -643,7 +635,7 @@ function makePostBody(report, sources, refs, dayKey, ai) {
   lines.push("");
 
   // 5) 고지
-  lines.push(`※ 본 자료는 도시공동체본부가 공개자료를 바탕으로 주간 정리한 '${PERSONA}'입니다(${dayKey}). 인용 원문의 저작권은 각 매체에 있습니다.`);
+  lines.push(`※ 본 자료는 도시공동체본부가 공개자료를 바탕으로 매일 정리한 '${PERSONA}'입니다(${dayKey}). 인용 원문의 저작권은 각 매체에 있습니다.`);
   return lines.join("\n");
 }
 
