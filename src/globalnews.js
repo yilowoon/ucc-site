@@ -315,7 +315,7 @@ function safeFileName(s) {
 
 /* --------------------------------------------------- 1) 자료 리서치 */
 
-// 주제별 영문 검색어 — 해외(영자) 뉴스 확보용(Google 뉴스 영문판)
+// 주제별 영문 검색어 — 해외(영자) 뉴스 확보용(Bing 뉴스 영문판)
 const QUERIES_EN = {
   "sse-policy": ["social solidarity economy policy", "EU social economy action plan", "social enterprise law Europe"],
   "coops": ["worker cooperative local economy", "platform cooperative", "cooperative movement community"],
@@ -325,44 +325,35 @@ const QUERIES_EN = {
   "finance": ["solidarity finance", "social impact investment community", "community development finance"],
 };
 
-/** 영문 Google 뉴스(해외 소스) 검색 — 제목·매체·링크(본문 없음) */
-async function fromGoogleIntl(keyword) {
-  const url = "https://news.google.com/rss/search?q=" + encodeURIComponent(keyword) + "&hl=en-US&gl=US&ceid=US:en";
+/** Bing 뉴스 RSS 검색 — 실제 기사 URL(링크의 url= 파라미터) + 스니펫(description) 제공.
+ *  Google 뉴스와 달리 링크가 해독 가능해 본문 fetch가 되고, 본문 실패 시에도 스니펫이 남는다. */
+async function fromBingNews(keyword, lang = "en") {
+  const mkt = lang === "ko" ? "ko-KR" : "en-US";
+  const url = "https://www.bing.com/news/search?q=" + encodeURIComponent(keyword) + "&format=rss&mkt=" + mkt;
   try {
     const ctrl = new AbortController();
     const to = setTimeout(() => ctrl.abort(), 10000);
-    const r = await fetch(url, { signal: ctrl.signal, headers: { "User-Agent": "Mozilla/5.0" } });
+    const r = await fetch(url, { signal: ctrl.signal, headers: { "User-Agent": "Mozilla/5.0", "Accept-Language": lang === "ko" ? "ko" : "en" } });
     clearTimeout(to);
     const text = await r.text();
-    const strip = (s) => String(s || "").replace(/<[^>]*>/g, "")
-      .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#39;/g, "'").replace(/&quot;/g, '"').trim();
+    const unesc = (s) => String(s || "").replace(/<!\[CDATA\[|\]\]>/g, "")
+      .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&").trim();
     const out = [];
-    for (const it of text.split("<item>").slice(1, 6)) {
+    for (const it of text.split("<item>").slice(1, 8)) {
       const g = (re) => { const m = it.match(re); return m ? m[1] : ""; };
-      let title = strip(g(/<title>([\s\S]*?)<\/title>/));
-      const source = strip(g(/<source[^>]*>([\s\S]*?)<\/source>/));
-      const link = strip(g(/<link>([\s\S]*?)<\/link>/));
+      const title = unesc(g(/<title>([\s\S]*?)<\/title>/));
+      let link = unesc(g(/<link>([\s\S]*?)<\/link>/));
+      const desc = unesc(g(/<description>([\s\S]*?)<\/description>/)).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
       const pub = g(/<pubDate>([\s\S]*?)<\/pubDate>/);
-      if (source && title.endsWith(" - " + source)) title = title.slice(0, -(source.length + 3)).trim();
-      if (!title || !link) continue;
-      out.push({ title, summary: "", source, url: link, guid: (link.split("/articles/")[1] || link).split("?")[0], published_at: pub ? new Date(pub).toISOString() : "" });
+      // Bing apiclick 링크에서 실제 기사 URL 추출
+      const m = link.match(/[?&]url=([^&]+)/);
+      if (m) { try { link = decodeURIComponent(m[1]); } catch (e) {} }
+      if (!title || !/^https?:\/\//.test(link)) continue;
+      let source = ""; try { source = new URL(link).hostname.replace(/^www\./, ""); } catch (e) {}
+      out.push({ title, summary: desc, source, url: link, guid: link.split("?")[0], published_at: pub ? new Date(pub).toISOString() : "" });
     }
     return out;
   } catch (e) { return []; }
-}
-
-/** Google 뉴스 리다이렉트 링크(/rss/articles/CBM…)를 실제 기사 URL로 복원(best-effort) */
-function decodeGNewsUrl(u) {
-  try {
-    const m = String(u || "").match(/\/articles\/([^?]+)/);
-    if (!m) return u;
-    const b64 = m[1].replace(/-/g, "+").replace(/_/g, "/");
-    const raw = Buffer.from(b64, "base64").toString("latin1");
-    const i = raw.indexOf("http");
-    if (i < 0) return u;
-    let url = raw.slice(i).split(/[^\x20-\x7e]/)[0].trim(); // 제어/비ASCII에서 자름
-    return /^https?:\/\/\S+$/.test(url) ? url : u;
-  } catch (e) { return u; }
 }
 
 /** 기사 HTML에서 본문 텍스트 추출(<p> 우선, 실패 시 태그 제거) */
@@ -391,17 +382,17 @@ async function fetchArticleText(url) {
   } catch (e) { return ""; }
 }
 
-/** 영문(intl) 출처의 본문을 실제로 가져와 발췌를 채운다(심층 분석 근거 확보) */
-async function enrichIntlSources(sources, limit = 6) {
+/** 영문(intl) 출처의 실제 기사 본문을 가져와 발췌를 보강(심층 분석 근거).
+ *  본문 확보 실패(유료·차단) 시 기존 스니펫 발췌를 그대로 유지한다. */
+async function enrichIntlSources(sources, limit = 8) {
   let done = 0;
   for (const s of sources || []) {
-    if (!s.intl || (s.excerpt && s.excerpt.length >= 120)) continue;
+    if (!s.intl) continue;
     if (done >= limit) break;
-    const real = decodeGNewsUrl(s.url);
-    const txt = await fetchArticleText(real);
-    if (txt && txt.length >= 120) {
-      s.excerpt = txt;
-      if (/^https?:\/\//.test(real)) s.url = real; // 참고자료 링크도 실제 기사로
+    if (s.excerpt && s.excerpt.length >= 600) continue; // 이미 충분하면 스킵
+    const txt = await fetchArticleText(s.url);
+    if (txt && txt.length > (s.excerpt || "").length && txt.length >= 200) {
+      s.excerpt = txt; // 전문(요약)이 스니펫보다 길면 교체
       done++;
     }
     await sleep(300);
@@ -431,7 +422,7 @@ async function researchSources(theme, { maxSources = 12 } = {}) {
     sources.push(cand);
   };
 
-  // 1) 국문 해외 보도(본문 있음 — 심층 집필 근거)
+  // 1) 국문 해외 보도(본문 있음 — 심층 집필 근거): Daum
   for (const q of theme.queries || []) {
     if (sources.length >= maxSources) break;
     let items = [];
@@ -440,11 +431,19 @@ async function researchSources(theme, { maxSources = 12 } = {}) {
     for (const it of items || []) addCand(it, false);
     await sleep(300);
   }
-  // 2) 영문 해외 뉴스(제목·매체 — 해외 사례 확장/추가 검토용)
+  // 2) 국문 보강(관련성↑): Bing 뉴스 국문
+  for (const q of theme.queries || []) {
+    if (sources.length >= maxSources) break;
+    let items = [];
+    try { items = await fromBingNews(q, "ko"); } catch (e) { continue; }
+    for (const it of items || []) addCand(it, false);
+    await sleep(300);
+  }
+  // 3) 영문 해외 뉴스(실제 URL·스니펫 — 본문 심층 분석): Bing 뉴스 영문
   for (const q of QUERIES_EN[theme.key] || []) {
     if (sources.length >= maxSources) break;
     let items = [];
-    try { items = await fromGoogleIntl(q); } catch (e) { continue; }
+    try { items = await fromBingNews(q, "en"); } catch (e) { continue; }
     for (const it of items || []) addCand(it, true);
     await sleep(300);
   }
