@@ -251,8 +251,8 @@ function buildDocx({
 
   // 발행 정보(가로줄 위)
   const pubRun = [];
-  if (publisher) pubRun.push({ t: "발행  ", bold: true, color: GREEN2 }, { t: publisher + "     ", color: INK });
-  if (date) pubRun.push({ t: "발행일  ", bold: true, color: GREEN2 }, { t: date, color: INK });
+  if (publisher) pubRun.push({ t: "발행 ", bold: true, color: GREEN2 }, { t: publisher + " ", color: INK });
+  if (date) pubRun.push({ t: "발행일 ", bold: true, color: GREEN2 }, { t: date, color: INK });
   if (pubRun.length) body.push(para(pubRun, { size: 19, before: 40, after: 60, topBorder: GOLD }));
   for (const m of meta) body.push(para(m, { size: 18, color: GRAY, after: 40 }));
   body.push(para("", { after: 40, topBorder: "D9D9D9" }));

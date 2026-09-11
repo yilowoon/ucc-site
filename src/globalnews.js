@@ -351,6 +351,64 @@ async function fromGoogleIntl(keyword) {
   } catch (e) { return []; }
 }
 
+/** Google 뉴스 리다이렉트 링크(/rss/articles/CBM…)를 실제 기사 URL로 복원(best-effort) */
+function decodeGNewsUrl(u) {
+  try {
+    const m = String(u || "").match(/\/articles\/([^?]+)/);
+    if (!m) return u;
+    const b64 = m[1].replace(/-/g, "+").replace(/_/g, "/");
+    const raw = Buffer.from(b64, "base64").toString("latin1");
+    const i = raw.indexOf("http");
+    if (i < 0) return u;
+    let url = raw.slice(i).split(/[^\x20-\x7e]/)[0].trim(); // 제어/비ASCII에서 자름
+    return /^https?:\/\/\S+$/.test(url) ? url : u;
+  } catch (e) { return u; }
+}
+
+/** 기사 HTML에서 본문 텍스트 추출(<p> 우선, 실패 시 태그 제거) */
+function extractMainText(html, maxChars = 1800) {
+  let h = String(html || "")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ");
+  const ps = [...h.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+    .map((m) => m[1].replace(/<[^>]+>/g, " ").replace(/&[a-z#0-9]+;/gi, " ").replace(/\s+/g, " ").trim())
+    .filter((t) => t.length >= 40);
+  let text = ps.join(" ").trim();
+  if (text.length < 120) text = h.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  return text.length > maxChars ? text.slice(0, maxChars - 1).trim() + "…" : text;
+}
+
+/** 기사 URL에서 본문 텍스트 가져오기(타임아웃·실패 시 빈 문자열) */
+async function fetchArticleText(url) {
+  try {
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), 8000);
+    const r = await fetch(url, { signal: ctrl.signal, redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 (compatible; UCCBrief/1.0)", "Accept-Language": "en,ko" } });
+    clearTimeout(to);
+    if (!r.ok) return "";
+    return extractMainText(await r.text());
+  } catch (e) { return ""; }
+}
+
+/** 영문(intl) 출처의 본문을 실제로 가져와 발췌를 채운다(심층 분석 근거 확보) */
+async function enrichIntlSources(sources, limit = 6) {
+  let done = 0;
+  for (const s of sources || []) {
+    if (!s.intl || (s.excerpt && s.excerpt.length >= 120)) continue;
+    if (done >= limit) break;
+    const real = decodeGNewsUrl(s.url);
+    const txt = await fetchArticleText(real);
+    if (txt && txt.length >= 120) {
+      s.excerpt = txt;
+      if (/^https?:\/\//.test(real)) s.url = real; // 참고자료 링크도 실제 기사로
+      done++;
+    }
+    await sleep(300);
+  }
+  return done;
+}
+
 async function researchSources(theme, { maxSources = 12 } = {}) {
   const seen = new Set();
   const sources = [];
@@ -447,6 +505,7 @@ const RULES = [
   "- 기사 발행일과 실제 사건 발생일을 구분하고, 여러 기사의 같은 사실은 하나로 묶습니다.",
   "- 한 문장에는 하나의 중심 주장, 한 문단에는 하나의 역할. 원문 표현을 바꿔 쓰기보다 사실을 구조에 맞게 새로 서술합니다.",
   "- 홍보성·평가성 수식을 피하고, 사실→의미의 순서로 담백하게 씁니다.",
+  "- 영문 출처의 [발췌]도 반드시 활용해 그 내용을 심층 분석하세요(제목·매체만 나열하지 말 것). 발췌가 없는 항목은 검증된 배경지식 범위에서만 신중히 다룹니다.",
 ].join("\n");
 
 /** 1단계: 보고서 설계안(제목·한줄요약·개요·핵심수치 + 심층 소개할 해외 사례 3~4개) */
@@ -635,8 +694,8 @@ function makeReportDocx(report, refs, dayKey) {
     title: report.title || "지구촌소식브리프",
     subtitle: report.oneLine || report.subtitle || "",
     publisher: AUTHOR,
-    date: fmtKst(new Date().toISOString()),
-    meta: [`${PERSONA}, 일일 이슈 브리프`, `발행 ${AUTHOR}  ·  발행인 ${PUBLISHER_NAME}  ·  ${dayKey}`],
+    date: fmtDot(new Date().toISOString()),
+    meta: [`${PERSONA} · 글로벌 일일 이슈 브리프`, `발행인 ${PUBLISHER_NAME} · ${dayKey}`],
     sections,
     colophon: COLOPHON,
   });
@@ -715,9 +774,9 @@ function makePostBody(report, sources, refs, dayKey, ai) {
   const seq = daySeq(new Date());
 
   // 0) 머리글
-  lines.push(`발행 ${AUTHOR}   발행일 ${dateDot}`);
-  lines.push(`${PERSONA}, 일일 이슈 브리프`);
-  lines.push(`발행인 ${PUBLISHER_NAME}.  ${dayKey}`);
+  lines.push(`발행 ${AUTHOR} 발행일 ${dateDot}`);
+  lines.push(`${PERSONA} · 글로벌 일일 이슈 브리프`);
+  lines.push(`발행인 ${PUBLISHER_NAME} · ${dayKey}`);
   lines.push("");
 
   // 1) 주요내용 — "이번 호는 …" 정돈된 요약(중복 문구 정리)
@@ -806,6 +865,8 @@ async function collectOnce({ force = false } = {}) {
   console.log(`[report] 리포트 작성 시작 — ${seq.key} / ${theme.title}`);
   const sources = await researchSources(theme, { maxSources: 12 });
   console.log(`[report] 관련 자료 ${sources.length}건 수집(관련성 필터 적용)`);
+  // 영문 해외 기사 본문 확보 → 심층 분석 근거로 사용
+  try { const n = await enrichIntlSources(sources); if (n) console.log(`[report] 영문 기사 본문 확보 ${n}건`); } catch (e) {}
 
   // 주제와 관련된 소스가 하나도 없으면 저품질 발행을 막기 위해 오늘 회차는 건너뜀
   if (!sources.length) {
