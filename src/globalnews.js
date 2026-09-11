@@ -180,6 +180,15 @@ function fmtDot(iso) {
   return `${k.getUTCFullYear()}.${String(k.getUTCMonth() + 1).padStart(2, "0")}.${String(k.getUTCDate()).padStart(2, "0")}.`;
 }
 
+/** 문장 종결 보정 — 중간에 끊긴 텍스트를 마지막 '완결 문장'까지만 남긴다(… 로 자르지 않음). */
+function completeSentences(t) {
+  const s = String(t || "").replace(/\s+/g, " ").trim();
+  if (!s) return s;
+  if (/[.!?。][”’"')\]】」』]?$/.test(s)) return s; // 이미 종결
+  const idx = Math.max(s.lastIndexOf("."), s.lastIndexOf("!"), s.lastIndexOf("?"), s.lastIndexOf("。"));
+  return idx >= 15 ? s.slice(0, idx + 1).trim() : s;
+}
+
 /** [오늘의 명언] — 공동체·연대·시민·변화 주제의 검증된 격언 풀(출처 확실한 것만; 조작 방지) */
 const QUOTES = [
   { text: "빨리 가려면 혼자 가고, 멀리 가려면 함께 가라.", author: "아프리카 속담" },
@@ -294,7 +303,7 @@ function buildHighlight(report, refs, ai) {
   }
 
   let out = sents.join(" ");
-  return out.length > 1400 ? out.slice(0, 1399).trim() + "…" : out;
+  return out.length > 1400 ? completeSentences(out.slice(0, 1400)) : completeSentences(out);
 }
 
 /** 요약 발췌(원문 전문 방지) — LLM 근거용이라 넉넉히, 단 전문 저장은 피한다 */
@@ -302,7 +311,7 @@ function buildExcerpt(item, maxChars = 1000) {
   const raw = String(item.content || item.summary || "").replace(/\s+/g, " ").trim();
   if (raw.length < 20) return String(item.summary || "").replace(/\s+/g, " ").trim();
   if (raw.length <= maxChars) return raw;
-  return raw.slice(0, maxChars - 1).trim() + "…";
+  return completeSentences(raw.slice(0, maxChars)); // 문장 중간에서 자르지 않음
 }
 
 function safeFileName(s) {
@@ -367,7 +376,7 @@ function extractMainText(html, maxChars = 1800) {
     .filter((t) => t.length >= 40);
   let text = ps.join(" ").trim();
   if (text.length < 120) text = h.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-  return text.length > maxChars ? text.slice(0, maxChars - 1).trim() + "…" : text;
+  return text.length > maxChars ? completeSentences(text.slice(0, maxChars)) : text;
 }
 
 /** 기사 URL에서 본문 텍스트 가져오기(타임아웃·실패 시 빈 문자열) */
@@ -398,6 +407,31 @@ async function enrichIntlSources(sources, limit = 8) {
     await sleep(300);
   }
   return done;
+}
+
+/** 영문(intl) 출처의 발췌를 한국어로 번역·정리한다(완결 문장). 한 번의 Gemini 호출로 일괄 처리. */
+async function translateSourcesToKorean(sources) {
+  const targets = (sources || []).filter((s) => s.intl && s.excerpt && /[A-Za-z]{40,}/.test(s.excerpt));
+  if (!targets.length || !GEMINI_KEY()) return 0;
+  const block = targets.map((s, i) => `[${i + 1}] TITLE: ${s.title}\nBODY: ${String(s.excerpt).slice(0, 1800)}`).join("\n\n");
+  const prompt = [
+    "다음은 해외 영문 기사들의 제목과 본문(또는 스니펫)이다.",
+    "각 기사의 핵심 내용을 한국어로 자연스럽고 정확하게 번역·정리하라.",
+    "- 각 항목 4~7문장, 사실 중심. 반드시 완결된 문장으로 끝맺을 것(중간에 끊거나 '…'로 생략 금지).",
+    "- 원문에 없는 사실·수치·인과를 추가하지 말 것. 고유명사는 한글(원어) 병기.",
+    '다음 JSON만 출력(설명 없이): { "items": [ { "i": 1, "ko": "한국어 정리" } ] }',
+    "",
+    block,
+  ].join("\n");
+  const j = await geminiJson(prompt, { maxTokens: 4096, temperature: 0.3 });
+  if (!j || !Array.isArray(j.items)) return 0;
+  let n = 0;
+  for (const it of j.items) {
+    const idx = (parseInt(it.i, 10) || 0) - 1;
+    const ko = completeSentences(String(it.ko || "").trim());
+    if (idx >= 0 && idx < targets.length && ko.length >= 40) { targets[idx].excerpt = ko; targets[idx].translated = true; n++; }
+  }
+  return n;
 }
 
 async function researchSources(theme, { maxSources = 12 } = {}) {
@@ -650,14 +684,16 @@ function fallbackReport(theme, sources) {
 
 /* ---------------------------------------------- 3) 보고서 조립 */
 
-/** 렌더 가능한 문단 형태로 정규화(LLM 출력 방어) */
+/** 렌더 가능한 문단 형태로 정규화(LLM 출력 방어) + 문장 종결 보정(축약·미완결 문장 제거) */
 function normParas(arr) {
   if (!Array.isArray(arr)) return [];
   return arr.map((p) => {
-    if (typeof p === "string") return p;
+    if (typeof p === "string") return completeSentences(p);
     if (p && typeof p === "object") {
-      if (p.h3 != null || p.bullet != null || p.lead != null || p.note != null || (p.label != null && p.text != null)) return p;
-      if (p.text != null) return String(p.text);
+      if (p.lead != null) return { ...p, lead: completeSentences(p.lead) };
+      if (p.text != null && p.label != null) return { ...p, text: completeSentences(p.text) };
+      if (p.h3 != null || p.bullet != null || p.note != null) return p;
+      if (p.text != null) return completeSentences(String(p.text));
     }
     return String(p);
   });
@@ -706,7 +742,7 @@ function extractImplications(report, max = 5) {
   if (Array.isArray(report._implications) && report._implications.length) {
     return report._implications.slice(0, max).map((t) => {
       const s = String(t).replace(/\s+/g, " ").trim();
-      return s.length > 200 ? s.slice(0, 199).trim() + "…" : s;
+      return s.length > 220 ? completeSentences(s.slice(0, 220)) : s;
     });
   }
   const secs = report.sections || [];
@@ -720,7 +756,7 @@ function extractImplications(report, max = 5) {
       if (typeof p === "string") t = p;
       else if (p && typeof p === "object") t = p.bullet || p.lead || p.text || "";
       t = String(t).replace(/\s+/g, " ").trim();
-      if (t.length >= 12) out.push(t.length > 160 ? t.slice(0, 159).trim() + "…" : t);
+      if (t.length >= 12) out.push(t.length > 180 ? completeSentences(t.slice(0, 180)) : t);
     }
   };
   if (pick) take(pick.paragraphs);
@@ -866,6 +902,8 @@ async function collectOnce({ force = false } = {}) {
   console.log(`[report] 관련 자료 ${sources.length}건 수집(관련성 필터 적용)`);
   // 영문 해외 기사 본문 확보 → 심층 분석 근거로 사용
   try { const n = await enrichIntlSources(sources); if (n) console.log(`[report] 영문 기사 본문 확보 ${n}건`); } catch (e) {}
+  // 영문 발췌를 한국어로 번역·정리(완결 문장) → 이후 요약/참고자료가 모두 한국어
+  try { const t = await translateSourcesToKorean(sources); if (t) console.log(`[report] 영문 기사 한국어 번역 ${t}건`); } catch (e) {}
 
   // 주제와 관련된 소스가 하나도 없으면 저품질 발행을 막기 위해 오늘 회차는 건너뜀
   if (!sources.length) {
