@@ -562,15 +562,22 @@ async function listModels(key) {
   } catch (e) { return []; }
 }
 
-/** 사용할 모델명 결정: 환경변수 우선 → ListModels에서 flash 계열 자동 선택 → 기본값 */
+// 안정성 우선 순위(과부하 잦은 최신/프리뷰보다 검증된 flash 계열을 먼저 선택)
+const MODEL_PREF = [
+  /^gemini-2\.5-flash$/i, /^gemini-2\.0-flash$/i,
+  /^gemini-2\.5-flash-lite/i, /^gemini-2\.0-flash-lite/i,
+  /^gemini-1\.5-flash$/i, /^gemini-1\.5-flash-8b/i, /flash-latest$/i,
+];
+
+/** 사용할 모델명 결정: 환경변수 우선 → ListModels에서 '안정 flash' 우선 선택 → 기본값 */
 async function resolveModel() {
   if (process.env.GEMINI_TEXT_MODEL) return process.env.GEMINI_TEXT_MODEL; // 사용자가 지정하면 신뢰
   if (_resolvedModel) return _resolvedModel;
   const avail = GEMINI_KEY() ? await listModels(GEMINI_KEY()) : [];
-  const pick = avail.find((n) => /flash/i.test(n) && !/(vision|thinking|exp|image|tts|live)/i.test(n))
-    || avail.find((n) => /flash/i.test(n))
-    || avail.find((n) => /gemini/i.test(n))
-    || "gemini-flash-latest";
+  const bad = /(vision|thinking|exp|image|tts|live|preview|audio)/i;
+  let pick = null;
+  for (const re of MODEL_PREF) { const m = avail.find((n) => re.test(n) && !bad.test(n)); if (m) { pick = m; break; } }
+  if (!pick) pick = avail.find((n) => /flash/i.test(n) && !bad.test(n)) || avail.find((n) => /flash/i.test(n)) || avail.find((n) => /gemini/i.test(n)) || "gemini-flash-latest";
   _resolvedModel = pick;
   console.log(`[report] Gemini 모델 자동 선택: ${pick} (사용가능 ${avail.length}종)`);
   return pick;
@@ -608,7 +615,8 @@ async function geminiJson(prompt, { ms = 90000, maxTokens = 8192, temperature = 
   if (!GEMINI_KEY()) return null;
   const body = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature, maxOutputTokens: maxTokens, responseMimeType: "application/json" } };
   let model = await resolveModel();
-  for (let attempt = 0; attempt < 3; attempt++) {
+  const MAX = 6; // 과부하(503) 대비 재시도 확대
+  for (let attempt = 0; attempt < MAX; attempt++) {
     const res = await geminiCallRaw(model, body, ms);
     if (res.ok) {
       let data; try { data = JSON.parse(res.text); } catch { return null; }
@@ -623,12 +631,14 @@ async function geminiJson(prompt, { ms = 90000, maxTokens = 8192, temperature = 
     }
     // 404: 모델명 문제 → 캐시 무효화 후 재해결(환경변수 미지정 시 1회)
     if (res.status === 404 && !process.env.GEMINI_TEXT_MODEL && attempt === 0) { _resolvedModel = null; model = await resolveModel(); continue; }
-    // 429/503: 과부하 → 백오프 후 재시도
-    if (res.status === 429 || res.status === 503) { await sleep(1500 * (attempt + 1)); continue; }
+    // 429/503/네트워크 타임아웃: 과부하 → 지수 백오프 후 재시도(최대 ~30초 대기)
+    if (res.status === 429 || res.status === 503 || res.status === 0) {
+      if (attempt < MAX - 1) { await sleep(Math.min(3000 * (attempt + 1), 12000)); continue; }
+    }
     console.error("[report] Gemini HTTP", res.status || "NET", (res.text || res.err || "").slice(0, 160));
     return null;
   }
-  console.error("[report] Gemini 재시도 실패(과부하/타임아웃)");
+  console.error("[report] Gemini 재시도 실패(과부하/타임아웃) — 모델", model);
   return null;
 }
 
@@ -742,8 +752,8 @@ async function writeFullReport(theme, sources) {
 
   const plan = sectionPlan(outline);
   console.log(`[report]  · 개요 완료 → ${plan.length}개 절 병렬 집필 시작`);
-  // 절을 동시 3개씩 병렬 집필(순차 대비 대폭 단축). 각 절 최대 2회 시도, 호출당 60초.
-  const written = await mapLimit(plan, 3, async (spec, i) => {
+  // 절을 동시 2개씩 병렬 집필(과부하 503 완화 + 속도 절충). 각 절 최대 2회 시도, 호출당 60초.
+  const written = await mapLimit(plan, 2, async (spec, i) => {
     let paras = [];
     for (let attempt = 0; attempt < 2 && paras.length === 0; attempt++) {
       const r = await geminiJson(buildSectionPrompt(theme, sources, outline, spec, i, plan.length), { maxTokens: 8192, temperature: 0.5, ms: 60000 });
