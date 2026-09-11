@@ -429,7 +429,7 @@ async function translateSourcesToKorean(sources) {
   // 영문 알파벳이 40자 이상 포함된 발췌는 번역 대상으로 본다(제목이 영문이어도 포함)
   const hasEnglish = (t) => (String(t || "").match(/[A-Za-z]/g) || []).length >= 40;
   const targets = (sources || []).filter((s) => s.intl && (hasEnglish(s.excerpt) || hasEnglish(s.title)));
-  if (!targets.length || !GEMINI_KEY()) return 0;
+  if (!targets.length || !_activeJson) return 0;
   const block = targets.map((s, i) => `[${i + 1}] TITLE: ${s.title}\nBODY: ${String(s.excerpt || "").slice(0, 2800)}`).join("\n\n");
   const prompt = [
     "다음은 해외 영문 기사들의 제목과 본문(또는 스니펫)이다.",
@@ -440,7 +440,7 @@ async function translateSourcesToKorean(sources) {
     "",
     block,
   ].join("\n");
-  const j = await geminiJson(prompt, { maxTokens: 4096, temperature: 0.3 });
+  const j = await llm(prompt, { maxTokens: 4096, temperature: 0.3 });
   const arr = Array.isArray(j) ? j : (j && j.items);
   if (!Array.isArray(arr)) return 0;
   let n = 0;
@@ -454,7 +454,7 @@ async function translateSourcesToKorean(sources) {
 
 /** 최종 안전망: 완성된 보고서 절 문단 중 영문이 남은 것을 한국어로 재작성(완결 문장). */
 async function koreanizeReport(report) {
-  if (!GEMINI_KEY() || !report || !Array.isArray(report.sections)) return 0;
+  if (!_activeJson || !report || !Array.isArray(report.sections)) return 0;
   const isEng = (t) => (String(t || "").match(/[A-Za-z]/g) || []).length >= 40;
   const items = [];
   for (const sec of report.sections) {
@@ -478,7 +478,7 @@ async function koreanizeReport(report) {
     "",
     block,
   ].join("\n");
-  const j = await geminiJson(prompt, { maxTokens: 8192, temperature: 0.3 });
+  const j = await llm(prompt, { maxTokens: 8192, temperature: 0.3 });
   const resArr = Array.isArray(j) ? j : (j && j.items);
   if (!Array.isArray(resArr)) return 0;
   let n = 0;
@@ -642,6 +642,81 @@ async function geminiJson(prompt, { ms = 90000, maxTokens = 8192, temperature = 
   return null;
 }
 
+/* ── 대체 LLM 제공자: OpenAI(GPT) / Anthropic(Claude) ──
+ * Gemini가 과부하(503)·오류로 실패하면 아래 제공자로 자동 전환한다(.env 에 키가 있을 때). */
+const OPENAI_KEY = () => process.env.OPENAI_API_KEY || "";
+const OPENAI_MODEL = () => process.env.OPENAI_TEXT_MODEL || "gpt-4o-mini";
+const ANTHROPIC_KEY = () => process.env.ANTHROPIC_API_KEY || "";
+const ANTHROPIC_MODEL = () => process.env.ANTHROPIC_TEXT_MODEL || "claude-3-5-haiku-latest";
+
+function parseJsonLoose(txt) {
+  if (!txt) return null;
+  try { return JSON.parse(txt); } catch {}
+  const m = txt.match(/\{[\s\S]*\}/);
+  if (m) { try { return JSON.parse(m[0]); } catch {} }
+  return null;
+}
+
+async function openaiJson(prompt, { ms = 90000, maxTokens = 8192, temperature = 0.5 } = {}) {
+  const key = OPENAI_KEY(); if (!key) return null;
+  const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const r = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST", signal: ctrl.signal,
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
+      body: JSON.stringify({ model: OPENAI_MODEL(), temperature, max_tokens: maxTokens, response_format: { type: "json_object" }, messages: [{ role: "system", content: "You output only one valid JSON object. No prose, no code fences." }, { role: "user", content: prompt }] }),
+    });
+    const t = await r.text();
+    if (!r.ok) { console.error("[report] OpenAI HTTP", r.status, t.slice(0, 160)); return null; }
+    const d = JSON.parse(t);
+    return parseJsonLoose(d && d.choices && d.choices[0] && d.choices[0].message && d.choices[0].message.content);
+  } catch (e) { console.error("[report] OpenAI 오류:", e.message); return null; }
+  finally { clearTimeout(to); }
+}
+
+async function anthropicJson(prompt, { ms = 90000, maxTokens = 8192, temperature = 0.5 } = {}) {
+  const key = ANTHROPIC_KEY(); if (!key) return null;
+  const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST", signal: ctrl.signal,
+      headers: { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({ model: ANTHROPIC_MODEL(), max_tokens: Math.min(maxTokens, 8192), temperature, system: "유효한 JSON 객체 하나만 출력하세요. 설명·코드블록 금지.", messages: [{ role: "user", content: prompt }] }),
+    });
+    const t = await r.text();
+    if (!r.ok) { console.error("[report] Anthropic HTTP", r.status, t.slice(0, 160)); return null; }
+    const d = JSON.parse(t);
+    return parseJsonLoose(d && d.content && d.content[0] && d.content[0].text);
+  } catch (e) { console.error("[report] Anthropic 오류:", e.message); return null; }
+  finally { clearTimeout(to); }
+}
+
+// 작동하는 제공자를 회차 시작 시 1회 선택해 모든 호출에 사용(선택 실패 제공자 반복 시도 방지)
+let _activeJson = null;
+
+async function pickProvider() {
+  if (GEMINI_KEY()) {
+    const p = await geminiPing();
+    if (p.ok) { console.log(`[report] LLM 제공자: Gemini (${p.model})`); _activeJson = geminiJson; return { name: "gemini", model: p.model }; }
+    console.warn(`[report] Gemini 사용 불가: ${p.reason}${p.detail ? " / " + p.detail : ""} → 대체 제공자 확인`);
+  }
+  if (OPENAI_KEY()) {
+    const r = await openaiJson('{"ping":true} 형식으로 답해줘', { maxTokens: 20, ms: 15000 });
+    if (r) { console.log(`[report] LLM 제공자: OpenAI (${OPENAI_MODEL()})`); _activeJson = openaiJson; return { name: "openai", model: OPENAI_MODEL() }; }
+    console.warn("[report] OpenAI 사용 불가 → 다음 제공자 확인");
+  }
+  if (ANTHROPIC_KEY()) {
+    const r = await anthropicJson('{"ping":true} 형식(JSON)으로만 답해줘', { maxTokens: 20, ms: 15000 });
+    if (r) { console.log(`[report] LLM 제공자: Claude (${ANTHROPIC_MODEL()})`); _activeJson = anthropicJson; return { name: "anthropic", model: ANTHROPIC_MODEL() }; }
+    console.warn("[report] Anthropic 사용 불가");
+  }
+  _activeJson = null;
+  return null;
+}
+
+/** 활성 제공자로 JSON 생성(제공자 미선택 시 Gemini 시도) */
+function llm(prompt, opts) { return (_activeJson || geminiJson)(prompt, opts); }
+
 /** 출처 자료를 프롬프트용 텍스트 블록으로 */
 function sourceBlock(sources) {
   if (!sources.length) return "(수집 자료가 부족합니다. 주제에 대한 널리 알려진·검증된 배경지식으로 신중히 작성하되, 불확실한 구체 수치·고유명사는 단정하지 마세요.)";
@@ -743,7 +818,7 @@ function buildSectionPrompt(theme, sources, outline, spec, index, total) {
 
 /** 설계안 + 절별 심층 집필 → A4 약 10쪽 보고서 객체. 실패 절은 재시도 후 건너뛴다. */
 async function writeFullReport(theme, sources) {
-  const outline = await geminiJson(buildOutlinePrompt(theme, sources), { maxTokens: 2048, temperature: 0.5 });
+  const outline = await llm(buildOutlinePrompt(theme, sources), { maxTokens: 2048, temperature: 0.5 });
   if (!outline || !outline.title) return null;
 
   const arr = (v) => (Array.isArray(v) ? v.map((x) => String(x || "").trim()).filter(Boolean) : (v ? [String(v).trim()] : []));
@@ -756,7 +831,7 @@ async function writeFullReport(theme, sources) {
   const written = await mapLimit(plan, 2, async (spec, i) => {
     let paras = [];
     for (let attempt = 0; attempt < 2 && paras.length === 0; attempt++) {
-      const r = await geminiJson(buildSectionPrompt(theme, sources, outline, spec, i, plan.length), { maxTokens: 8192, temperature: 0.5, ms: 60000 });
+      const r = await llm(buildSectionPrompt(theme, sources, outline, spec, i, plan.length), { maxTokens: 8192, temperature: 0.5, ms: 60000 });
       paras = normParas(r && (r.paragraphs || (Array.isArray(r) ? r : null)));
       if (paras.length === 0) await sleep(500);
     }
@@ -996,14 +1071,12 @@ async function collectOnce({ force = false } = {}) {
   const t0 = Date.now();
   console.log(`[report] 리포트 작성 시작 — ${seq.key} / ${theme.title}`);
 
-  // Gemini 사용 불가 시: 영문·축약 fallback 문서를 발행하지 않고 건너뜀(원인은 로그로 노출)
-  const gp = await geminiPing();
-  if (!gp.ok) {
-    console.error(`[report] ⚠ Gemini 사용 불가 → 발행 건너뜀. 사유: ${gp.reason}${gp.detail ? " / " + gp.detail : ""} (모델 ${gp.model || "?"})`);
-    console.error(`[report]   .env 의 GEMINI_API_KEY 확인, 필요 시 GEMINI_TEXT_MODEL 지정 후 'pm2 restart ucc'`);
-    return { published: false, reason: "gemini-unavailable", detail: gp.reason, dayKey: seq.key, theme: theme.key };
+  // LLM 제공자 선택(Gemini → OpenAI → Claude). 모두 불가하면 국내·영문 fallback 문서를 만들지 않고 건너뜀.
+  const provider = await pickProvider();
+  if (!provider) {
+    console.error(`[report] ⚠ 사용 가능한 LLM 없음 → 발행 건너뜀. .env 에 GEMINI_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY 중 하나가 정상 작동해야 합니다. 설정 후 'pm2 restart ucc'`);
+    return { published: false, reason: "no-llm", dayKey: seq.key, theme: theme.key };
   }
-  console.log(`[report] Gemini 사용 가능 ✅ (모델 ${gp.model})`);
 
   const sources = await researchSources(theme, { maxSources: 12 });
   console.log(`[report] 관련 자료 ${sources.length}건 수집(관련성 필터 적용)`);
@@ -1018,19 +1091,18 @@ async function collectOnce({ force = false } = {}) {
     return { published: false, reason: "no-relevant-sources", dayKey: seq.key, theme: theme.key };
   }
 
-  let ai = true;
-  let report = await writeFullReport(theme, sources);
+  const report = await writeFullReport(theme, sources);
+  // LLM 집필이 전부 실패하면 국내·영문 fallback을 발행하지 않고 건너뜀(지침: 완결 한국어 심층 보고서만 발행)
   if (!report || !report.sections || !report.sections.length) {
-    console.warn("[report] LLM 집필 실패 → 기본 다이제스트로 대체");
-    report = fallbackReport(theme, sources);
-    ai = false;
+    console.error(`[report] ⚠ LLM 집필 실패(${provider.name}) → 발행 건너뜀(저품질 fallback 미발행)`);
+    return { published: false, reason: "write-failed", provider: provider.name, dayKey: seq.key, theme: theme.key };
   }
   // 최종 안전망: 보고서에 남은 영문 문단을 한국어로 재작성
   try { const k = await koreanizeReport(report); if (k) console.log(`[report] 잔여 영문 문단 한국어화 ${k}건`); } catch (e) {}
 
-  const out = publishReport(report, sources, seq.key, theme, ai, guid);
-  console.log(`[report] 발행 완료 — post ${out.postId} (${ai ? "AI집필" : "다이제스트"}, 첨부 ${out.attached}, ${Math.round((Date.now() - t0) / 1000)}초 소요)`);
-  return { published: true, ai, dayKey: seq.key, theme: theme.key, ...out };
+  const out = publishReport(report, sources, seq.key, theme, true, guid);
+  console.log(`[report] 발행 완료 — post ${out.postId} (AI집필/${provider.name}, 첨부 ${out.attached}, ${Math.round((Date.now() - t0) / 1000)}초 소요)`);
+  return { published: true, ai: true, provider: provider.name, dayKey: seq.key, theme: theme.key, ...out };
 }
 
 /* ------------------- 스케줄러: 매일 07:00 (KST 고정, 서버 타임존 무관) ------- */
