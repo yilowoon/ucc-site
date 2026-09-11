@@ -7,6 +7,26 @@ const cfg = require("../config");
 
 const PER_PAGE = 10;
 
+// 지구촌소식브리프(global) 공유용 통일 OG 이미지
+const GLOBAL_OG_IMAGE = "/img/og-globalbrief.png?v=1";
+const GLOBAL_OG_DESC_DEFAULT =
+  "도시공동체본부가 매일 정리하는 해외 사회연대경제·공동체경제 이슈 브리프입니다.";
+
+/** 지구촌소식브리프 본문에서 [주요내용] 문단을 뽑아 OG 설명(약 160자)으로 정리 */
+function globalOgDescription(content) {
+  const text = String(content || "");
+  const m = text.match(/\[주요내용\]\s*([\s\S]*?)(?:\n\s*\[|$)/);
+  let s = (m ? m[1] : text).replace(/\s+/g, " ").trim();
+  if (!s) return GLOBAL_OG_DESC_DEFAULT;
+  if (s.length > 160) {
+    s = s.slice(0, 160);
+    const cut = Math.max(s.lastIndexOf(". "), s.lastIndexOf("다 "), s.lastIndexOf("다."));
+    if (cut > 80) s = s.slice(0, cut + 1);
+    s = s.trim() + " …";
+  }
+  return s;
+}
+
 module.exports = function boardRoutes() {
   const router = express.Router();
 
@@ -55,6 +75,15 @@ module.exports = function boardRoutes() {
       )
       .all(...params, PER_PAGE, offset);
 
+    const listOgExtra = board === "global"
+      ? {
+          ogTitle: `${meta.name} | 사단법인 도시공동체본부`,
+          ogDescription: GLOBAL_OG_DESC_DEFAULT,
+          ogImage: GLOBAL_OG_IMAGE,
+          ogUrl: `${res.locals.baseUrl || ""}/board/global`,
+        }
+      : {};
+
     res.render("board-list", {
       ...res.locals,
       title: meta.name,
@@ -66,6 +95,7 @@ module.exports = function boardRoutes() {
       total,
       q,
       perPage: PER_PAGE,
+      ...listOgExtra,
     });
   });
 
@@ -106,6 +136,16 @@ module.exports = function boardRoutes() {
       )
       .get(board, id);
 
+    // 지구촌소식브리프: 외부 공유용 OG 통일(이미지 고정 + 글별 제목/설명)
+    const ogExtra = board === "global"
+      ? {
+          ogTitle: `${post.title} | 지구촌소식브리프`,
+          ogDescription: globalOgDescription(post.content),
+          ogImage: GLOBAL_OG_IMAGE,
+          ogUrl: `${res.locals.baseUrl || ""}/board/global/${id}`,
+        }
+      : {};
+
     res.render("board-post", {
       ...res.locals,
       title: post.title,
@@ -117,6 +157,7 @@ module.exports = function boardRoutes() {
       prev,
       next: next_,
       backPage: parseInt(req.query.page, 10) || 1,
+      ...ogExtra,
     });
   });
 
