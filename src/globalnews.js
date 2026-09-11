@@ -144,6 +144,21 @@ const insertAttach = db.prepare(
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/** 동시 실행 수를 제한하며 map(순서 보존) — 절 병렬 집필용 */
+async function mapLimit(items, limit, fn) {
+  const results = new Array(items.length);
+  let idx = 0;
+  const workers = Array.from({ length: Math.max(1, Math.min(limit, items.length)) }, async () => {
+    while (true) {
+      const i = idx++;
+      if (i >= items.length) break;
+      results[i] = await fn(items[i], i);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
 /** ISO 시각 → 'YYYY. MM. DD.' (KST) */
 function fmtKst(iso) {
   const d = iso ? new Date(iso) : new Date();
@@ -685,20 +700,20 @@ async function writeFullReport(theme, sources) {
   const oneLine = String(outline.oneLine || "").trim();
 
   const plan = sectionPlan(outline);
-  const sections = [];
-  for (let i = 0; i < plan.length; i++) {
-    const spec = plan[i];
+  console.log(`[report]  · 개요 완료 → ${plan.length}개 절 병렬 집필 시작`);
+  // 절을 동시 3개씩 병렬 집필(순차 대비 대폭 단축). 각 절 최대 2회 시도, 호출당 60초.
+  const written = await mapLimit(plan, 3, async (spec, i) => {
     let paras = [];
-    for (let attempt = 0; attempt < 3 && paras.length === 0; attempt++) {
-      const r = await geminiJson(buildSectionPrompt(theme, sources, outline, spec, i, plan.length), { maxTokens: 8192, temperature: 0.5 });
+    for (let attempt = 0; attempt < 2 && paras.length === 0; attempt++) {
+      const r = await geminiJson(buildSectionPrompt(theme, sources, outline, spec, i, plan.length), { maxTokens: 8192, temperature: 0.5, ms: 60000 });
       paras = normParas(r && (r.paragraphs || (Array.isArray(r) ? r : null)));
-      if (paras.length === 0) await sleep(600);
+      if (paras.length === 0) await sleep(500);
     }
-    if (paras.length === 0) { console.warn(`[report]  · 절 집필 실패(건너뜀): ${spec.heading}`); continue; }
-    sections.push({ heading: spec.heading, paragraphs: paras });
-    console.log(`[report]  · 절 ${i + 1}/${plan.length} 집필: ${spec.heading} (${paras.length}문단)`);
-    await sleep(400);
-  }
+    if (paras.length === 0) { console.warn(`[report]  · 절 집필 실패(건너뜀): ${spec.heading}`); return null; }
+    console.log(`[report]  · 절 집필 완료: ${spec.heading} (${paras.length}문단)`);
+    return { heading: spec.heading, paragraphs: paras };
+  });
+  const sections = written.filter(Boolean);
   if (!sections.length) return null;
 
   return {
@@ -924,6 +939,7 @@ async function collectOnce({ force = false } = {}) {
     return { published: false, reason: "exists", dayKey: seq.key, theme: theme.key };
   }
 
+  const t0 = Date.now();
   console.log(`[report] 리포트 작성 시작 — ${seq.key} / ${theme.title}`);
 
   // Gemini 사용 불가 시: 영문·축약 fallback 문서를 발행하지 않고 건너뜀(원인은 로그로 노출)
@@ -959,7 +975,7 @@ async function collectOnce({ force = false } = {}) {
   try { const k = await koreanizeReport(report); if (k) console.log(`[report] 잔여 영문 문단 한국어화 ${k}건`); } catch (e) {}
 
   const out = publishReport(report, sources, seq.key, theme, ai);
-  console.log(`[report] 발행 완료 — post ${out.postId} (${ai ? "AI집필" : "다이제스트"}, 첨부 ${out.attached})`);
+  console.log(`[report] 발행 완료 — post ${out.postId} (${ai ? "AI집필" : "다이제스트"}, 첨부 ${out.attached}, ${Math.round((Date.now() - t0) / 1000)}초 소요)`);
   return { published: true, ai, dayKey: seq.key, theme: theme.key, ...out };
 }
 
