@@ -426,13 +426,14 @@ async function translateSourcesToKorean(sources) {
     block,
   ].join("\n");
   const j = await geminiJson(prompt, { maxTokens: 4096, temperature: 0.3 });
-  if (!j || !Array.isArray(j.items)) return 0;
+  const arr = Array.isArray(j) ? j : (j && j.items);
+  if (!Array.isArray(arr)) return 0;
   let n = 0;
-  for (const it of j.items) {
-    const idx = (parseInt(it.i, 10) || 0) - 1;
-    const ko = completeSentences(String(it.ko || "").trim());
+  arr.forEach((it, k) => {
+    const idx = (parseInt(it && it.i, 10) || (k + 1)) - 1;
+    const ko = completeSentences(String((it && it.ko) || "").trim());
     if (idx >= 0 && idx < targets.length && ko.length >= 40) { targets[idx].excerpt = ko; targets[idx].translated = true; n++; }
-  }
+  });
   return n;
 }
 
@@ -463,17 +464,18 @@ async function koreanizeReport(report) {
     block,
   ].join("\n");
   const j = await geminiJson(prompt, { maxTokens: 8192, temperature: 0.3 });
-  if (!j || !Array.isArray(j.items)) return 0;
+  const resArr = Array.isArray(j) ? j : (j && j.items);
+  if (!Array.isArray(resArr)) return 0;
   let n = 0;
-  for (const r of j.items) {
-    const idx = (parseInt(r.i, 10) || 0) - 1;
-    const ko = completeSentences(String(r.ko || "").trim());
-    if (idx < 0 || idx >= items.length || ko.length < 20) continue;
+  resArr.forEach((r, k) => {
+    const idx = (parseInt(r && r.i, 10) || (k + 1)) - 1;
+    const ko = completeSentences(String((r && r.ko) || "").trim());
+    if (idx < 0 || idx >= items.length || ko.length < 20) return;
     const it = items[idx];
     if (it.key === "str") it.arr[it.i] = ko;
     else it.arr[it.i] = { ...it.arr[it.i], [it.key]: ko };
     n++;
-  }
+  });
   return n;
 }
 
@@ -528,6 +530,22 @@ async function researchSources(theme, { maxSources = 12 } = {}) {
 }
 
 /* --------------------------------------------- 2) Gemini 집필 호출 */
+
+/** Gemini 사용 가능 여부 확인(키·모델·네트워크). { ok, reason, detail } */
+async function geminiPing() {
+  const key = GEMINI_KEY();
+  if (!key) return { ok: false, reason: "NO_KEY" };
+  try {
+    const url = `${GEMINI_BASE()}/v1beta/models/${GEMINI_TEXT_MODEL()}:generateContent?key=${encodeURIComponent(key)}`;
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), 15000);
+    const r = await fetch(url, { method: "POST", signal: ctrl.signal, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: "핑" }] }] }) });
+    clearTimeout(to);
+    if (r.ok) return { ok: true };
+    const t = await r.text();
+    return { ok: false, reason: `HTTP ${r.status}`, detail: t.slice(0, 200) };
+  } catch (e) { return { ok: false, reason: e.message }; }
+}
 
 async function geminiJson(prompt, { ms = 90000, maxTokens = 8192, temperature = 0.5 } = {}) {
   const key = GEMINI_KEY();
@@ -673,7 +691,7 @@ async function writeFullReport(theme, sources) {
     let paras = [];
     for (let attempt = 0; attempt < 3 && paras.length === 0; attempt++) {
       const r = await geminiJson(buildSectionPrompt(theme, sources, outline, spec, i, plan.length), { maxTokens: 8192, temperature: 0.5 });
-      paras = normParas(r && r.paragraphs);
+      paras = normParas(r && (r.paragraphs || (Array.isArray(r) ? r : null)));
       if (paras.length === 0) await sleep(600);
     }
     if (paras.length === 0) { console.warn(`[report]  · 절 집필 실패(건너뜀): ${spec.heading}`); continue; }
@@ -907,6 +925,16 @@ async function collectOnce({ force = false } = {}) {
   }
 
   console.log(`[report] 리포트 작성 시작 — ${seq.key} / ${theme.title}`);
+
+  // Gemini 사용 불가 시: 영문·축약 fallback 문서를 발행하지 않고 건너뜀(원인은 로그로 노출)
+  const gp = await geminiPing();
+  if (!gp.ok) {
+    console.error(`[report] ⚠ Gemini 사용 불가 → 발행 건너뜀. 사유: ${gp.reason}${gp.detail ? " / " + gp.detail : ""}`);
+    console.error(`[report]   .env 의 GEMINI_API_KEY 확인, 필요 시 GEMINI_TEXT_MODEL 지정 후 'pm2 restart ucc'`);
+    return { published: false, reason: "gemini-unavailable", detail: gp.reason, dayKey: seq.key, theme: theme.key };
+  }
+  console.log(`[report] Gemini 사용 가능 ✅ (모델 ${GEMINI_TEXT_MODEL()})`);
+
   const sources = await researchSources(theme, { maxSources: 12 });
   console.log(`[report] 관련 자료 ${sources.length}건 수집(관련성 필터 적용)`);
   // 영문 해외 기사 본문 확보 → 심층 분석 근거로 사용
