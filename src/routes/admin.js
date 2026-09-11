@@ -288,6 +288,8 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     const atts = db.prepare("SELECT filename FROM attachments WHERE post_id = ?").all(id);
     db.prepare("DELETE FROM posts WHERE id = ?").run(id); // CASCADE로 attachments 행 삭제
     for (const a of atts) safeUnlink(a.filename);
+    // 관리자 대시보드에서 삭제하면 관리자 페이지로, 공개 게시글 뷰에서 삭제하면 공개 목록으로
+    if (req.body.from === "admin") return res.redirect("/admin?board=" + encodeURIComponent(post.board));
     res.redirect(`/board/${post.board}`);
   });
 

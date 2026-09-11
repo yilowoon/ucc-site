@@ -164,6 +164,7 @@
             <a href="/admin/edit/<%= p.id %>" class="linkbtn">수정</a>
             <form action="/admin/delete/<%= p.id %>" method="post" onsubmit="return confirm('삭제하시겠습니까?');">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <input type="hidden" name="from" value="admin" />
               <button type="submit" class="linkbtn linkbtn-danger">삭제</button>
             </form>
           <% } %>
