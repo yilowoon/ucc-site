@@ -199,17 +199,25 @@ function topReferences(sources, theme, limit = 10) {
  *  [시사점]과 기능 중첩을 피하기 위해 시사점/제언/함의 절은 제외하고 본문·발췌에서 핵심 문장을 뽑는다.
  *  AI(Gemini) 집필 시 보고서 요약+본문, 미설정 시 관련 기사 발췌의 핵심 문장으로 구성. */
 function buildHighlight(report, refs, ai) {
+  const TARGET = 560;   // 약 1분 분량(한글 기준 ~500-700자)
+  const MAX_SENTS = 14; // 문장 수 상한
   const clean = (t) => String(t || "").replace(/\s+/g, " ").trim();
   const stripByline = (t) =>
     clean(t).replace(/^\([^)]*\)\s*/, "").replace(/^[가-힣]{2,5}\s*(기자|특파원|논설위원)\s*[=·]\s*/, "");
-  const firstSent = (t) => {
+  // 텍스트에서 앞쪽 최대 maxN개의 온전한 문장을 뽑는다
+  const sentencesOf = (t, maxN) => {
     const s = stripByline(t);
-    if (s.length < 20) return "";
-    const m = s.match(/^[\s\S]{20,150}?[.!?。](?=\s|$)/);
-    return (m ? m[0] : s.slice(0, 140)).trim();
+    if (s.length < 20) return [];
+    const out = [];
+    const re = /[\s\S]{15,180}?[.!?。](?=\s|$)/g;
+    let m;
+    while ((m = re.exec(s)) && out.length < maxN) out.push(m[0].trim());
+    if (!out.length) out.push(s.slice(0, 160).trim());
+    return out;
   };
   const focus = clean(report.subtitle || report.title);
   const sents = [];
+  const curLen = () => sents.join(" ").length;
   const push = (raw) => {
     let s = clean(raw);
     if (s.length < 15) return;
@@ -218,28 +226,31 @@ function buildHighlight(report, refs, ai) {
     if (sents.some((x) => x.slice(0, 16) === key)) return; // 중복 문장 제거
     sents.push(s);
   };
+  const enough = () => curLen() >= TARGET || sents.length >= MAX_SENTS;
 
   // 1) 리드 문장
   if (ai && clean(report.summary).length >= 30 && !/자동 다이제스트/.test(report.summary)) push(report.summary);
   else push(`이번 호는 ${focus} 관련 동향과 사례 ${(refs || []).length}건을 정리했습니다.`);
 
-  // 2) 내용 문장 — 시사점/제언 절은 제외(중첩 방지)
+  // 2) 내용 문장 — 시사점/제언 절은 제외(중첩 방지). 소스당 2~3문장씩 뽑아 목표 분량까지 채운다.
   if (ai) {
     for (const sec of report.sections || []) {
       if (/시사점|제언|함의|참고자료/.test(sec.heading || "")) continue;
       for (const p of sec.paragraphs || []) {
+        if (enough()) break;
         const t = typeof p === "string" ? p : (p && (p.lead || p.text || p.h3 || p.bullet)) || "";
-        const s = firstSent(t);
-        if (s) push(s);
-        if (sents.length >= 5) break;
+        for (const s of sentencesOf(t, 3)) { push(s); if (enough()) break; }
       }
-      if (sents.length >= 5) break;
+      if (enough()) break;
     }
   } else {
-    for (const r of refs || []) {
-      const s = firstSent(r.excerpt || "");
-      if (s) push(s);
-      if (sents.length >= 5) break;
+    // 1차: 소스당 2문장으로 폭넓게, 부족하면 2차에서 3문장까지 더 채운다
+    for (const pass of [2, 3]) {
+      for (const r of refs || []) {
+        if (enough()) break;
+        for (const s of sentencesOf(r.excerpt || "", pass)) { push(s); if (enough()) break; }
+      }
+      if (enough()) break;
     }
   }
 
@@ -253,7 +264,7 @@ function buildHighlight(report, refs, ai) {
   }
 
   let out = sents.join(" ");
-  return out.length > 1200 ? out.slice(0, 1199).trim() + "…" : out;
+  return out.length > 1400 ? out.slice(0, 1399).trim() + "…" : out;
 }
 
 /** 요약 발췌(원문 전문 방지) — LLM 근거용이라 넉넉히, 단 전문 저장은 피한다 */
