@@ -97,11 +97,37 @@ const CORE_KEYWORDS = [
   "임팩트투자", "임팩트금융", "공동체경제", "커뮤니티 자산",
 ];
 
-/** 기사(제목+발췌)가 주제와 관련 있는지: 공통 또는 주제 키워드 포함 여부 */
+// 해외 신호 키워드 — 이 소식지는 '해외 전용'이라, 국내 기사 배제를 위해 아래 중 하나가 반드시 있어야 채택.
+const OVERSEAS_KEYWORDS = [
+  "해외", "국제", "글로벌", "세계", "외신", "각국",
+  "유럽", "유럽연합", "eu", "미국", "영국", "프랑스", "독일", "이탈리아", "스페인", "네덜란드", "벨기에",
+  "스위스", "스웨덴", "덴마크", "노르웨이", "핀란드", "오스트리아", "포르투갈", "아일랜드", "스코틀랜드",
+  "캐나다", "퀘벡", "일본", "대만", "중국", "인도", "호주", "뉴질랜드", "브라질", "아르헨티나", "멕시코",
+  "oecd", "ilo", "un", "유엔", "세계은행", "몬드라곤", "mondragon",
+  // 영문 소스 대응
+  "cooperative", "co-op", "social economy", "solidarity economy", "social enterprise", "europe", "global",
+];
+
+// 국내 소식지가 아님을 확실히 하기 위한 국내(한국) 전용 표지 — 해외 신호가 전혀 없을 때 배제 강화용.
+const DOMESTIC_MARKERS = [
+  "국내", "우리나라", "국회", "청와대", "대통령실", "행정안전부", "기획재정부", "보건복지부",
+  "서울시", "부산시", "대구시", "인천시", "광주시", "대전시", "울산시", "세종시", "경기도", "충청", "전라", "경상", "강원", "제주",
+  "시의회", "도의회", "구청", "시청", "도청",
+];
+
+/** 기사가 (1) 주제 관련성 + (2) 해외 소식 여부를 모두 만족하는지.
+ *  국내 소식은 완전히 배제한다: 해외 신호가 없으면(그리고 국내 표지가 있으면) 제외. */
 function isRelevant(item, theme) {
   const hay = ((item.title || "") + " " + (item.excerpt || item.summary || "")).toLowerCase();
-  const kws = CORE_KEYWORDS.concat(theme.match || []);
-  return kws.some((k) => hay.includes(String(k).toLowerCase()));
+  const topic = CORE_KEYWORDS.concat(theme.match || []).some((k) => hay.includes(String(k).toLowerCase()));
+  if (!topic) return false;
+  const overseas = OVERSEAS_KEYWORDS.some((k) => hay.includes(String(k).toLowerCase()));
+  if (!overseas) return false;                 // 해외 신호 없으면 배제(국내 기사 차단)
+  const domestic = DOMESTIC_MARKERS.some((k) => hay.includes(String(k).toLowerCase()));
+  const overseasHits = OVERSEAS_KEYWORDS.filter((k) => hay.includes(String(k).toLowerCase())).length;
+  // 국내 표지가 있으면서 해외 신호가 약하면(1개뿐) 국내 기사로 보고 배제
+  if (domestic && overseasHits < 2) return false;
+  return true;
 }
 
 const insertPost = db.prepare(
@@ -289,36 +315,79 @@ function safeFileName(s) {
 
 /* --------------------------------------------------- 1) 자료 리서치 */
 
-async function researchSources(theme, { maxSources = 8 } = {}) {
+// 주제별 영문 검색어 — 해외(영자) 뉴스 확보용(Google 뉴스 영문판)
+const QUERIES_EN = {
+  "sse-policy": ["social solidarity economy policy", "EU social economy action plan", "social enterprise law Europe"],
+  "coops": ["worker cooperative local economy", "platform cooperative", "cooperative movement community"],
+  "community": ["community wealth building", "community land trust", "community ownership economy"],
+  "energy": ["energy cooperative community", "citizen renewable energy community", "community solar cooperative"],
+  "care": ["social cooperative care", "community care cooperative", "care economy social enterprise"],
+  "finance": ["solidarity finance", "social impact investment community", "community development finance"],
+};
+
+/** 영문 Google 뉴스(해외 소스) 검색 — 제목·매체·링크(본문 없음) */
+async function fromGoogleIntl(keyword) {
+  const url = "https://news.google.com/rss/search?q=" + encodeURIComponent(keyword) + "&hl=en-US&gl=US&ceid=US:en";
+  try {
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), 10000);
+    const r = await fetch(url, { signal: ctrl.signal, headers: { "User-Agent": "Mozilla/5.0" } });
+    clearTimeout(to);
+    const text = await r.text();
+    const strip = (s) => String(s || "").replace(/<[^>]*>/g, "")
+      .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#39;/g, "'").replace(/&quot;/g, '"').trim();
+    const out = [];
+    for (const it of text.split("<item>").slice(1, 6)) {
+      const g = (re) => { const m = it.match(re); return m ? m[1] : ""; };
+      let title = strip(g(/<title>([\s\S]*?)<\/title>/));
+      const source = strip(g(/<source[^>]*>([\s\S]*?)<\/source>/));
+      const link = strip(g(/<link>([\s\S]*?)<\/link>/));
+      const pub = g(/<pubDate>([\s\S]*?)<\/pubDate>/);
+      if (source && title.endsWith(" - " + source)) title = title.slice(0, -(source.length + 3)).trim();
+      if (!title || !link) continue;
+      out.push({ title, summary: "", source, url: link, guid: (link.split("/articles/")[1] || link).split("?")[0], published_at: pub ? new Date(pub).toISOString() : "" });
+    }
+    return out;
+  } catch (e) { return []; }
+}
+
+async function researchSources(theme, { maxSources = 12 } = {}) {
   const seen = new Set();
   const sources = [];
-  for (const q of theme.queries) {
+  const addCand = (it, intl) => {
+    if (sources.length >= maxSources) return;
+    if (!it.title || !it.url) return;
+    const key = (it.guid || it.url).split("?")[0];
+    if (seen.has(key)) return;
+    const cand = {
+      title: String(it.title).replace(/\s+/g, " ").trim(),
+      source: it.source || "",
+      url: it.url,
+      date: fmtKst(it.published_at),
+      excerpt: buildExcerpt(it),
+      intl: !!intl,
+    };
+    // 국문 소스는 관련성+해외 필터 적용(국내 배제). 영문 소스는 해외 쿼리로 확보한 것이라 그대로 채택.
+    if (!intl && !isRelevant(cand, theme)) return;
+    seen.add(key);
+    sources.push(cand);
+  };
+
+  // 1) 국문 해외 보도(본문 있음 — 심층 집필 근거)
+  for (const q of theme.queries || []) {
     if (sources.length >= maxSources) break;
     let items = [];
-    try {
-      items = await fromDaum(q);
-      if (!items || !items.length) items = await fromGoogle(q);
-    } catch (e) {
-      console.error("[report] 리서치 실패:", q, e.message);
-      continue;
-    }
-    for (const it of items || []) {
-      if (sources.length >= maxSources) break;
-      if (!it.title || !it.url) continue;
-      const key = (it.guid || it.url).split("?")[0];
-      if (seen.has(key)) continue;
-      seen.add(key);
-      const cand = {
-        title: String(it.title).replace(/\s+/g, " ").trim(),
-        source: it.source || "",
-        url: it.url,
-        date: fmtKst(it.published_at),
-        excerpt: buildExcerpt(it),
-      };
-      // 관련성 필터: 주제와 무관한 정치·정부일정·인기뉴스 유입 차단
-      if (!isRelevant(cand, theme)) continue;
-      sources.push(cand);
-    }
+    try { items = await fromDaum(q); if (!items || !items.length) items = await fromGoogle(q); }
+    catch (e) { console.error("[report] 리서치 실패:", q, e.message); continue; }
+    for (const it of items || []) addCand(it, false);
+    await sleep(300);
+  }
+  // 2) 영문 해외 뉴스(제목·매체 — 해외 사례 확장/추가 검토용)
+  for (const q of QUERIES_EN[theme.key] || []) {
+    if (sources.length >= maxSources) break;
+    let items = [];
+    try { items = await fromGoogleIntl(q); } catch (e) { continue; }
+    for (const it of items || []) addCand(it, true);
     await sleep(300);
   }
   return sources;
@@ -369,6 +438,8 @@ const PERSONA_PROMPT =
 
 const RULES = [
   "엄격한 원칙:",
+  "- ★이 보고서는 '해외 소식' 전용입니다. 반드시 해외(외국) 사례·제도·동향만 다루세요. 한국 국내의 사례·정책·통계·기관·지자체를 본문 주제로 삼지 마세요. (해외 사례의 함의를 설명하며 한국을 '비교 참조'로 1~2문장 언급하는 것만 허용)",
+  "- ★작성 언어는 한국어입니다. 출처가 영문 기사여도 한국어로 서술하고, 고유명사는 '한글(원어)' 형태로 병기합니다(예: 몬드라곤(Mondragon)).",
   "- 제공된 [출처] 자료에 실제로 있는 사실만 사용합니다. 출처에 없는 수치·인명·기관명·연도·인과관계를 지어내지 마세요.",
   "- 분량을 채우려고 원문에 없는 원인이나 결과를 만들지 마세요. 근거가 없으면 해당 문장을 비웁니다(빈 문자열).",
   "- '때문이다'는 원인이 출처에서 확인될 때만, '이어졌다'는 결과가 확인될 때만 씁니다. 불확실하면 '~로 알려졌다/평가된다'로 신중히.",
@@ -405,22 +476,21 @@ function buildOutlinePrompt(theme, sources) {
 function sectionPlan(outline) {
   const cases = Array.isArray(outline.cases) ? outline.cases.slice(0, 4) : [];
   const plan = [
-    { heading: "1. 개요", brief: "보고서 전체의 핵심 논지·문제의식과 결론의 요지를 제시. 왜 지금 이 주제가 중요한지(무슨 일이 있었나→왜 중요한가)를 설득력 있게." },
-    { heading: "2. 문제의식과 구조적 배경", brief: "저성장·양극화·인구감소·돌봄공백 등 구조적 맥락에서 이 주제가 부상하는 배경을 이론적·실증적으로 심층 분석(왜 지금 일어나는가)." },
-    { heading: "3. 국제 담론과 정책 동향", brief: "UN·ILO·OECD·EU 등 국제사회의 의제화와 각국 정부 정책 흐름을, 검증된 사실 위주로 정리(어떤 논의가 어떻게 전개돼 왔는가)." },
+    { heading: "1. 개요", brief: "보고서 전체의 핵심 논지와 결론의 요지를 제시. 이번 호가 다루는 해외 동향이 무엇이고 왜 중요한지 설득력 있게(국내 사례는 다루지 않음)." },
+    { heading: "2. 국제적 배경과 문제의식", brief: "해외에서 이 주제가 부상하는 구조적 배경(저성장·양극화·인구감소·돌봄공백 등)을 국제적 맥락에서 심층 분석(왜 지금 일어나는가). 한국 사례는 넣지 않는다." },
+    { heading: "3. 국제 담론과 정책 동향", brief: "UN·ILO·OECD·EU 등 국제사회의 의제화와 각국(외국) 정부 정책 흐름을 검증된 사실 위주로 정리(어떤 논의가 어떻게 전개돼 왔는가)." },
   ];
   cases.forEach((c, i) => {
     plan.push({
       heading: `${4 + i}. 해외 사례 | ${c.country || "해외"} — ${c.name || "사례"}`,
-      brief: `${c.country || ""}의 '${c.name || "사례"}'를 ①역사적 배경 ②제도·거버넌스 구조 ③실제 작동 방식과 재원 ④성과와 한계 ⑤한국에의 함의 순으로 매우 구체적으로. 특히 조명할 점: ${c.angle || "지역경제·공동체에 준 효과"}.`,
+      brief: `${c.country || ""}의 '${c.name || "사례"}'를 ①역사적 배경 ②제도·거버넌스 구조 ③실제 작동 방식과 재원 ④성과와 한계 ⑤국제적 함의 순으로 매우 구체적으로. 특히 조명할 점: ${c.angle || "지역경제·공동체에 준 효과"}.`,
       isCase: true,
     });
   });
   const base = 4 + cases.length;
-  plan.push({ heading: `${base}. 국내 현황과 국제 비교`, brief: "한국의 현황·제도·규모를 앞의 해외 사례와 비교해 강점과 격차를 분석(무엇이 같고 다른가)." });
-  plan.push({ heading: `${base + 1}. 시사점과 정책 제언`, brief: "제도·금융(연대금융)·중간지원·인력양성 등 층위별로 구체적·실행가능한 제언(무엇을 해야 하나). 근거 있는 해석만." });
-  plan.push({ heading: `${base + 2}. 도시공동체본부의 전략적 방향`, brief: "본부의 햇빛소득마을(주민참여 재생에너지)·커뮤니티 사업과 연결한 실천 전략을 단계적으로 제안." });
-  plan.push({ heading: `${base + 3}. 결론`, brief: "핵심 논지를 응축하고, 확정된 후속 과제와 향후 관전점(무엇을 확인해야 하나)을 제시." });
+  plan.push({ heading: `${base}. 해외 사례 비교와 공통 패턴`, brief: "앞서 다룬 해외 사례들을 서로 비교해 공통 성공요인·차이·한계를 도출(무엇이 같고 다른가). 국가 간 비교이며 한국은 포함하지 않는다." });
+  plan.push({ heading: `${base + 1}. 시사점과 함의`, brief: "해외 사례들이 주는 교훈과 함의를 제도·금융(연대금융)·중간지원·인력양성 등 층위별로 정리(무엇을 배울 수 있나). 근거 있는 해석만. 한국 적용은 '참조' 수준의 한두 문장까지만." });
+  plan.push({ heading: `${base + 2}. 결론과 향후 관전점`, brief: "핵심 논지를 응축하고, 해외에서 확정된 후속 과제와 앞으로 지켜볼 관전점(무엇을 확인해야 하나)을 제시." });
   return plan;
 }
 
