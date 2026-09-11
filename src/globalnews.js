@@ -135,6 +135,82 @@ function isoWeek(date) {
   return { year: dt.getUTCFullYear(), week, key: `${dt.getUTCFullYear()}-W${String(week).padStart(2, "0")}` };
 }
 
+/** 일자 시퀀스 키 { year, dayOfYear, key: 'YYYY-Dddd' } (KST 기준, 연중 일수) */
+function daySeq(date) {
+  const base = date ? new Date(date) : new Date();
+  const k = new Date(base.getTime() + 9 * 3600 * 1000); // KST
+  const year = k.getUTCFullYear();
+  const start = Date.UTC(year, 0, 1);
+  const dayOfYear = Math.floor((Date.UTC(year, k.getUTCMonth(), k.getUTCDate()) - start) / 86400000) + 1;
+  return { year, dayOfYear, key: `${year}-D${String(dayOfYear).padStart(3, "0")}` };
+}
+
+/** ISO 시각 → 'YYYY.MM.DD.' (KST, 공백 없음) */
+function fmtDot(iso) {
+  const d = iso ? new Date(iso) : new Date();
+  if (isNaN(d)) return "";
+  const k = new Date(d.getTime() + 9 * 3600 * 1000);
+  return `${k.getUTCFullYear()}.${String(k.getUTCMonth() + 1).padStart(2, "0")}.${String(k.getUTCDate()).padStart(2, "0")}.`;
+}
+
+/** [오늘의 명언] — 공동체·연대·시민·변화 주제의 검증된 격언 풀(출처 확실한 것만; 조작 방지) */
+const QUOTES = [
+  { text: "빨리 가려면 혼자 가고, 멀리 가려면 함께 가라.", author: "아프리카 속담" },
+  { text: "한 아이를 키우는 데 온 마을이 필요하다.", author: "아프리카 속담" },
+  { text: "홀로 할 수 있는 일은 적지만, 함께라면 많은 일을 할 수 있다.", author: "헬렌 켈러" },
+  { text: "사려 깊고 헌신적인 시민들의 작은 모임이 세상을 바꿀 수 있음을 결코 의심하지 말라.", author: "마거릿 미드" },
+  { text: "우리가 세상에서 보고 싶은 변화, 우리 스스로가 그 변화가 되어야 한다.", author: "마하트마 간디" },
+  { text: "혼자면 빠르지만, 함께면 멀리 그리고 오래간다.", author: "협동조합 격언" },
+  { text: "무엇이든 나눌수록 커지는 것이 있다. 지식과 공동체가 그렇다.", author: "동서양 격언" },
+];
+function pickQuote(dayOfYear) {
+  return QUOTES[((dayOfYear || 1) - 1) % QUOTES.length];
+}
+
+/** [참고자료] — 유사·중복 기사 제거 후 관련성 높은 상위 N건만 선별 */
+function topReferences(sources, theme, limit = 10) {
+  const norm = (t) => String(t || "").toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+  const seen = [];
+  const uniq = [];
+  for (const s of sources || []) {
+    const n = norm(s.title);
+    if (!n) continue;
+    const dup = seen.some((x) => x === n || (x.length >= 12 && n.length >= 12 && (x.includes(n) || n.includes(x))));
+    if (dup) continue;
+    seen.push(n);
+    uniq.push(s);
+  }
+  const kws = CORE_KEYWORDS.concat((theme && theme.match) || []);
+  const score = (s) => {
+    const title = String(s.title || "").toLowerCase();
+    const hay = (title + " " + String(s.excerpt || "")).toLowerCase();
+    let sc = 0;
+    for (const k of kws) { const kk = String(k).toLowerCase(); if (hay.includes(kk)) sc += 1; if (title.includes(kk)) sc += 2; }
+    return sc;
+  };
+  return uniq
+    .map((s, i) => ({ s, sc: score(s), i }))
+    .sort((a, b) => b.sc - a.sc || a.i - b.i)
+    .slice(0, limit)
+    .map((x) => x.s);
+}
+
+/** [주요내용] — "이번 호는 …" 으로 시작하는 정돈된 요약(AI면 보고서 요약, 아니면 중복 제거된 제목 기반) */
+function buildHighlight(report, refs, ai) {
+  const clean = (t) => String(t || "").replace(/\s+/g, " ").trim();
+  let body;
+  if (ai) {
+    body = clean(buildContentSummary(report, String(report.subtitle || ""))) || clean(report.summary);
+  } else {
+    const titles = (refs || []).slice(0, 6).map((s) => clean(s.title)).filter(Boolean);
+    body = `${clean(report.subtitle || report.title)} 관련 동향과 사례 ${(refs || []).length}건을 모았습니다`;
+    if (titles.length) body += ` — ${titles.join(" · ")}`;
+    body += ".";
+  }
+  if (!/^이번\s*호/.test(body)) body = "이번 호는 " + body;
+  return body.length > 900 ? body.slice(0, 899).trim() + "…" : body;
+}
+
 /** 요약 발췌(원문 전문 방지) — LLM 근거용이라 넉넉히, 단 전문 저장은 피한다 */
 function buildExcerpt(item, maxChars = 1000) {
   const raw = String(item.content || item.summary || "").replace(/\s+/g, " ").trim();
@@ -393,19 +469,19 @@ function referencesSection(sources) {
   return { heading: "참고자료", paragraphs: paras };
 }
 
-function makeReportDocx(report, sources, weekKey) {
+function makeReportDocx(report, refs, dayKey) {
   const sections = (report.sections || []).map((s) => ({
     heading: String(s.heading || "").trim(),
     paragraphs: normParas(s.paragraphs),
   }));
-  sections.push(referencesSection(sources));
+  sections.push(referencesSection(refs));
 
   return buildDocx({
     title: report.title || "사회연대경제 이슈리포트",
     subtitle: report.subtitle || "",
     publisher: AUTHOR,
     date: fmtKst(new Date().toISOString()),
-    meta: [`${PERSONA}  ·  주간 이슈 브리프`, `발행  ${AUTHOR}  ·  ${weekKey}`],
+    meta: [`${PERSONA}  ·  주간 이슈 브리프`, `발행  ${AUTHOR}  ·  ${dayKey}`],
     sections,
     colophon: COLOPHON,
   });
@@ -469,78 +545,70 @@ function buildContentSummary(report, subtitle) {
   return out;
 }
 
-/** [주요내용] fallback(비-AI) — 원문 덤프 대신, 관련 기사 제목 기반의 깔끔한 다이제스트 */
-function buildFallbackDigest(sources, subtitle, summary) {
-  const clean = (t) => String(t || "").replace(/\s+/g, " ").trim();
-  const lead = clean(subtitle) || clean(summary);
-  const titles = (sources || []).slice(0, 6).map((s) => clean(s.title)).filter(Boolean);
-  let out = lead ? lead + ". " : "";
-  out += `이번 호는 주제와 관련된 해외·국내 동향과 사례 ${sources.length}건을 모아 핵심 흐름과 시사점을 정리했습니다`;
-  if (titles.length) out += ` — 주요 다룸: ${titles.join(" · ")}`;
-  out += ".";
-  return out.length > 800 ? out.slice(0, 799).trim() + "…" : out;
-}
-
-/** 게시글 본문 — 순수 텍스트. 참고자료 URL 은 뷰에서 새 창 링크로 렌더된다. */
-function makePostBody(report, sources, weekKey, ai) {
+/** 게시글 본문 — 순수 텍스트. 참고자료 URL 은 뷰에서 새 창 링크로 렌더된다.
+ *  refs: [참고자료]에 넣을 상위 10건(중복 제거·랭킹 완료), dayKey: 'YYYY-Dddd' */
+function makePostBody(report, sources, refs, dayKey, ai) {
   const lines = [];
-  const dateStr = fmtKst(new Date().toISOString());
-  const subtitle = String(report.subtitle || report.summary || "").trim();
+  const dateDot = fmtDot(new Date().toISOString());
+  const seq = daySeq(new Date());
 
-  // 0) 머리글 — 부제(첫머리글) + 발간 정보
-  if (subtitle) lines.push(subtitle, "");
-  lines.push(`발행  ${AUTHOR}     발행일  ${dateStr}`);
-  lines.push(`${PERSONA}  ·  주간 이슈 브리프`);
-  lines.push(`발행번호  ·  ${weekKey}`);
+  // 0) 머리글
+  lines.push(`발행:${AUTHOR}`);
+  lines.push(`발행일 ${dateDot}`);
+  lines.push(`지구촌소식 · 주간 이슈 브리프`);
+  lines.push(`발행번호 : ${dayKey}`);
   lines.push("");
 
-  // 1) 주요내용 — AI 집필이면 보고서 요약, 아니면 제목 기반 다이제스트(원문 덤프 방지)
-  const content = ai ? buildContentSummary(report, subtitle) : buildFallbackDigest(sources, subtitle, report.summary);
+  // 1) 주요내용 — "이번 호는 …" 정돈된 요약(중복 문구 정리)
   lines.push("[주요내용]");
-  lines.push(content || subtitle || "자세한 내용은 첨부된 보고서를 확인해 주세요.");
+  lines.push(buildHighlight(report, refs, ai));
   lines.push("");
 
   // 2) 시사점
   const imps = extractImplications(report);
-  if (imps.length) {
-    lines.push("[시사점]");
-    imps.forEach((t) => lines.push(`- ${t}`));
-    lines.push("");
-  }
-
-  // 3) 참고자료 (URL 은 그대로 두면 뷰가 새 창 링크로 만든다)
-  if (sources.length) {
-    lines.push("[참고자료]");
-    sources.forEach((s, i) => {
-      lines.push(`${i + 1}. ${s.title} — ${s.source || "미상"}`);
-      if (s.url) lines.push(`   ${s.url}`);
-    });
-    lines.push("");
-  }
-
-  // 4) 전체 보고서 안내 + 고지
-  lines.push("[전체 보고서]");
-  lines.push("해외사례를 심층 소개한 전체 보고서(A4)는 아래 첨부(docx)로 내려받을 수 있습니다.");
+  lines.push("[시사점]");
+  if (imps.length) imps.forEach((t) => lines.push(`- ${t}`));
+  else lines.push("- 자세한 내용은 첨부된 보고서를 확인해 주세요.");
   lines.push("");
-  lines.push(`※ 본 자료는 도시공동체본부가 공개자료를 바탕으로 주간 정리한 '${PERSONA}'입니다(${weekKey}). 인용 원문의 저작권은 각 매체에 있습니다.`);
+
+  // 3) 참고자료 — 유사·중복 제거 후 임팩트 있는 10대 뉴스만 (URL은 뷰가 새 창 링크로 렌더)
+  lines.push("[참고자료]");
+  (refs || []).forEach((s, i) => {
+    lines.push(`${i + 1}. ${s.title} — ${s.source || "미상"}`);
+    if (s.url) lines.push(`   ${s.url}`);
+  });
+  lines.push("");
+
+  // 4) 오늘의 명언 — 주제(공동체·연대) 관련 검증된 격언
+  const q = pickQuote(seq.dayOfYear);
+  lines.push("[오늘의 명언]");
+  lines.push(`- ${q.text} -`);
+  lines.push(`- by ${q.author}`);
+  lines.push("");
+
+  // 5) 고지
+  lines.push(`※ 본 자료는 도시공동체본부가 공개자료를 바탕으로 주간 정리한 '${PERSONA}'입니다(${dayKey}). 인용 원문의 저작권은 각 매체에 있습니다.`);
   return lines.join("\n");
 }
 
 /* --------------------------------------------- 4) 발행(글+첨부) */
 
-function publishReport(report, sources, weekKey, themeKey, ai) {
-  const guid = `report:${weekKey}:${themeKey}`;
+function publishReport(report, sources, dayKey, theme, ai) {
+  const guid = `report:${dayKey}:${theme.key}`;
   const title = `[리포트] ${String(report.title || "사회연대경제 이슈리포트").replace(/\s+/g, " ").trim()}`.slice(0, 200);
   const now = new Date().toISOString();
 
-  const res = insertPost.run(BOARD, title, makePostBody(report, sources, weekKey, ai), AUTHOR, now, now, guid);
+  // [참고자료]·docx 모두 유사·중복 제거 후 임팩트 상위 10건만 사용
+  const refs = topReferences(sources, theme, 10);
+
+  const res = insertPost.run(BOARD, title, makePostBody(report, sources, refs, dayKey, ai), AUTHOR, now, now, guid);
   const postId = Number(res.lastInsertRowid);
 
   try {
-    const buf = makeReportDocx(report, sources, weekKey);
+    const buf = makeReportDocx(report, refs, dayKey);
     const stored = crypto.randomBytes(12).toString("hex") + ".docx";
     fs.writeFileSync(path.join(UPLOAD_DIR, stored), buf);
-    const original = safeFileName(`${report.title || "사회연대경제 이슈리포트"} (${weekKey})`) + ".docx";
+    const original = safeFileName(`${report.title || "사회연대경제 이슈리포트"} (${dayKey})`) + ".docx";
     insertAttach.run(postId, stored, original, DOCX_MIME, buf.length);
     return { postId, title, attached: true };
   } catch (e) {
@@ -552,36 +620,36 @@ function publishReport(report, sources, weekKey, themeKey, ai) {
 /* -------------------------------------------------- 1회 발행 실행 */
 
 /**
- * 이번 주 리포트를 만든다. 주차별로 주제를 로테이션하며, 같은 주차·주제 글이
- * 이미 있으면(수동/자동 중복 실행) 건너뛴다.
- * force:true 면 주차 중복이어도 새 주제로 강제 발행(관리자 '지금 발행'용).
+ * 오늘자 리포트를 만든다(일일 발행). 날짜(연중 일수)로 주제를 로테이션하며,
+ * 같은 날·주제 글이 이미 있으면(수동/자동 중복 실행) 건너뛴다.
+ * force:true 면 오늘 이미 발행돼도 다음 주제로 강제 발행(관리자 '지금 발행'용).
  */
 async function collectOnce({ force = false } = {}) {
-  const wk = isoWeek(new Date());
-  let idx = (wk.week - 1) % THEMES.length;
+  const seq = daySeq(new Date());
+  let idx = (seq.dayOfYear - 1) % THEMES.length;
   if (force) {
-    // 이미 이번 주 주제가 있으면 다음 주제로 밀어 새 리포트를 만든다
+    // 오늘 이미 발행된 주제가 있으면 다음 주제로 밀어 새 리포트를 만든다
     for (let n = 0; n < THEMES.length; n++) {
       const t = THEMES[(idx + n) % THEMES.length];
-      if (!existsGuid.get(`report:${wk.key}:${t.key}`)) { idx = (idx + n) % THEMES.length; break; }
+      if (!existsGuid.get(`report:${seq.key}:${t.key}`)) { idx = (idx + n) % THEMES.length; break; }
     }
   }
   const theme = THEMES[idx];
-  const guid = `report:${wk.key}:${theme.key}`;
+  const guid = `report:${seq.key}:${theme.key}`;
 
   if (!force && existsGuid.get(guid)) {
-    console.log(`[report] 이번 주 리포트 이미 발행됨: ${guid}`);
-    return { published: false, reason: "exists", weekKey: wk.key, theme: theme.key };
+    console.log(`[report] 오늘자 리포트 이미 발행됨: ${guid}`);
+    return { published: false, reason: "exists", dayKey: seq.key, theme: theme.key };
   }
 
-  console.log(`[report] 리포트 작성 시작 — ${wk.key} / ${theme.title}`);
+  console.log(`[report] 리포트 작성 시작 — ${seq.key} / ${theme.title}`);
   const sources = await researchSources(theme, { maxSources: 12 });
   console.log(`[report] 관련 자료 ${sources.length}건 수집(관련성 필터 적용)`);
 
-  // 주제와 관련된 소스가 하나도 없으면 저품질 발행을 막기 위해 이번 회차는 건너뜀
+  // 주제와 관련된 소스가 하나도 없으면 저품질 발행을 막기 위해 오늘 회차는 건너뜀
   if (!sources.length) {
-    console.warn(`[report] 관련 자료 0건 → 발행 건너뜀 (${wk.key} / ${theme.title})`);
-    return { published: false, reason: "no-relevant-sources", weekKey: wk.key, theme: theme.key };
+    console.warn(`[report] 관련 자료 0건 → 발행 건너뜀 (${seq.key} / ${theme.title})`);
+    return { published: false, reason: "no-relevant-sources", dayKey: seq.key, theme: theme.key };
   }
 
   let ai = true;
@@ -592,65 +660,60 @@ async function collectOnce({ force = false } = {}) {
     ai = false;
   }
 
-  const out = publishReport(report, sources, wk.key, theme.key, ai);
+  const out = publishReport(report, sources, seq.key, theme, ai);
   console.log(`[report] 발행 완료 — post ${out.postId} (${ai ? "AI집필" : "다이제스트"}, 첨부 ${out.attached})`);
-  return { published: true, ai, weekKey: wk.key, theme: theme.key, ...out };
+  return { published: true, ai, dayKey: seq.key, theme: theme.key, ...out };
 }
 
-/* ------------------- 스케줄러: 매주 월요일 07:00 (서버 시간) ------- */
+/* ------------------- 스케줄러: 매일 07:00 (서버 시간) ------- */
 
-function msUntilWeekly(weekday, hour, minute) {
+function msUntilDaily(hour, minute) {
   const now = new Date();
   const t = new Date(now);
   t.setHours(hour, minute, 0, 0);
-  let add = (weekday - now.getDay() + 7) % 7;
-  if (add === 0 && t <= now) add = 7;
-  t.setDate(t.getDate() + add);
+  if (t <= now) t.setDate(t.getDate() + 1); // 오늘 시각이 지났으면 내일
   return t.getTime() - now.getTime();
 }
 
-// 이번 주 월요일 hour:minute 시각(서버 로컬)
-function thisWeekMonday(hour, minute) {
+// 오늘 hour:minute 시각(서버 로컬)
+function todayAt(hour, minute) {
   const t = new Date();
   t.setHours(hour, minute, 0, 0);
-  const day = t.getDay();            // 0=일 … 6=토
-  const back = day === 0 ? 6 : day - 1; // 이번 주 월요일까지 되돌릴 일수
-  t.setDate(t.getDate() - back);
   return t;
 }
 
 function startScheduler() {
-  const WD = 1, H = 7, M = 0; // 월요일 07:00
+  const H = 7, M = 0; // 매일 07:00
   let running = false; // 정시/캐치업 동시 실행 방지
 
   const publishIfDue = async (reason) => {
     if (running) return;
     running = true;
     try {
-      const r = await collectOnce();               // 주 단위 멱등: 이미 발행됐으면 no-op
-      if (r && r.published) console.log(`[report] 주간 발행 완료 (${reason})`);
+      const r = await collectOnce();               // 일 단위 멱등: 오늘자 이미 발행됐으면 no-op
+      if (r && r.published) console.log(`[report] 일일 발행 완료 (${reason})`);
     } catch (e) {
-      console.error(`[report] 주간 발행 오류 (${reason}):`, e.message);
+      console.error(`[report] 일일 발행 오류 (${reason}):`, e.message);
     } finally { running = false; }
   };
 
-  // 1) 정시 실행: 매주 월요일 07:00
+  // 1) 정시 실행: 매일 07:00
   const run = async () => {
     await publishIfDue("정시");
-    setTimeout(run, msUntilWeekly(WD, H, M));
+    setTimeout(run, msUntilDaily(H, M));
   };
-  setTimeout(run, msUntilWeekly(WD, H, M));
+  setTimeout(run, msUntilDaily(H, M));
 
-  // 2) 안전망: 매시간 점검 — 재시작 등으로 정시를 놓쳤어도, 이번 주 월요일 07:00이 지났는데
-  //    이번 주 리포트가 없으면 즉시 캐치업 발행(멱등이라 중복 없음)
+  // 2) 안전망: 매시간 점검 — 재시작 등으로 정시를 놓쳤어도, 오늘 07:00이 지났는데
+  //    오늘자 리포트가 없으면 즉시 캐치업 발행(멱등이라 중복 없음)
   const safety = () => {
-    if (Date.now() >= thisWeekMonday(H, M).getTime()) publishIfDue("캐치업");
+    if (Date.now() >= todayAt(H, M).getTime()) publishIfDue("캐치업");
   };
   safety();                                  // 시작 즉시 1회(재시작 캐치업)
   setInterval(safety, 60 * 60 * 1000);       // 매시간 재점검
 
-  const next = new Date(Date.now() + msUntilWeekly(WD, H, M));
-  console.log(`[report] 주간 스케줄러 시작 — 정시 발행: ${next.toLocaleString()} · 안전망(매시간 캐치업) 활성`);
+  const next = new Date(Date.now() + msUntilDaily(H, M));
+  console.log(`[report] 일일 스케줄러 시작 — 정시 발행: ${next.toLocaleString()} · 안전망(매시간 캐치업) 활성`);
 }
 
 module.exports = { collectOnce, startScheduler, THEMES, AUTHOR, PERSONA, BOARD };
