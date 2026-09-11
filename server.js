@@ -370,7 +370,7 @@ app.listen(PORT, () => {
   console.log(`  · 데이터    ${DATA_DIR}\n`);
   // 뉴스레터 자동 수집 스케줄러 (매일 08:00 / 18:00) — 수집 실패는 서비스에 영향 없음
   try { require("./src/newsletter").startScheduler(); } catch (e) { console.error("[newsletter] 스케줄러 시작 실패:", e.message); }
-  // 지구촌소식브리프 주간 리포트 자동 발행 (매주 월요일 07:00)
+  // 지구촌소식브리프 일일 리포트 자동 발행 (매일 07:00 KST) + 재시작 캐치업
   try { require("./src/globalnews").startScheduler(); } catch (e) { console.error("[globalnews] 스케줄러 시작 실패:", e.message); }
   // 준회원 정회원전환 안내 메일 (가입 1주일 경과, 회비 미확인) — 매시간 점검
   try { require("./src/member-reminder").startScheduler(); } catch (e) { console.error("[reminder] 스케줄러 시작 실패:", e.message); }

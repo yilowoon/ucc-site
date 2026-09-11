@@ -963,21 +963,25 @@ async function collectOnce({ force = false } = {}) {
   return { published: true, ai, dayKey: seq.key, theme: theme.key, ...out };
 }
 
-/* ------------------- 스케줄러: 매일 07:00 (서버 시간) ------- */
+/* ------------------- 스케줄러: 매일 07:00 (KST 고정, 서버 타임존 무관) ------- */
 
-function msUntilDaily(hour, minute) {
-  const now = new Date();
-  const t = new Date(now);
-  t.setHours(hour, minute, 0, 0);
-  if (t <= now) t.setDate(t.getDate() + 1); // 오늘 시각이 지났으면 내일
-  return t.getTime() - now.getTime();
+// 서버 타임존과 무관하게 항상 KST(UTC+9) 기준으로 계산한다.
+function kstTargetMs(hour, minute) {
+  const kst = new Date(Date.now() + 9 * 3600 * 1000);
+  // 오늘(KST) hour:minute 의 UTC epoch = KST 자정(UTC 표현) - 9h + 시각
+  return Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate(), hour, minute, 0) - 9 * 3600 * 1000;
 }
 
-// 오늘 hour:minute 시각(서버 로컬)
-function todayAt(hour, minute) {
-  const t = new Date();
-  t.setHours(hour, minute, 0, 0);
-  return t;
+function msUntilDaily(hour, minute) {
+  const now = Date.now();
+  let target = kstTargetMs(hour, minute);
+  if (target <= now) target += 86400000; // 오늘(KST) 시각이 지났으면 내일
+  return target - now;
+}
+
+// 오늘 KST hour:minute 이 지났는가
+function kstPassedToday(hour, minute) {
+  return Date.now() >= kstTargetMs(hour, minute);
 }
 
 function startScheduler() {
@@ -1005,13 +1009,13 @@ function startScheduler() {
   // 2) 안전망: 매시간 점검 — 재시작 등으로 정시를 놓쳤어도, 오늘 07:00이 지났는데
   //    오늘자 리포트가 없으면 즉시 캐치업 발행(멱등이라 중복 없음)
   const safety = () => {
-    if (Date.now() >= todayAt(H, M).getTime()) publishIfDue("캐치업");
+    if (kstPassedToday(H, M)) publishIfDue("캐치업");
   };
   safety();                                  // 시작 즉시 1회(재시작 캐치업)
   setInterval(safety, 60 * 60 * 1000);       // 매시간 재점검
 
-  const next = new Date(Date.now() + msUntilDaily(H, M));
-  console.log(`[report] 일일 스케줄러 시작 — 정시 발행: ${next.toLocaleString()} · 안전망(매시간 캐치업) 활성`);
+  const nextKst = new Date(Date.now() + msUntilDaily(H, M) + 9 * 3600 * 1000);
+  console.log(`[report] 일일 스케줄러 시작 — 다음 정시 발행(KST): ${nextKst.toISOString().replace("T", " ").slice(0, 16)} · 안전망(매시간 캐치업) 활성`);
 }
 
 module.exports = { collectOnce, startScheduler, THEMES, AUTHOR, PERSONA, BOARD };
