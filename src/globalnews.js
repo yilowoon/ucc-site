@@ -765,41 +765,6 @@ function extractImplications(report, max = 5) {
   return out;
 }
 
-/** [주요내용] — docx 보고서 본문을 요약해 표기한다.
- *  요약(summary)을 기본으로 하되, 얇으면 각 절의 첫 핵심 문장으로 보강한다. */
-function buildContentSummary(report, subtitle) {
-  const clean = (t) => String(t || "").replace(/\s+/g, " ").trim();
-  // 기사 앞머리 데이트라인·바이라인 제거: "(서울=연합뉴스) 홍길동 기자 = "
-  const stripByline = (t) =>
-    clean(t)
-      .replace(/^\([^)]*\)\s*/, "")
-      .replace(/^[가-힣]{2,5}\s*(기자|특파원|논설위원)\s*[=·]\s*/, "");
-
-  let base = clean(report.summary);
-  if (subtitle && base.startsWith(subtitle)) base = clean(base.slice(subtitle.length).replace(/^[.\s·]+/, ""));
-  const parts = base ? [base] : [];
-  const sub = clean(subtitle);
-
-  if (base.length < 320) {
-    for (const sec of report.sections || []) {
-      if (/참고자료/.test(sec.heading || "")) continue;
-      for (const p of sec.paragraphs || []) {
-        let t = typeof p === "string" ? p : (p && (p.lead || p.text || p.bullet)) || "";
-        t = stripByline(t);
-        if (t.length >= 40) {
-          const sent = (t.match(/^[^.!?。]+[.!?。]/) || [t])[0].trim();
-          const dupSub = sub && (sent.includes(sub) || sub.includes(sent));
-          if (!dupSub && !parts.some((x) => x.includes(sent))) parts.push(sent);
-          break;
-        }
-      }
-      if (parts.join(" ").length >= 700) break;
-    }
-  }
-  let out = parts.join(" ");
-  if (out.length > 800) out = out.slice(0, 799).trim() + "…";
-  return out;
-}
 
 /** 게시글 본문 — 순수 텍스트. 참고자료 URL 은 뷰에서 새 창 링크로 렌더된다.
  *  refs: [참고자료]에 넣을 상위 10건(중복 제거·랭킹 완료), dayKey: 'YYYY-Dddd' */
