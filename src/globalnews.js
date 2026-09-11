@@ -195,20 +195,65 @@ function topReferences(sources, theme, limit = 10) {
     .map((x) => x.s);
 }
 
-/** [주요내용] — "이번 호는 …" 으로 시작하는 정돈된 요약(AI면 보고서 요약, 아니면 중복 제거된 제목 기반) */
+/** [주요내용] — 내용 중심의 요약(최소 3문장). 글의 요지·핵심을 정리한다.
+ *  [시사점]과 기능 중첩을 피하기 위해 시사점/제언/함의 절은 제외하고 본문·발췌에서 핵심 문장을 뽑는다.
+ *  AI(Gemini) 집필 시 보고서 요약+본문, 미설정 시 관련 기사 발췌의 핵심 문장으로 구성. */
 function buildHighlight(report, refs, ai) {
   const clean = (t) => String(t || "").replace(/\s+/g, " ").trim();
-  let body;
+  const stripByline = (t) =>
+    clean(t).replace(/^\([^)]*\)\s*/, "").replace(/^[가-힣]{2,5}\s*(기자|특파원|논설위원)\s*[=·]\s*/, "");
+  const firstSent = (t) => {
+    const s = stripByline(t);
+    if (s.length < 20) return "";
+    const m = s.match(/^[\s\S]{20,150}?[.!?。](?=\s|$)/);
+    return (m ? m[0] : s.slice(0, 140)).trim();
+  };
+  const focus = clean(report.subtitle || report.title);
+  const sents = [];
+  const push = (raw) => {
+    let s = clean(raw);
+    if (s.length < 15) return;
+    if (!/[.!?。]$/.test(s)) s += ".";
+    const key = s.slice(0, 16);
+    if (sents.some((x) => x.slice(0, 16) === key)) return; // 중복 문장 제거
+    sents.push(s);
+  };
+
+  // 1) 리드 문장
+  if (ai && clean(report.summary).length >= 30 && !/자동 다이제스트/.test(report.summary)) push(report.summary);
+  else push(`이번 호는 ${focus} 관련 동향과 사례 ${(refs || []).length}건을 정리했습니다.`);
+
+  // 2) 내용 문장 — 시사점/제언 절은 제외(중첩 방지)
   if (ai) {
-    body = clean(buildContentSummary(report, String(report.subtitle || ""))) || clean(report.summary);
+    for (const sec of report.sections || []) {
+      if (/시사점|제언|함의|참고자료/.test(sec.heading || "")) continue;
+      for (const p of sec.paragraphs || []) {
+        const t = typeof p === "string" ? p : (p && (p.lead || p.text || p.h3 || p.bullet)) || "";
+        const s = firstSent(t);
+        if (s) push(s);
+        if (sents.length >= 5) break;
+      }
+      if (sents.length >= 5) break;
+    }
   } else {
-    const titles = (refs || []).slice(0, 6).map((s) => clean(s.title)).filter(Boolean);
-    body = `${clean(report.subtitle || report.title)} 관련 동향과 사례 ${(refs || []).length}건을 모았습니다`;
-    if (titles.length) body += ` — ${titles.join(" · ")}`;
-    body += ".";
+    for (const r of refs || []) {
+      const s = firstSent(r.excerpt || "");
+      if (s) push(s);
+      if (sents.length >= 5) break;
+    }
   }
-  if (!/^이번\s*호/.test(body)) body = "이번 호는 " + body;
-  return body.length > 900 ? body.slice(0, 899).trim() + "…" : body;
+
+  // 3) 최소 3문장 보장(부족하면 제목으로 보완)
+  if (sents.length < 3) {
+    for (const r of refs || []) {
+      if (sents.length >= 3) break;
+      const t = clean(r.title);
+      if (t) push(`${t} 등이 비중 있게 다뤄졌습니다.`);
+    }
+  }
+
+  let out = sents.join(" ");
+  return out.length > 1200 ? out.slice(0, 1199).trim() + "…" : out;
 }
 
 /** 요약 발췌(원문 전문 방지) — LLM 근거용이라 넉넉히, 단 전문 저장은 피한다 */
