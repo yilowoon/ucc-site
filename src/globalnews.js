@@ -702,7 +702,8 @@ function buildOutlinePrompt(theme, sources) {
     PERSONA_PROMPT,
     `주제: "${theme.title}" — ${theme.focus}`,
     "아래 [출처] 자료를 검토해, A4 약 10쪽 분량의 '심층 이슈 보고서' 설계안을 만드세요.",
-    "본문에서 '자세히 소개할 해외 사례'를 국가/제도 단위로 3~4개 선정하세요(가능하면 서로 다른 나라).",
+    "본문에서 '자세히 소개할 해외 사례'를 국가/제도 단위로 3~4개 선정하세요.",
+    "★사례의 국가 다양성을 반드시 확보하세요: 서로 다른 나라의 사례를 우선 선정하고, 한 나라에서 2개를 초과해 뽑지 마세요(예: 미국 3개 금지). 출처가 한 나라에 쏠려 있으면, 검증된 배경지식 범위에서 다른 나라(유럽·아시아·남미 등)의 대표 사례를 포함해 균형을 맞추세요.",
     RULES,
     "",
     "다음 JSON만 출력(설명·코드블록 없이):",
@@ -721,7 +722,18 @@ function buildOutlinePrompt(theme, sources) {
 
 /** 설계안 → 절(section) 집필 계획(약 10쪽 분량이 되도록 구성) */
 function sectionPlan(outline) {
-  const cases = Array.isArray(outline.cases) ? outline.cases.slice(0, 4) : [];
+  // 국가 다양성 보정: 한 나라 사례가 2개를 넘지 않도록 걸러 균형을 맞춘다(미국 편중 방지).
+  const rawCases = Array.isArray(outline.cases) ? outline.cases : [];
+  const perCountry = new Map();
+  const cases = [];
+  for (const c of rawCases) {
+    if (cases.length >= 4) break;
+    const key = String((c && c.country) || "기타").trim().toLowerCase();
+    const n = perCountry.get(key) || 0;
+    if (n >= 2) continue; // 같은 나라 3번째부터 제외
+    perCountry.set(key, n + 1);
+    cases.push(c);
+  }
   const plan = [
     { heading: "1. 개요", brief: "보고서 전체의 핵심 논지와 결론의 요지를 제시. 이번 호가 다루는 해외 동향이 무엇이고 왜 중요한지 설득력 있게(국내 사례는 다루지 않음)." },
     { heading: "2. 국제적 배경과 문제의식", brief: "해외에서 이 주제가 부상하는 구조적 배경(저성장·양극화·인구감소·돌봄공백 등)을 국제적 맥락에서 심층 분석(왜 지금 일어나는가). 한국 사례는 넣지 않는다." },
