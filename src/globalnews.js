@@ -946,12 +946,19 @@ function makePostBody(report, sources, refs, dayKey, ai) {
   return lines.join("\n");
 }
 
-/** 주요내용: 완결형 문장 5개 이내 요약(카카오 발송용) */
+/** 주요내용: 서술 종결형('~다.')으로 끝나는 완결 문장만 5개 이내로 추출(카카오 발송용).
+ *  단순히 마침표(.)로 자르지 않는다 → 약어(U. S.)·비종결 명사구('~ 배경.')를 문장으로 오인하지 않음. */
 function kakaoSummary(report) {
-  const base = String((report && (report.summary || report.oneLine)) || "").replace(/\s+/g, " ").trim();
+  const raw = typeof report === "string" ? report : (report && (report.summary || report.oneLine));
+  const base = String(raw || "").replace(/\s+/g, " ").trim();
   if (!base) return "오늘의 해외 사회연대경제·공동체경제 주요 흐름을 정리했습니다.";
-  const sents = base.match(/[^.!?。]*[.!?。]/g) || [base];
-  return completeSentences(sents.slice(0, 5).join(" ").trim());
+  const CLOSE = "[”\"'’\\)\\]】》」』]*"; // 닫는 따옴표·괄호 허용
+  // 종결어미 '다' + 마침표 경계마다 분할표시() 삽입 후 분리
+  const marked = base.replace(new RegExp(`(다${CLOSE}[.。]${CLOSE})(\\s|$)`, "g"), "$1");
+  const parts = marked.split("").map((s) => s.trim()).filter(Boolean);
+  const isDeclarative = new RegExp(`다${CLOSE}[.。]${CLOSE}$`);
+  const sents = parts.filter((s) => isDeclarative.test(s)).slice(0, 5);
+  return sents.length ? sents.join(" ") : completeSentences(base);
 }
 
 /** 카카오톡 '나에게 보내기'용 요약 메시지
