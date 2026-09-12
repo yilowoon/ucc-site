@@ -18,7 +18,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
 
-const { db, UPLOAD_DIR } = require("./db");
+const { db, UPLOAD_DIR, getSetting, setSetting } = require("./db");
 const { fromDaum, fromGoogle } = require("./newsletter");
 const { buildDocx } = require("./docx");
 
@@ -635,7 +635,7 @@ async function geminiJson(prompt, { ms = 90000, maxTokens = 8192, temperature = 
   if (!GEMINI_KEY()) return null;
   const body = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature, maxOutputTokens: maxTokens, responseMimeType: "application/json" } };
   let model = await resolveModel();
-  const MAX = 7; // 과부하(503) 대비 재시도 확대
+  const MAX = 4; // 503(과부하) 회복은 노리되, 429(할당량)에서 과도한 재시도로 무료 할당량을 태우지 않도록 제한
   for (let attempt = 0; attempt < MAX; attempt++) {
     const res = await geminiCallRaw(model, body, ms);
     if (res.ok) {
@@ -792,15 +792,11 @@ async function writeFullReport(theme, sources) {
 
   const plan = sectionPlan(outline);
   console.log(`[report]  · 개요 완료 → ${plan.length}개 절 순차 집필 시작`);
-  // 무료 Gemini 과부하(503) 방지를 위해 절을 1개씩 순차 집필한다(전역 스로틀이 호출 간격도 보장).
-  // 각 절 최대 2회 시도, 호출당 60초.
+  // 무료 Gemini 과부하(503)·할당량(429) 방지를 위해 절을 1개씩 순차 집필(전역 스로틀이 호출 간격 보장).
+  // 외부 재시도는 두지 않는다 — geminiJson 내부에서 이미 429/503 재시도를 하므로 중복 재시도로 할당량을 낭비하지 않음.
   const written = await mapLimit(plan, 1, async (spec, i) => {
-    let paras = [];
-    for (let attempt = 0; attempt < 2 && paras.length === 0; attempt++) {
-      const r = await llm(buildSectionPrompt(theme, sources, outline, spec, i, plan.length), { maxTokens: 8192, temperature: 0.5, ms: 60000 });
-      paras = normParas(r && (r.paragraphs || (Array.isArray(r) ? r : null)));
-      if (paras.length === 0) await sleep(500);
-    }
+    const r = await llm(buildSectionPrompt(theme, sources, outline, spec, i, plan.length), { maxTokens: 8192, temperature: 0.5, ms: 60000 });
+    const paras = normParas(r && (r.paragraphs || (Array.isArray(r) ? r : null)));
     if (paras.length === 0) { console.warn(`[report]  · 절 집필 실패(건너뜀): ${spec.heading}`); return null; }
     console.log(`[report]  · 절 집필 완료: ${spec.heading} (${paras.length}문단)`);
     return { heading: spec.heading, paragraphs: paras };
@@ -1129,17 +1125,26 @@ async function _collectOnceInner({ force = false } = {}) {
     guid = `${guid}:${Date.now().toString(36)}`;
   }
 
+  if (!GEMINI_KEY()) {
+    console.error("[report] ⚠ GEMINI_API_KEY 없음 → 발행 건너뜀 (.env 확인 후 'pm2 restart ucc')");
+    return { published: false, reason: "no-key", dayKey: seq.key, theme: theme.key };
+  }
+
+  // 하루 재시도 상한: 무료 Gemini 할당량(429)이 소진되면 매시간 캐치업이 계속 실패하며
+  // 남은 할당량(챗봇 등 공유)까지 태운다. 하루 최대 N회만 시도하고 이후엔 건너뛴다(수동 '지금 발행'은 예외).
+  const ATTEMPT_KEY = `report_attempts:${seq.key}`;
+  const MAX_DAILY_ATTEMPTS = 6;
+  if (!force) {
+    const attempts = parseInt(getSetting(ATTEMPT_KEY, "0"), 10) || 0;
+    if (attempts >= MAX_DAILY_ATTEMPTS) {
+      console.warn(`[report] 오늘 자동 시도 상한(${MAX_DAILY_ATTEMPTS}회) 도달 → 캐치업 중단(무료 할당량 보호). 필요 시 관리자 '지금 발행'으로 강제 가능.`);
+      return { published: false, reason: "attempt-cap", dayKey: seq.key, theme: theme.key };
+    }
+    setSetting(ATTEMPT_KEY, String(attempts + 1));
+  }
+
   const t0 = Date.now();
   console.log(`[report] 리포트 작성 시작 — ${seq.key} / ${theme.title}`);
-
-  // Gemini(무료) 사용 불가 시: 국내·영문 fallback 문서를 만들지 않고 건너뜀(원인은 로그로 노출).
-  const gp = await geminiPing();
-  if (!gp.ok) {
-    console.error(`[report] ⚠ Gemini 사용 불가 → 발행 건너뜀. 사유: ${gp.reason}${gp.detail ? " / " + gp.detail : ""} (모델 ${gp.model || "?"})`);
-    console.error(`[report]   과부하(503)면 무료 사용량 소진일 수 있음 → 스케줄러(매시간 캐치업)가 자동 재시도합니다.`);
-    return { published: false, reason: "gemini-unavailable", detail: gp.reason, dayKey: seq.key, theme: theme.key };
-  }
-  console.log(`[report] Gemini 사용 가능 ✅ (모델 ${gp.model})`);
 
   const sources = await researchSources(theme, { maxSources: 12 });
   console.log(`[report] 관련 자료 ${sources.length}건 수집(관련성 필터 적용)`);
