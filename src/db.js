@@ -235,6 +235,27 @@ try { db.exec("ALTER TABLE newsletter ADD COLUMN content TEXT NOT NULL DEFAULT '
 // newsletter: 조회수
 try { db.exec("ALTER TABLE newsletter ADD COLUMN views INTEGER NOT NULL DEFAULT 0"); } catch (e) {}
 
+// 앱 설정 KV(민감 토큰 등 — data/ucc.db 는 커밋 제외이므로 비밀 저장에 적합)
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS app_settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL DEFAULT '',
+    updated_at TEXT NOT NULL DEFAULT ''
+  );`);
+} catch (e) {}
+function getSetting(key, def = "") {
+  try { const r = db.prepare("SELECT value FROM app_settings WHERE key = ?").get(key); return r ? r.value : def; }
+  catch (e) { return def; }
+}
+function setSetting(key, value) {
+  try {
+    db.prepare("INSERT INTO app_settings (key, value, updated_at) VALUES (?, ?, ?) " +
+               "ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at")
+      .run(key, String(value == null ? "" : value), new Date().toISOString());
+    return true;
+  } catch (e) { return false; }
+}
+
 /* ---- 햇빛소득마을: 시·도 시드 (없을 때만) ---- */
 function seedSolarRegions() {
   const row = db.prepare("SELECT COUNT(*) AS n FROM solar_regions").get();
@@ -368,4 +389,4 @@ function ensurePartners() {
 }
 ensurePartners();
 
-module.exports = { db, DATA_DIR, UPLOAD_DIR, DB_PATH };
+module.exports = { db, DATA_DIR, UPLOAD_DIR, DB_PATH, getSetting, setSetting };

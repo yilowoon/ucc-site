@@ -946,6 +946,35 @@ function makePostBody(report, sources, refs, dayKey, ai) {
   return lines.join("\n");
 }
 
+/** 주요내용: 완결형 문장 5개 이내 요약(카카오 발송용) */
+function kakaoSummary(report) {
+  const base = String((report && (report.summary || report.oneLine)) || "").replace(/\s+/g, " ").trim();
+  if (!base) return "오늘의 해외 사회연대경제·공동체경제 주요 흐름을 정리했습니다.";
+  const sents = base.match(/[^.!?。]*[.!?。]/g) || [base];
+  return completeSentences(sents.slice(0, 5).join(" ").trim());
+}
+
+/** 카카오톡 '나에게 보내기'용 요약 메시지
+ *  형식: 'yyyy.mm.dd 도시공동체 지구촌소식 브리프' / [주요내용] 5줄 / [관련소식] 10건 / 명언 1줄 */
+function buildKakaoMessage(report, refs, dayKey) {
+  const seq = daySeq(new Date());
+  const dateDot = fmtDot(new Date().toISOString()).replace(/\.\s*$/, ""); // yyyy.mm.dd
+  const lines = [];
+  lines.push(`${dateDot} 도시공동체 지구촌소식 브리프`);
+  lines.push("");
+  lines.push("[주요내용]");
+  lines.push(kakaoSummary(report));
+  lines.push("");
+  lines.push("[관련소식]");
+  (refs || []).slice(0, 10).forEach((s, i) => {
+    lines.push(`${i + 1}. ${String(s.title).replace(/\s+/g, " ").trim()} - ${s.source || "미상"}`);
+  });
+  lines.push("");
+  const q = pickQuote(seq.dayOfYear);
+  lines.push(`- ${q.text} (by ${q.author}) -`);
+  return lines.join("\n");
+}
+
 /* --------------------------------------------- 4) 발행(글+첨부) */
 
 function publishReport(report, sources, dayKey, theme, ai, guidOverride) {
@@ -965,10 +994,10 @@ function publishReport(report, sources, dayKey, theme, ai, guidOverride) {
     fs.writeFileSync(path.join(UPLOAD_DIR, stored), buf);
     const original = safeFileName(`${report.title || "사회연대경제 이슈리포트"} (${dayKey})`) + ".docx";
     insertAttach.run(postId, stored, original, DOCX_MIME, buf.length);
-    return { postId, title, attached: true };
+    return { postId, title, attached: true, refs };
   } catch (e) {
     console.error("[report] docx 첨부 실패(post " + postId + "):", e.message);
-    return { postId, title, attached: false };
+    return { postId, title, attached: false, refs };
   }
 }
 
@@ -1051,7 +1080,26 @@ async function _collectOnceInner({ force = false } = {}) {
 
   const out = publishReport(report, sources, seq.key, theme, true, guid);
   console.log(`[report] 발행 완료 — post ${out.postId} (AI집필/gemini, 첨부 ${out.attached}, ${Math.round((Date.now() - t0) / 1000)}초 소요)`);
+
+  // 카카오톡 '나에게 보내기' 자동 발송(연결·자동발송 켜진 경우만; 실패해도 발행에는 영향 없음)
+  try {
+    const kakao = require("./kakao");
+    if (kakao.isConnected() && kakao.autoSendOn()) {
+      const msg = buildKakaoMessage(report, out.refs, seq.key);
+      const link = `${SITE_BASE_URL()}/board/global/${out.postId}`;
+      const n = await kakao.sendToMe(msg, link);
+      console.log(`[report] 카카오톡 발송 완료 (${n}통)`);
+    }
+  } catch (e) {
+    console.error(`[report] 카카오톡 발송 실패(발행은 정상): ${e.message}`);
+  }
+
   return { published: true, ai: true, provider: "gemini", dayKey: seq.key, theme: theme.key, ...out };
+}
+
+/** 공개 사이트 절대 주소(카카오 링크·OG 등) */
+function SITE_BASE_URL() {
+  return (process.env.BASE_URL || "https://ucc.or.kr").replace(/\/+$/, "");
 }
 
 /* ------------------- 스케줄러: 매일 07:00 (KST 고정, 서버 타임존 무관) ------- */
@@ -1109,4 +1157,4 @@ function startScheduler() {
   console.log(`[report] 일일 스케줄러 시작 — 다음 정시 발행(KST): ${nextKst.toISOString().replace("T", " ").slice(0, 16)} · 안전망(매시간 캐치업) 활성`);
 }
 
-module.exports = { collectOnce, startScheduler, THEMES, AUTHOR, PERSONA, BOARD };
+module.exports = { collectOnce, startScheduler, THEMES, AUTHOR, PERSONA, BOARD, buildKakaoMessage, SITE_BASE_URL };

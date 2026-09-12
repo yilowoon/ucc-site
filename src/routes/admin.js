@@ -11,6 +11,8 @@ const bcrypt = require("bcryptjs");
 const { db, UPLOAD_DIR } = require("../db");
 const cfg = require("../config");
 const mailer = require("../mailer"); // 정회원 전환 시 환영 메일 발송
+const oauth = require("../oauth");   // 카카오 인가(나에게 보내기) — baseUrl/state 재사용
+const kakaoMemo = require("../kakao"); // 카카오톡 '나에게 보내기' 자동발송
 
 // ---- 업로드 설정 ----
 const ALLOWED_EXT = new Set([
@@ -315,6 +317,70 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     const hash = bcrypt.hashSync(newpw, 10);
     db.prepare("UPDATE admins SET password_hash = ? WHERE id = ?").run(hash, admin.id);
     res.render("admin-password", { ...res.locals, title: "비밀번호 변경", error: null, done: true });
+  });
+
+  // ---------- 카카오톡 자동발송(지구촌소식브리프 '나에게 보내기') ----------
+  const kakaoRedirectUri = (req) => oauth.baseUrl(req) + "/admin/kakao-memo/callback";
+
+  router.get("/kakao-memo", requireAdmin, (req, res) => {
+    res.render("admin-kakao", {
+      ...res.locals,
+      title: "카카오톡 자동발송",
+      k: kakaoMemo.status(),
+      redirectUri: kakaoRedirectUri(req),
+      msg: req.query.msg || "",
+      err: req.query.err || "",
+    });
+  });
+
+  // 1회 동의 시작 → 카카오 인가 페이지로
+  router.get("/kakao-memo/connect", requireAdmin, (req, res) => {
+    if (!kakaoMemo.isConfigured()) {
+      return res.redirect("/admin/kakao-memo?err=" + encodeURIComponent(".env 에 KAKAO_REST_API_KEY 가 없습니다."));
+    }
+    const state = oauth.signState({ p: "kakao-memo" });
+    res.redirect(kakaoMemo.authorizeUrl(kakaoRedirectUri(req), state));
+  });
+
+  // 동의 콜백 → refresh_token 저장
+  router.get("/kakao-memo/callback", requireAdmin, async (req, res) => {
+    const { code, state, error } = req.query;
+    if (error) return res.redirect("/admin/kakao-memo?err=" + encodeURIComponent("동의가 취소되었습니다."));
+    if (!code || !oauth.verifyState(state, "kakao-memo")) {
+      return res.redirect("/admin/kakao-memo?err=" + encodeURIComponent("인가 검증에 실패했습니다. 다시 시도하세요."));
+    }
+    try {
+      await kakaoMemo.connect(code, kakaoRedirectUri(req));
+      res.redirect("/admin/kakao-memo?msg=" + encodeURIComponent("카카오 연결이 완료되었습니다. 매일 발행 시 자동 발송됩니다."));
+    } catch (e) {
+      res.redirect("/admin/kakao-memo?err=" + encodeURIComponent(e.message));
+    }
+  });
+
+  // 테스트 발송
+  router.post("/kakao-memo/test", requireAdmin, verifyCsrf, async (req, res) => {
+    try {
+      const base = (process.env.BASE_URL || oauth.baseUrl(req)).replace(/\/+$/, "");
+      const n = await kakaoMemo.sendToMe(
+        "[테스트] 도시공동체 지구촌소식 브리프\n카카오톡 자동발송 연동이 정상 작동합니다.",
+        base + "/board/global"
+      );
+      res.redirect("/admin/kakao-memo?msg=" + encodeURIComponent(`테스트 발송 완료(${n}통). 카카오톡을 확인하세요.`));
+    } catch (e) {
+      res.redirect("/admin/kakao-memo?err=" + encodeURIComponent("테스트 발송 실패: " + e.message));
+    }
+  });
+
+  // 자동발송 ON/OFF
+  router.post("/kakao-memo/autosend", requireAdmin, verifyCsrf, (req, res) => {
+    kakaoMemo.setAutoSend(req.body.autosend === "1");
+    res.redirect("/admin/kakao-memo?msg=" + encodeURIComponent("설정을 저장했습니다."));
+  });
+
+  // 연결 해제
+  router.post("/kakao-memo/disconnect", requireAdmin, verifyCsrf, (req, res) => {
+    kakaoMemo.disconnect();
+    res.redirect("/admin/kakao-memo?msg=" + encodeURIComponent("카카오 연결을 해제했습니다."));
   });
 
   // ---------- 교육일정(캘린더) 관리 ----------
