@@ -35,25 +35,47 @@ function loadEnv() {
   const r = await fetch(`${base}/v1beta/models?key=${encodeURIComponent(key)}&pageSize=200`);
   if (!r.ok) { console.error("모델 조회 실패:", r.status, (await r.text()).slice(0, 200)); process.exit(1); }
   const d = await r.json();
-  const models = (d.models || [])
+  let models = (d.models || [])
     .filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"))
-    .map((m) => ({
-      name: String(m.name || "").replace(/^models\//, ""),
-      inTok: m.inputTokenLimit || 0,
-      outTok: m.outputTokenLimit || 0,
-    }));
+    .map((m) => String(m.name || "").replace(/^models\//, ""));
 
-  // flash/lite 계열(무료 할당량 큰 편)을 위로 정렬
+  // 프리뷰/특수 목적 모델은 집필용으로 부적합 → 제외
+  const bad = /(vision|thinking|exp|image|tts|live|audio|embedding|aqa|learnlm)/i;
+  models = models.filter((n) => !bad.test(n));
+
+  // flash/lite(무료 할당량 큰 편) 우선 정렬
   const score = (n) => (/lite/i.test(n) ? 0 : /flash/i.test(n) ? 1 : /pro/i.test(n) ? 3 : 2);
-  models.sort((a, b) => score(a.name) - score(b.name) || a.name.localeCompare(b.name));
+  models.sort((a, b) => score(a.name || a) - score(b.name || b) || String(a).localeCompare(String(b)));
 
-  console.log(`\n생성(generateContent) 가능 모델 ${models.length}종:\n` + "─".repeat(64));
-  for (const m of models) {
-    const tag = /lite/i.test(m.name) ? " ← 무료 할당량 큰 편(추천)" : (/flash/i.test(m.name) ? " ← 품질/속도 균형" : "");
-    console.log(`${m.name.padEnd(34)} in:${m.inTok} out:${m.outTok}${tag}`);
+  // 실제 호출로 사용 가능 여부 확인(1토큰) — 목록에 있어도 404(폐기)일 수 있으므로 직접 확인
+  console.log(`\n생성 가능 모델 ${models.length}종 — 실제 호출로 확인 중...\n` + "─".repeat(72));
+  const usable = [];
+  for (const name of models) {
+    let status = 0, note = "";
+    try {
+      const rr = await fetch(`${base}/v1beta/models/${name}:generateContent?key=${encodeURIComponent(key)}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }], generationConfig: { maxOutputTokens: 1 } }),
+      });
+      status = rr.status;
+      if (!rr.ok) { const t = await rr.text(); note = (JSON.parse(t).error?.message || t).slice(0, 80); }
+    } catch (e) { note = e.message; }
+    const mark = status === 200 ? "✅ 사용가능"
+      : status === 429 ? "⏳ 429(할당량/속도 — 모델은 유효)"
+      : status === 404 ? "❌ 404(폐기/미제공)"
+      : `⚠ ${status || "NET"}`;
+    if (status === 200 || status === 429) usable.push(name);
+    console.log(`${String(name).padEnd(32)} ${mark}${note ? " — " + note : ""}`);
+    await new Promise((r) => setTimeout(r, 400)); // 과도한 호출 방지
   }
-  console.log("─".repeat(64));
-  console.log("고정하려면 .env 에 아래처럼 추가 후 'pm2 restart ucc':");
-  console.log("  GEMINI_TEXT_MODEL=<위 목록에서 선택>");
-  console.log("무료 할당량이 부족하면 'lite' 계열을, 품질을 우선하면 일반 'flash' 계열을 권장합니다.\n");
+  console.log("─".repeat(72));
+  if (usable.length) {
+    const rec = usable.find((n) => /lite/i.test(n)) || usable.find((n) => /flash/i.test(n)) || usable[0];
+    console.log(`추천(사용가능 + 무료 할당량 유리): ${rec}`);
+    console.log("고정: .env 에 아래 추가 후 'pm2 restart ucc'");
+    console.log(`  GEMINI_TEXT_MODEL=${rec}`);
+  } else {
+    console.log("사용 가능한(200/429) 모델이 없습니다. 키/프로젝트 설정을 확인하세요.");
+  }
+  console.log("");
 })();
