@@ -38,7 +38,7 @@ const COLOPHON = [
 /* Gemini(Generative Language API) — 텍스트 집필 */
 const GEMINI_KEY = () => process.env.GEMINI_API_KEY || "";
 const GEMINI_BASE = () => (process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com").replace(/\/+$/, "");
-const GEMINI_TEXT_MODEL = () => process.env.GEMINI_TEXT_MODEL || "gemini-flash-latest";
+const GEMINI_TEXT_MODEL = () => process.env.GEMINI_TEXT_MODEL || "gemini-3.1-flash-lite";
 
 /**
  * 주간 주제. 모두 해외 사례를 중심으로 사회연대경제(사회적경제·공동체·협동조합)로의
@@ -580,11 +580,11 @@ async function listModels(key) {
   } catch (e) { return []; }
 }
 
-// 안정성 우선 순위(과부하 잦은 최신/프리뷰보다 검증된 flash 계열을 먼저 선택)
+// 선호 순위(무료 할당량 유리한 lite 계열을 우선, 폐기 잦은 구버전은 뒤로)
 const MODEL_PREF = [
-  /^gemini-2\.5-flash$/i, /^gemini-2\.0-flash$/i,
+  /^gemini-3\.1-flash-lite$/i, /^gemini-3\.\d+-flash-lite/i, /^gemini-3\.\d+-flash$/i,
   /^gemini-2\.5-flash-lite/i, /^gemini-2\.0-flash-lite/i,
-  /^gemini-1\.5-flash$/i, /^gemini-1\.5-flash-8b/i, /flash-latest$/i,
+  /^gemini-2\.5-flash$/i, /^gemini-2\.0-flash$/i, /flash-lite-latest$/i, /flash-latest$/i,
 ];
 
 /** 사용할 모델명 결정: 환경변수 우선 → ListModels에서 '안정 flash' 우선 선택 → 기본값 */
@@ -595,7 +595,7 @@ async function resolveModel() {
   const bad = /(vision|thinking|exp|image|tts|live|preview|audio)/i;
   let pick = null;
   for (const re of MODEL_PREF) { const m = avail.find((n) => re.test(n) && !bad.test(n)); if (m) { pick = m; break; } }
-  if (!pick) pick = avail.find((n) => /flash/i.test(n) && !bad.test(n)) || avail.find((n) => /flash/i.test(n)) || avail.find((n) => /gemini/i.test(n)) || "gemini-flash-latest";
+  if (!pick) pick = avail.find((n) => /flash/i.test(n) && !bad.test(n)) || avail.find((n) => /flash/i.test(n)) || avail.find((n) => /gemini/i.test(n)) || "gemini-3.1-flash-lite";
   _resolvedModel = pick;
   console.log(`[report] Gemini 모델 자동 선택: ${pick} (사용가능 ${avail.length}종)`);
   return pick;
