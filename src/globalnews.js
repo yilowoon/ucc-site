@@ -1076,10 +1076,10 @@ function publishReport(report, sources, dayKey, theme, ai, guidOverride) {
     fs.writeFileSync(path.join(UPLOAD_DIR, stored), buf);
     const original = safeFileName(`${report.title || "사회연대경제 이슈리포트"} (${dayKey})`) + ".docx";
     insertAttach.run(postId, stored, original, DOCX_MIME, buf.length);
-    return { postId, title, attached: true, refs };
+    return { postId, title, attached: true };
   } catch (e) {
     console.error("[report] docx 첨부 실패(post " + postId + "):", e.message);
-    return { postId, title, attached: false, refs };
+    return { postId, title, attached: false };
   }
 }
 

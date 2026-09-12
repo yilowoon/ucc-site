@@ -894,7 +894,7 @@ module.exports = function adminRoutes({ verifyCsrf }) {
       // 자료 조사·집필로 오래 걸린다. 응답은 즉시 돌려주고 백그라운드로 진행.
       // force: 이번 주 리포트가 이미 있어도 다음 주제로 새 리포트를 발행한다.
       collectOnce({ force: true })
-        .then((r) => console.log("[report] 수동 발행:", JSON.stringify(r)))
+        .then((r) => console.log(`[report] 수동 발행 결과: ${r && r.published ? `발행됨 post ${r.postId}` : `미발행(${r && r.reason || "?"})`} · ${r && r.dayKey || ""}`))
         .catch((e) => console.error("[report] 수동 발행 오류:", e.message));
     } catch (e) {
       console.error("[report] 수동 발행 시작 실패:", e.message);
