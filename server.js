@@ -372,6 +372,8 @@ app.listen(PORT, () => {
   try { require("./src/newsletter").startScheduler(); } catch (e) { console.error("[newsletter] 스케줄러 시작 실패:", e.message); }
   // 지구촌소식브리프 일일 리포트 자동 발행 (매일 07:00 KST) + 재시작 캐치업
   try { require("./src/globalnews").startScheduler(); } catch (e) { console.error("[globalnews] 스케줄러 시작 실패:", e.message); }
+  // 지구촌소식브리프 카카오톡 자동발송 (매일 08:00 KST, 오늘자 발행 글 기준) + 매시간 캐치업
+  try { require("./src/globalnews").startKakaoScheduler(); } catch (e) { console.error("[globalnews] 카카오 스케줄러 시작 실패:", e.message); }
   // 준회원 정회원전환 안내 메일 (가입 1주일 경과, 회비 미확인) — 매시간 점검
   try { require("./src/member-reminder").startScheduler(); } catch (e) { console.error("[reminder] 스케줄러 시작 실패:", e.message); }
 });

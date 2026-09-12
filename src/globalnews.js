@@ -1137,20 +1137,7 @@ async function _collectOnceInner({ force = false } = {}) {
 
   const out = publishReport(report, sources, seq.key, theme, true, guid);
   console.log(`[report] 발행 완료 — post ${out.postId} (AI집필/gemini, 첨부 ${out.attached}, ${Math.round((Date.now() - t0) / 1000)}초 소요)`);
-
-  // 카카오톡 '나에게 보내기' 자동 발송(연결·자동발송 켜진 경우만; 실패해도 발행에는 영향 없음)
-  try {
-    const kakao = require("./kakao");
-    if (kakao.isConnected() && kakao.autoSendOn()) {
-      const msg = buildKakaoMessage(report, out.refs, seq.key);
-      const link = `${SITE_BASE_URL()}/board/global/${out.postId}`;
-      const n = await kakao.sendToMe(msg, link);
-      console.log(`[report] 카카오톡 발송 완료 (${n}통)`);
-    }
-  } catch (e) {
-    console.error(`[report] 카카오톡 발송 실패(발행은 정상): ${e.message}`);
-  }
-
+  // 카카오톡 발송은 발행과 분리되어 매일 08:00 KST 스케줄러가 '오늘자 발행 글'을 읽어 전송한다(아래 startKakaoScheduler).
   return { published: true, ai: true, provider: "gemini", dayKey: seq.key, theme: theme.key, ...out };
 }
 
@@ -1220,7 +1207,66 @@ function latestGlobalPost() {
   catch (e) { return null; }
 }
 
+/** 오늘자(KST) 발행 글 1건 — source_guid(report:YYYY-Dddd:*) 로 정확히 매칭 */
+function todaysGlobalPost() {
+  const seq = daySeq(new Date());
+  try { return db.prepare("SELECT * FROM posts WHERE board = ? AND source_guid LIKE ? ORDER BY id DESC LIMIT 1").get(BOARD, `report:${seq.key}:%`) || null; }
+  catch (e) { return null; }
+}
+
+/* ------------------- 카카오톡 자동발송: 매일 08:00 (KST 고정) -------------------
+ * 발행(07:00)과 분리. 08:00에 '오늘자 발행 글'을 읽어 카카오로 보낸다(하루 1회 멱등).
+ * 07:00 발행이 지연/실패해도 매시간 캐치업이 오늘 글이 준비되는 즉시 발송한다. */
+const K_SENT_DAYKEY = "kakao_memo_last_sent_daykey";
+
+/** 오늘자 브리프를 카카오로 발송(하루 1회). 반환 { sent, reason?, postId?, parts? } */
+async function sendTodayKakao(reason = "manual") {
+  const kakao = require("./kakao");
+  const { getSetting, setSetting } = require("./db");
+  const seq = daySeq(new Date());
+  if (!kakao.isConnected()) return { sent: false, reason: "not-connected" };
+  if (!kakao.autoSendOn()) return { sent: false, reason: "autosend-off" };
+  if (getSetting(K_SENT_DAYKEY) === seq.key) return { sent: false, reason: "already-sent" };
+  const post = todaysGlobalPost();
+  if (!post) { console.log(`[kakao] 오늘자 브리프 글이 아직 없어 발송 보류 (${reason})`); return { sent: false, reason: "no-post" }; }
+  const msg = buildKakaoMessageFromPost(post);
+  const link = `${SITE_BASE_URL()}/board/global/${post.id}`;
+  const n = await kakao.sendToMe(msg, link);
+  setSetting(K_SENT_DAYKEY, seq.key); // 오늘 발송 완료 표시(중복 방지)
+  console.log(`[kakao] 자동발송 완료 (${reason}) — post ${post.id}, ${n}통 · ${seq.key}`);
+  return { sent: true, postId: post.id, parts: n };
+}
+
+function startKakaoScheduler() {
+  const H = 8, M = 0; // 매일 08:00 KST 고정
+  let running = false;
+
+  const sendIfDue = async (reason) => {
+    if (running) return;
+    running = true;
+    try { await sendTodayKakao(reason); }
+    catch (e) { console.error(`[kakao] 자동발송 오류 (${reason}):`, e.message); }
+    finally { running = false; }
+  };
+
+  // 1) 정시: 매일 08:00
+  const run = async () => {
+    await sendIfDue("정시");
+    setTimeout(run, msUntilDaily(H, M));
+  };
+  setTimeout(run, msUntilDaily(H, M));
+
+  // 2) 안전망: 매시간 — 08:00이 지났는데 오늘자 미발송이면(글 준비되는 대로) 발송(멱등)
+  const safety = () => { if (kstPassedToday(H, M)) sendIfDue("캐치업"); };
+  safety();                              // 시작 즉시 1회(재시작 캐치업)
+  setInterval(safety, 60 * 60 * 1000);   // 매시간 재점검
+
+  const nextKst = new Date(Date.now() + msUntilDaily(H, M) + 9 * 3600 * 1000);
+  console.log(`[kakao] 자동발송 스케줄러 시작 — 다음 발송(KST): ${nextKst.toISOString().replace("T", " ").slice(0, 16)} · 매시간 캐치업 활성`);
+}
+
 module.exports = {
-  collectOnce, startScheduler, THEMES, AUTHOR, PERSONA, BOARD,
-  buildKakaoMessage, buildKakaoMessageFromPost, latestGlobalPost, SITE_BASE_URL,
+  collectOnce, startScheduler, startKakaoScheduler, sendTodayKakao,
+  THEMES, AUTHOR, PERSONA, BOARD,
+  buildKakaoMessage, buildKakaoMessageFromPost, latestGlobalPost, todaysGlobalPost, SITE_BASE_URL,
 };

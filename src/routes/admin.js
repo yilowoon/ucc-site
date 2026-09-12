@@ -359,7 +359,7 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     }
     try {
       await kakaoMemo.connect(code, kakaoRedirectUri(req));
-      res.redirect("/admin/kakao-memo?msg=" + encodeURIComponent("카카오 연결이 완료되었습니다. 매일 발행 시 자동 발송됩니다."));
+      res.redirect("/admin/kakao-memo?msg=" + encodeURIComponent("카카오 연결이 완료되었습니다. 매일 오전 8시(KST)에 자동 발송됩니다."));
     } catch (e) {
       res.redirect("/admin/kakao-memo?err=" + encodeURIComponent(e.message));
     }
