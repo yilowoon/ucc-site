@@ -982,36 +982,31 @@ function buildKakaoMessage(report, refs, dayKey) {
   return lines.join("\n");
 }
 
-/** 저장된 지구촌소식브리프 게시물(content)을 파싱해 카카오 발송 메시지로 재구성.
- *  발행 시점의 실제 내용(주요내용·참고자료·명언)을 그대로 반영한다. */
-function buildKakaoMessageFromPost(post) {
+/** 저장된 지구촌소식브리프 게시물(content)에서 날짜·주요내용·관련소식·명언을 파싱 */
+function parseGlobalPost(post) {
   const content = String((post && post.content) || "");
   const between = (label) => {
     const m = content.match(new RegExp(`\\[${label}\\]\\s*([\\s\\S]*?)(?:\\n\\s*\\[|\\n\\s*※|$)`));
     return m ? m[1].trim() : "";
   };
-  // 날짜: 헤더 '발행일 yyyy.mm.dd.' → 없으면 created_at
   let dateDot = "";
   const dm = content.match(/발행일\s*([0-9]{4}\.\s*[0-9]{1,2}\.\s*[0-9]{1,2})\.?/);
   if (dm) dateDot = dm[1].replace(/\s+/g, "");
   else if (post && post.created_at) dateDot = fmtDot(post.created_at).replace(/\.\s*$/, "");
 
-  // 주요내용: 5문장 이내 요약
   const highlight = between("주요내용");
   const summary = kakaoSummary({ summary: highlight });
 
-  // 관련소식: [참고자료] 의 'N. 제목 — 매체' 줄에서 최대 10건
   const refBlock = between("참고자료");
   const refs = [];
   for (const line of refBlock.split("\n")) {
     const m = line.match(/^\s*\d+\.\s*(.+)$/);
-    if (!m) continue; // URL 줄 등은 건너뜀
+    if (!m) continue;
     const [title, source] = m[1].split(/\s+[—-]\s+/);
     refs.push(`${refs.length + 1}. ${(title || m[1]).trim()} - ${(source || "미상").trim()}`);
     if (refs.length >= 10) break;
   }
 
-  // 명언: [오늘의 명언] 블록을 한 줄('- 문구 (by 저자) -')로 정규화
   const qBlock = between("오늘의 명언");
   let quoteLine = "";
   const one = qBlock.match(/-\s*(.+?)\s*\(by\s*(.+?)\)\s*-/);
@@ -1020,6 +1015,25 @@ function buildKakaoMessageFromPost(post) {
   else if (two) quoteLine = `- ${two[1].trim()} (by ${two[2].trim()}) -`;
   else if (qBlock) quoteLine = qBlock.split("\n")[0].trim();
 
+  return { dateDot, summary, refs, quoteLine };
+}
+
+/** '~다.' 종결 문장 단위로 예산(글자수) 이내까지만 담는다 */
+function trimToBudget(text, budget) {
+  const sents = String(text || "").split(/(?<=다[.。])\s+/);
+  let out = "";
+  for (const s of sents) {
+    const cand = out ? out + " " + s : s;
+    if (cand.length > budget) break;
+    out = cand;
+  }
+  if (!out) out = completeSentences(String(text || "").slice(0, budget));
+  return out.trim();
+}
+
+/** 저장된 글 → 카카오 발송 메시지(전체판: 주요내용·관련소식10·명언). 200자 초과 시 분할됨. */
+function buildKakaoMessageFromPost(post) {
+  const { dateDot, summary, refs, quoteLine } = parseGlobalPost(post);
   const out = [];
   out.push(`${dateDot} 도시공동체 지구촌소식 브리프`);
   out.push("");
@@ -1030,6 +1044,20 @@ function buildKakaoMessageFromPost(post) {
   refs.forEach((r) => out.push(r));
   if (quoteLine) { out.push(""); out.push(quoteLine); }
   return out.join("\n");
+}
+
+/** 저장된 글 → 카카오 '한 통(≤200자)' 메시지: 날짜 + 주요내용(압축) + 링크 안내.
+ *  관련소식 10건·명언 전문은 게시물 링크(브리프 보기)로 연결한다. */
+function buildKakaoShortFromPost(post) {
+  const { dateDot, summary } = parseGlobalPost(post);
+  const header = `${dateDot} 도시공동체 지구촌소식 브리프`;
+  const label = "[주요내용]";
+  const cta = "▶ 관련소식·명언·전문은 아래 링크에서";
+  // 전체 ≤168자 목표('[테스트] ' 접두 6자를 더해도 카카오 200자·분할기준 182자 이내로 한 통 보장).
+  // 줄바꿈 5개 포함 고정길이를 뺀 나머지를 주요내용 예산으로 사용.
+  const budget = Math.max(50, 168 - header.length - label.length - cta.length - 5);
+  const shortSummary = trimToBudget(summary, budget);
+  return [header, "", label, shortSummary, "", cta].join("\n");
 }
 
 /* --------------------------------------------- 4) 발행(글+첨부) */
@@ -1229,7 +1257,7 @@ async function sendTodayKakao(reason = "manual") {
   if (getSetting(K_SENT_DAYKEY) === seq.key) return { sent: false, reason: "already-sent" };
   const post = todaysGlobalPost();
   if (!post) { console.log(`[kakao] 오늘자 브리프 글이 아직 없어 발송 보류 (${reason})`); return { sent: false, reason: "no-post" }; }
-  const msg = buildKakaoMessageFromPost(post);
+  const msg = buildKakaoShortFromPost(post); // 한 통(≤200자) + 링크
   const link = `${SITE_BASE_URL()}/board/global/${post.id}`;
   const n = await kakao.sendToMe(msg, link);
   setSetting(K_SENT_DAYKEY, seq.key); // 오늘 발송 완료 표시(중복 방지)
@@ -1268,5 +1296,6 @@ function startKakaoScheduler() {
 module.exports = {
   collectOnce, startScheduler, startKakaoScheduler, sendTodayKakao,
   THEMES, AUTHOR, PERSONA, BOARD,
-  buildKakaoMessage, buildKakaoMessageFromPost, latestGlobalPost, todaysGlobalPost, SITE_BASE_URL,
+  buildKakaoMessage, buildKakaoMessageFromPost, buildKakaoShortFromPost,
+  latestGlobalPost, todaysGlobalPost, SITE_BASE_URL,
 };

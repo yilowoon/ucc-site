@@ -327,7 +327,7 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     const latest = globalnews.latestGlobalPost();
     let preview = "", previewPostId = 0;
     if (latest) {
-      try { preview = globalnews.buildKakaoMessageFromPost(latest); previewPostId = latest.id; } catch (e) {}
+      try { preview = globalnews.buildKakaoShortFromPost(latest); previewPostId = latest.id; } catch (e) {}
     }
     res.render("admin-kakao", {
       ...res.locals,
@@ -373,7 +373,7 @@ module.exports = function adminRoutes({ verifyCsrf }) {
       const latest = globalnews.latestGlobalPost();
       let text, link;
       if (latest) {
-        text = "[테스트] " + globalnews.buildKakaoMessageFromPost(latest);
+        text = "[테스트] " + globalnews.buildKakaoShortFromPost(latest);
         link = base + "/board/global/" + latest.id;
       } else {
         text = "[테스트] 도시공동체 지구촌소식 브리프\n카카오톡 자동발송 연동이 정상 작동합니다.";
