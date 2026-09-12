@@ -711,7 +711,7 @@ function buildOutlinePrompt(theme, sources) {
     '  "title": "보고서 제목(25~40자, 핵심 주제+변화, 평가보다 정보)",',
     '  "oneLine": "가장 중요한 사실과 의미를 압축한 한 줄 요약(50~90자)",',
     '  "summary": "게시글용 개요 4~6문장(핵심 논지와 결론 요지, 완결된 문장)",',
-    '  "keyFigures": ["판단에 필요한 핵심 수치 2~3개(단위·시점 명시). 없으면 []"],',
+    '  "keyPoints": ["보고서 전체를 관통하는 핵심 내용 4~5개. 각 항목은 하나의 완결된 문장(~다.)으로, 수치 나열이 아니라 무슨 일이 왜 중요한지 서술"],',
     '  "cases": [ { "country": "국가", "name": "제도/사례명", "angle": "특히 조명할 점 한 줄" } ]',
     "}",
     "",
@@ -787,7 +787,8 @@ async function writeFullReport(theme, sources) {
   if (!outline || !outline.title) return null;
 
   const arr = (v) => (Array.isArray(v) ? v.map((x) => String(x || "").trim()).filter(Boolean) : (v ? [String(v).trim()] : []));
-  const keyFigures = arr(outline.keyFigures);
+  // 핵심 내용: 보고서 전체를 관통하는 4~5개 완결 문장(구 keyFigures 대체)
+  const keyPoints = arr(outline.keyPoints).slice(0, 5);
   const oneLine = String(outline.oneLine || "").trim();
 
   const plan = sectionPlan(outline);
@@ -809,7 +810,7 @@ async function writeFullReport(theme, sources) {
     subtitle: oneLine || theme.focus,
     summary: String(outline.summary || oneLine || theme.focus).trim(),
     oneLine,
-    keyFigures,
+    keyPoints,
     sections,
   };
 }
@@ -846,9 +847,9 @@ function makeReportDocx(report, refs, dayKey) {
   const sections = [];
   // 한 줄 요약(있으면 맨 앞에)
   if (report.oneLine) sections.push({ heading: "한 줄 요약", paragraphs: [{ lead: String(report.oneLine) }] });
-  // 핵심 수치(있으면)
-  if (Array.isArray(report.keyFigures) && report.keyFigures.length) {
-    sections.push({ heading: "핵심 수치", paragraphs: report.keyFigures.map((f) => ({ bullet: String(f) })) });
+  // 핵심 내용(보고서 전체를 4~5개 핵심 문장으로 정리)
+  if (Array.isArray(report.keyPoints) && report.keyPoints.length) {
+    sections.push({ heading: "핵심 내용", paragraphs: report.keyPoints.map((f) => ({ bullet: String(f) })) });
   }
   // 본문 5문단(①~⑤)
   (report.sections || []).forEach((s) => sections.push({
