@@ -975,6 +975,56 @@ function buildKakaoMessage(report, refs, dayKey) {
   return lines.join("\n");
 }
 
+/** 저장된 지구촌소식브리프 게시물(content)을 파싱해 카카오 발송 메시지로 재구성.
+ *  발행 시점의 실제 내용(주요내용·참고자료·명언)을 그대로 반영한다. */
+function buildKakaoMessageFromPost(post) {
+  const content = String((post && post.content) || "");
+  const between = (label) => {
+    const m = content.match(new RegExp(`\\[${label}\\]\\s*([\\s\\S]*?)(?:\\n\\s*\\[|\\n\\s*※|$)`));
+    return m ? m[1].trim() : "";
+  };
+  // 날짜: 헤더 '발행일 yyyy.mm.dd.' → 없으면 created_at
+  let dateDot = "";
+  const dm = content.match(/발행일\s*([0-9]{4}\.\s*[0-9]{1,2}\.\s*[0-9]{1,2})\.?/);
+  if (dm) dateDot = dm[1].replace(/\s+/g, "");
+  else if (post && post.created_at) dateDot = fmtDot(post.created_at).replace(/\.\s*$/, "");
+
+  // 주요내용: 5문장 이내 요약
+  const highlight = between("주요내용");
+  const summary = kakaoSummary({ summary: highlight });
+
+  // 관련소식: [참고자료] 의 'N. 제목 — 매체' 줄에서 최대 10건
+  const refBlock = between("참고자료");
+  const refs = [];
+  for (const line of refBlock.split("\n")) {
+    const m = line.match(/^\s*\d+\.\s*(.+)$/);
+    if (!m) continue; // URL 줄 등은 건너뜀
+    const [title, source] = m[1].split(/\s+[—-]\s+/);
+    refs.push(`${refs.length + 1}. ${(title || m[1]).trim()} - ${(source || "미상").trim()}`);
+    if (refs.length >= 10) break;
+  }
+
+  // 명언: [오늘의 명언] 블록을 한 줄('- 문구 (by 저자) -')로 정규화
+  const qBlock = between("오늘의 명언");
+  let quoteLine = "";
+  const one = qBlock.match(/-\s*(.+?)\s*\(by\s*(.+?)\)\s*-/);
+  const two = qBlock.match(/-\s*(.+?)\s*-\s*\n-\s*by\s*(.+)/);
+  if (one) quoteLine = `- ${one[1].trim()} (by ${one[2].trim()}) -`;
+  else if (two) quoteLine = `- ${two[1].trim()} (by ${two[2].trim()}) -`;
+  else if (qBlock) quoteLine = qBlock.split("\n")[0].trim();
+
+  const out = [];
+  out.push(`${dateDot} 도시공동체 지구촌소식 브리프`);
+  out.push("");
+  out.push("[주요내용]");
+  out.push(summary);
+  out.push("");
+  out.push("[관련소식]");
+  refs.forEach((r) => out.push(r));
+  if (quoteLine) { out.push(""); out.push(quoteLine); }
+  return out.join("\n");
+}
+
 /* --------------------------------------------- 4) 발행(글+첨부) */
 
 function publishReport(report, sources, dayKey, theme, ai, guidOverride) {
@@ -1157,4 +1207,13 @@ function startScheduler() {
   console.log(`[report] 일일 스케줄러 시작 — 다음 정시 발행(KST): ${nextKst.toISOString().replace("T", " ").slice(0, 16)} · 안전망(매시간 캐치업) 활성`);
 }
 
-module.exports = { collectOnce, startScheduler, THEMES, AUTHOR, PERSONA, BOARD, buildKakaoMessage, SITE_BASE_URL };
+/** 최신 지구촌소식브리프 게시물 1건(카카오 미리보기/재발송용) */
+function latestGlobalPost() {
+  try { return db.prepare("SELECT * FROM posts WHERE board = ? ORDER BY id DESC LIMIT 1").get(BOARD) || null; }
+  catch (e) { return null; }
+}
+
+module.exports = {
+  collectOnce, startScheduler, THEMES, AUTHOR, PERSONA, BOARD,
+  buildKakaoMessage, buildKakaoMessageFromPost, latestGlobalPost, SITE_BASE_URL,
+};

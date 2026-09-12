@@ -323,11 +323,19 @@ module.exports = function adminRoutes({ verifyCsrf }) {
   const kakaoRedirectUri = (req) => oauth.baseUrl(req) + "/admin/kakao-memo/callback";
 
   router.get("/kakao-memo", requireAdmin, (req, res) => {
+    const globalnews = require("../globalnews");
+    const latest = globalnews.latestGlobalPost();
+    let preview = "", previewPostId = 0;
+    if (latest) {
+      try { preview = globalnews.buildKakaoMessageFromPost(latest); previewPostId = latest.id; } catch (e) {}
+    }
     res.render("admin-kakao", {
       ...res.locals,
       title: "카카오톡 자동발송",
       k: kakaoMemo.status(),
       redirectUri: kakaoRedirectUri(req),
+      preview,
+      previewPostId,
       msg: req.query.msg || "",
       err: req.query.err || "",
     });
@@ -357,14 +365,21 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     }
   });
 
-  // 테스트 발송
+  // 테스트 발송 — 최신 지구촌소식브리프 글의 실제 발송 메시지로 전송(없으면 안내 문구)
   router.post("/kakao-memo/test", requireAdmin, verifyCsrf, async (req, res) => {
     try {
+      const globalnews = require("../globalnews");
       const base = (process.env.BASE_URL || oauth.baseUrl(req)).replace(/\/+$/, "");
-      const n = await kakaoMemo.sendToMe(
-        "[테스트] 도시공동체 지구촌소식 브리프\n카카오톡 자동발송 연동이 정상 작동합니다.",
-        base + "/board/global"
-      );
+      const latest = globalnews.latestGlobalPost();
+      let text, link;
+      if (latest) {
+        text = "[테스트] " + globalnews.buildKakaoMessageFromPost(latest);
+        link = base + "/board/global/" + latest.id;
+      } else {
+        text = "[테스트] 도시공동체 지구촌소식 브리프\n카카오톡 자동발송 연동이 정상 작동합니다.";
+        link = base + "/board/global";
+      }
+      const n = await kakaoMemo.sendToMe(text, link);
       res.redirect("/admin/kakao-memo?msg=" + encodeURIComponent(`테스트 발송 완료(${n}통). 카카오톡을 확인하세요.`));
     } catch (e) {
       res.redirect("/admin/kakao-memo?err=" + encodeURIComponent("테스트 발송 실패: " + e.message));
