@@ -303,7 +303,7 @@
 @media (max-width: 720px) { .mp-guide-cards { grid-template-columns: 1fr; } }
 
 /* ── 공유바 (알림마당 상세 상단) ── */
-.share-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 22px; padding: 0 0 18px; border-bottom: 1px solid var(--line); }
+.share-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 22px; padding: 18px 0; border-bottom: 1px solid var(--line); }
 .share-label { font-size: .85rem; font-weight: 700; color: var(--muted); margin-right: 4px; }
 .share-btn { width: 38px; height: 38px; border: none; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; transition: transform .12s ease, filter .12s ease; padding: 0; }
 .share-btn[hidden] { display: none; }
