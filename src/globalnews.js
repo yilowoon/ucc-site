@@ -935,11 +935,10 @@ function makePostBody(report, sources, refs, dayKey, ai) {
   });
   lines.push("");
 
-  // 4) 오늘의 명언 — 주제(공동체·연대) 관련 검증된 격언
+  // 4) 오늘의 명언 — 주제(공동체·연대) 관련 검증된 격언 (한 줄: - 문구 (by 저자) -)
   const q = pickQuote(seq.dayOfYear);
   lines.push("[오늘의 명언]");
-  lines.push(`- ${q.text} -`);
-  lines.push(`- by ${q.author}`);
+  lines.push(`- ${q.text} (by ${q.author}) -`);
   lines.push("");
 
   // 5) 고지
