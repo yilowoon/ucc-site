@@ -235,6 +235,17 @@ try { db.exec("ALTER TABLE newsletter ADD COLUMN content TEXT NOT NULL DEFAULT '
 // newsletter: 조회수
 try { db.exec("ALTER TABLE newsletter ADD COLUMN views INTEGER NOT NULL DEFAULT 0"); } catch (e) {}
 
+// 관리자가 삭제한 SNS 계정 차단 목록: 삭제 후 간편로그인으로 자동 재가입/자동로그인 방지
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS deleted_social (
+    provider    TEXT NOT NULL,
+    provider_id TEXT NOT NULL,
+    email       TEXT NOT NULL DEFAULT '',
+    deleted_at  TEXT NOT NULL DEFAULT '',
+    PRIMARY KEY (provider, provider_id)
+  );`);
+} catch (e) {}
+
 // 앱 설정 KV(민감 토큰 등 — data/ucc.db 는 커밋 제외이므로 비밀 저장에 적합)
 try {
   db.exec(`CREATE TABLE IF NOT EXISTS app_settings (

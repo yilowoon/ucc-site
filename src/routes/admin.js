@@ -577,7 +577,22 @@ module.exports = function adminRoutes({ verifyCsrf }) {
   });
 
   router.post("/members/:id/delete", requireAdmin, verifyCsrf, (req, res) => {
-    db.prepare("DELETE FROM members WHERE id = ?").run(parseInt(req.params.id, 10));
+    const id = parseInt(req.params.id, 10);
+    const m = db.prepare("SELECT * FROM members WHERE id = ?").get(id);
+    if (m) {
+      // 1) SNS 연동 회원이면 삭제 목록에 기록 → 간편로그인 자동 재가입 차단
+      if (m.provider && m.provider_id) {
+        db.prepare("INSERT OR REPLACE INTO deleted_social (provider, provider_id, email, deleted_at) VALUES (?, ?, ?, ?)")
+          .run(m.provider, m.provider_id, m.email || "", new Date().toISOString());
+      }
+      // 2) 업로드 파일(기업 로고·소개자료) 정리
+      safeUnlink(m.biz_logo);
+      safeUnlink(m.biz_profile);
+      // 3) 문의 연동 해제(고아 참조 제거)
+      try { db.prepare("UPDATE contacts SET member_id = 0 WHERE member_id = ?").run(id); } catch (e) {}
+      // 4) 회원 정보 완전 삭제
+      db.prepare("DELETE FROM members WHERE id = ?").run(id);
+    }
     res.redirect("/admin/members");
   });
 

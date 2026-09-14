@@ -43,6 +43,8 @@ const PROVIDERS = {
     // 카카오 scope는 쉼표(,)로 구분. 닉네임만 요청(가장 기본, 검수 불필요).
     // 이메일까지 받으려면 동의항목에서 account_email 을 '사용'으로 켠 뒤 "profile_nickname,account_email" 로 변경.
     scope: "profile_nickname",
+    // 자동(무동의) 로그인 방지: 매 로그인마다 로그인·동의 절차를 다시 거치게 한다.
+    auth: { prompt: "login" },
   },
   naver: {
     label: "네이버",
@@ -52,6 +54,7 @@ const PROVIDERS = {
     tokenUrl: "https://nid.naver.com/oauth2.0/token",
     userUrl: "https://openapi.naver.com/v1/nid/me",
     scope: "",
+    auth: { auth_type: "reprompt" }, // 매번 재동의(자동 로그인 방지)
   },
   google: {
     label: "구글",
@@ -61,6 +64,7 @@ const PROVIDERS = {
     tokenUrl: "https://oauth2.googleapis.com/token",
     userUrl: "https://openidconnect.googleapis.com/v1/userinfo",
     scope: "openid email profile",
+    auth: { prompt: "select_account consent" }, // 계정 선택·동의 재확인(자동 로그인 방지)
   },
 };
 
@@ -93,6 +97,8 @@ function authorizeUrl(p, state, redirectUri) {
     state,
   });
   if (c.scope) q.set("scope", c.scope);
+  // 자동(무동의) 로그인 방지용 추가 파라미터(prompt / auth_type 등)
+  if (c.auth) for (const k of Object.keys(c.auth)) q.set(k, c.auth[k]);
   return `${c.authUrl}?${q.toString()}`;
 }
 
