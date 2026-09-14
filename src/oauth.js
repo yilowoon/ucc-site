@@ -165,4 +165,20 @@ async function exchange(p, code, redirectUri, state) {
   };
 }
 
-module.exports = { PROVIDERS, isEnabled, enabled, baseUrl, callbackUrl, authorizeUrl, exchange, signState, verifyState };
+/** 앱-사용자 연결 해제(동의 기록 초기화) — 재로그인 시 동의항목이 다시 표시되게 한다.
+ *  카카오: Admin 키로 user_id(=provider_id) 기준 unlink. (KAKAO_ADMIN_KEY 필요)
+ *  네이버/구글: 앱 어드민 키 기반 강제 해제 API가 없어 지원하지 않음(사용자 토큰 필요). */
+async function unlink(provider, providerId) {
+  if (provider !== "kakao") return { ok: false, reason: "unsupported-provider" };
+  const adminKey = process.env.KAKAO_ADMIN_KEY || "";
+  if (!adminKey) return { ok: false, reason: "no-admin-key" };
+  if (!providerId) return { ok: false, reason: "no-provider-id" };
+  const r = await fetchJson("https://kapi.kakao.com/v1/user/unlink", {
+    method: "POST",
+    headers: { Authorization: "KakaoAK " + adminKey, "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ target_id_type: "user_id", target_id: String(providerId) }).toString(),
+  });
+  return { ok: r.ok, status: r.status, detail: (r.text || "").slice(0, 200) };
+}
+
+module.exports = { PROVIDERS, isEnabled, enabled, baseUrl, callbackUrl, authorizeUrl, exchange, unlink, signState, verifyState };

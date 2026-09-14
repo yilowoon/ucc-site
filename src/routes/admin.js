@@ -576,14 +576,17 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     res.redirect(back);
   });
 
-  router.post("/members/:id/delete", requireAdmin, verifyCsrf, (req, res) => {
+  router.post("/members/:id/delete", requireAdmin, verifyCsrf, async (req, res) => {
     const id = parseInt(req.params.id, 10);
     const m = db.prepare("SELECT * FROM members WHERE id = ?").get(id);
     if (m) {
-      // 1) SNS 연동 회원이면 삭제 목록에 기록 → 간편로그인 자동 재가입 차단
+      // 1) SNS 연동 회원이면 앱-계정 연결 해제(동의 기록 초기화) → 재로그인 시 동의항목 다시 표시
       if (m.provider && m.provider_id) {
-        db.prepare("INSERT OR REPLACE INTO deleted_social (provider, provider_id, email, deleted_at) VALUES (?, ?, ?, ?)")
-          .run(m.provider, m.provider_id, m.email || "", new Date().toISOString());
+        try {
+          const r = await require("../oauth").unlink(m.provider, m.provider_id);
+          if (r.ok) console.log(`[oauth] 연결 해제 완료(${m.provider}): ${m.provider_id}`);
+          else console.warn(`[oauth] 연결 해제 미수행(${m.provider}): ${r.reason || r.status || "?"}${m.provider === "kakao" && r.reason === "no-admin-key" ? " — .env 에 KAKAO_ADMIN_KEY 설정 필요" : ""}`);
+        } catch (e) { console.error("[oauth] 연결 해제 오류:", e.message); }
       }
       // 2) 업로드 파일(기업 로고·소개자료) 정리
       safeUnlink(m.biz_logo);
@@ -594,20 +597,6 @@ module.exports = function adminRoutes({ verifyCsrf }) {
       db.prepare("DELETE FROM members WHERE id = ?").run(id);
     }
     res.redirect("/admin/members");
-  });
-
-  // ---------- 삭제된 SNS 계정(간편로그인 재가입 차단) 관리 ----------
-  router.get("/social-blocks", requireAdmin, (req, res) => {
-    const rows = db.prepare("SELECT provider, provider_id, email, deleted_at FROM deleted_social ORDER BY deleted_at DESC").all();
-    res.render("admin-social-blocks", { ...res.locals, title: "삭제된 SNS 계정 관리", rows, msg: req.query.msg || "" });
-  });
-  // 차단 해제(재가입 허용): 해당 SNS 계정이 다시 간편로그인하면 회원정보 입력 폼으로 진행됨
-  router.post("/social-blocks/delete", requireAdmin, verifyCsrf, (req, res) => {
-    const { provider, provider_id } = req.body;
-    if (provider && provider_id) {
-      db.prepare("DELETE FROM deleted_social WHERE provider = ? AND provider_id = ?").run(provider, provider_id);
-    }
-    res.redirect("/admin/social-blocks?msg=" + encodeURIComponent("차단을 해제했습니다. 해당 계정은 다시 간편로그인으로 가입할 수 있습니다."));
   });
 
   // ---------- 기업회원 > 임원사 관리 ----------

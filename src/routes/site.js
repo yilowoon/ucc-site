@@ -758,13 +758,6 @@ module.exports = function siteRoutes({ verifyCsrf }) {
       const prof = await oauth.exchange(p, req.query.code, oauth.callbackUrl(req, p), req.query.state);
       if (!prof || !prof.providerId) return oauthFail("프로필 정보를 가져오지 못했습니다.");
 
-      // 0) 관리자가 삭제한 SNS 계정 차단 — 자동 재가입/자동 로그인 방지
-      const blocked = db.prepare("SELECT 1 FROM deleted_social WHERE provider = ? AND provider_id = ?").get(p, prof.providerId);
-      if (blocked) {
-        console.warn(`[oauth] 삭제된 SNS 계정 로그인 시도 차단(${p}): ${prof.providerId}`);
-        return oauthFail("관리자에 의해 삭제된 계정입니다. 재가입을 원하시면 도시공동체본부로 문의해 주세요.");
-      }
-
       // 1) provider+id 로 기존 연동 회원 조회
       let m = db.prepare("SELECT * FROM members WHERE provider = ? AND provider_id = ?").get(p, prof.providerId);
 
