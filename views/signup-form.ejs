@@ -151,7 +151,7 @@
             <p class="verify-msg" id="verifyMsg" role="status" aria-live="polite"></p>
           </div>
         </div>
-        <div class="field"><label for="phone">연락처 <span class="opt-badge">선택</span> <span class="field-hint">숫자만 입력</span></label><input type="tel" id="phone" name="phone" value="<%= esc(form.phone || '') %>" inputmode="numeric" pattern="[0-9]{9,11}" maxlength="11" placeholder="숫자만 입력 (예: 01012345678)" oninput="this.value=this.value.replace(/[^0-9]/g,'')" /></div>
+        <div class="field"><label for="phone">연락처 <span class="req-badge">필수</span> <span class="field-hint">숫자만 입력</span></label><input type="tel" id="phone" name="phone" value="<%= esc(form.phone || '') %>" inputmode="numeric" pattern="[0-9]{9,11}" maxlength="11" placeholder="숫자만 입력 (예: 01012345678)" oninput="this.value=this.value.replace(/[^0-9]/g,'')" required /></div>
         <div class="write-grid">
           <div class="field"><label for="password">비밀번호 <span class="field-hint">8자 이상</span></label><input type="password" id="password" name="password" autocomplete="new-password" required minlength="8" /></div>
           <div class="field"><label for="confirm">비밀번호 확인</label><input type="password" id="confirm" name="confirm" autocomplete="new-password" required minlength="8" /></div>
