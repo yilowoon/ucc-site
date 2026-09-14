@@ -1,0 +1,45 @@
+<%- include('partials/header') %>
+<div class="container admin-wrap">
+  <div class="admin-head">
+    <div>
+      <h1>삭제된 SNS 계정 관리</h1>
+      <p class="admin-sub">관리자가 삭제한 SNS(간편로그인) 계정 목록입니다. 차단을 해제하면 해당 계정이 다시 간편로그인으로 가입할 수 있습니다.</p>
+    </div>
+    <div class="admin-head-actions">
+      <a class="btn btn-neutral btn-sm" href="/admin/members">← 회원 관리</a>
+    </div>
+  </div>
+
+  <% if (msg) { %><p class="form-alert ok"><%= msg %></p><% } %>
+
+  <div class="admin-auth-card" style="max-width:820px;margin-top:8px;">
+    <% if (!rows.length) { %>
+      <p class="field-hint">차단된 SNS 계정이 없습니다.</p>
+    <% } else { %>
+      <ul class="admin-list">
+        <li class="admin-list-head" aria-hidden="true">
+          <span style="flex:0 0 90px;">제공사</span>
+          <span style="flex:1;">이메일</span>
+          <span style="flex:0 0 120px;">삭제일</span>
+          <span style="flex:0 0 100px;text-align:right;">관리</span>
+        </li>
+        <% rows.forEach(function(r){ %>
+          <li class="admin-row" style="display:flex;align-items:center;gap:8px;">
+            <span style="flex:0 0 90px;"><span class="board-tag"><%= r.provider %></span></span>
+            <span style="flex:1;word-break:break-all;"><%= esc(r.email || '(이메일 없음)') %></span>
+            <span style="flex:0 0 120px;color:var(--muted);font-size:.88rem;"><%= (r.deleted_at || '').slice(0,10) %></span>
+            <span style="flex:0 0 100px;text-align:right;">
+              <form method="post" action="/admin/social-blocks/delete" onsubmit="return confirm('이 계정의 차단을 해제할까요? 다시 간편로그인으로 가입할 수 있게 됩니다.');" style="display:inline">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <input type="hidden" name="provider" value="<%= esc(r.provider) %>" />
+                <input type="hidden" name="provider_id" value="<%= esc(r.provider_id) %>" />
+                <button type="submit" class="linkbtn">차단 해제</button>
+              </form>
+            </span>
+          </li>
+        <% }); %>
+      </ul>
+    <% } %>
+  </div>
+</div>
+<%- include('partials/footer') %>

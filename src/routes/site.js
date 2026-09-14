@@ -519,6 +519,60 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     if (req.session.member) return res.redirect("/");
     res.render("signup-form", { ...res.locals, title: "회원가입 신청", error: null, form: {}, types: MEMBER_TYPES, fees: MEMBER_FEE, verifiedEmail: req.session.emailVerified || "" });
   });
+
+  // SNS 간편로그인 신규 → 회원정보 입력(간편가입 완료)
+  const providerLabel = (p) => (require("../oauth").PROVIDERS[p] || {}).label || "소셜";
+  router.get("/signup/social", (req, res) => {
+    if (req.session.member) return res.redirect("/");
+    const ps = req.session.pendingSocial;
+    if (!ps) return res.redirect("/login");
+    res.render("signup-social", {
+      ...res.locals, title: "회원정보 입력", error: null, types: MEMBER_TYPES,
+      providerLabel: providerLabel(ps.provider),
+      form: { name: ps.name || "", email: ps.email || "" },
+    });
+  });
+  router.post("/signup/social", verifyCsrf, (req, res) => {
+    const ps = req.session.pendingSocial;
+    if (!ps) return res.redirect("/login");
+    const name = (req.body.name || "").trim();
+    const memberType = MEMBER_TYPES.includes(req.body.member_type) ? req.body.member_type : "개인회원";
+    const orgName = (req.body.org_name || "").trim();
+    const position = (req.body.position || "").trim();
+    const job = (req.body.job || "").trim();
+    const interest = (req.body.interest || "").trim();
+    const phone = (req.body.phone || "").replace(/[^0-9]/g, "");
+    let email = (req.body.email || ps.email || "").trim().toLowerCase();
+    const form = { name, member_type: memberType, org_name: orgName, position, job, interest, phone, email };
+    const fail = (msg) => res.status(400).render("signup-social", {
+      ...res.locals, title: "회원정보 입력", error: msg, types: MEMBER_TYPES, providerLabel: providerLabel(ps.provider), form,
+    });
+
+    if (!name) return fail("이름을 입력해 주세요.");
+    if (!orgName) return fail("소속을 입력해 주세요.");
+    if (!position) return fail("직급을 입력해 주세요.");
+    if (!job) return fail("하시는 일을 입력해 주세요.");
+    if (!interest) return fail("관심 분야를 입력해 주세요.");
+    if (!/^[0-9]{9,11}$/.test(phone)) return fail("연락처를 숫자 9~11자리로 입력해 주세요.");
+    if (!email) email = `${ps.provider}_${ps.providerId}@social.ucc`;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("유효한 이메일을 입력해 주세요.");
+    // 이메일 중복 시 소셜 식별자 기반 대체 이메일로 회피
+    if (db.prepare("SELECT id FROM members WHERE email = ?").get(email)) {
+      email = `${ps.provider}_${ps.providerId}@social.ucc`;
+      if (db.prepare("SELECT id FROM members WHERE email = ?").get(email)) return fail("이미 가입된 계정입니다. 로그인해 주세요.");
+    }
+    const now = new Date().toISOString();
+    const info = db.prepare(
+      "INSERT INTO members (name, email, phone, member_type, org_name, position, job, interest, password_hash, provider, provider_id, created_at) " +
+      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    ).run(name, email, phone, memberType, orgName || "도시공동체본부", position, job, interest, "", ps.provider, ps.providerId, now);
+    const id = Number(info.lastInsertRowid);
+    const next = ps.next || "/";
+    delete req.session.pendingSocial;
+    req.session.member = { id, name, loginAt: Date.now() };
+    console.log(`[oauth] 신규 회원 가입 완료(${ps.provider}): #${id} ${email}`);
+    res.redirect(next);
+  });
   // 이메일 중복 확인(실시간)
   router.get("/api/check-email", (req, res) => {
     const email = (req.query.email || "").trim().toLowerCase();
@@ -776,28 +830,22 @@ module.exports = function siteRoutes({ verifyCsrf }) {
         }
       }
 
-      // 3) 신규 → 바로 회원가입(개인회원·준회원)
-      let isNew = false;
+      // 3) 신규 → 곧바로 자동 가입하지 않고, 회원정보 입력 폼(/signup/social)으로 유도
       if (!m) {
-        const email = (prof.email || `${p}_${prof.providerId}@social.ucc`).toLowerCase();
-        // 혹시 이메일 유니크 충돌 시 provider 기반 대체 이메일 사용
-        let finalEmail = email;
-        if (db.prepare("SELECT id FROM members WHERE email = ?").get(finalEmail)) {
-          finalEmail = `${p}_${prof.providerId}@social.ucc`;
-        }
-        const now = new Date().toISOString();
-        const info = db.prepare(
-          "INSERT INTO members (name, email, phone, member_type, org_name, position, job, interest, password_hash, provider, provider_id, created_at) " +
-          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        ).run(prof.name || "회원", finalEmail, "", "개인회원", "도시공동체본부", "", "", "", "", p, prof.providerId, now);
-        m = db.prepare("SELECT * FROM members WHERE id = ?").get(info.lastInsertRowid);
-        isNew = true;
-        console.log(`[oauth] 신규 회원 가입(${p}): #${m.id} ${m.email}`);
+        req.session.pendingSocial = {
+          provider: p,
+          providerId: prof.providerId,
+          name: prof.name || "",
+          email: (prof.email || "").toLowerCase(),
+          next: st.next || "/",
+        };
+        console.log(`[oauth] 신규 SNS 로그인(${p}) → 정보입력 폼으로 유도: ${prof.providerId}`);
+        return res.redirect("/signup/social");
       }
 
       req.session.member = { id: m.id, name: m.name, loginAt: Date.now() };
-      // 신규 가입 또는 정보 미완성(연락처 없음) → 마이페이지로 이동해 정보 입력 유도
-      const incomplete = isNew || !String(m.phone || "").trim();
+      // 기존 회원인데 정보 미완성(연락처 없음)이면 마이페이지로 이동해 정보 입력 유도
+      const incomplete = !String(m.phone || "").trim();
       return res.redirect(incomplete ? "/mypage/edit?welcome=1" : (st.next || "/"));
     } catch (e) {
       console.error(`[oauth] ${p} 콜백 오류:`, e.message);

@@ -596,6 +596,20 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     res.redirect("/admin/members");
   });
 
+  // ---------- 삭제된 SNS 계정(간편로그인 재가입 차단) 관리 ----------
+  router.get("/social-blocks", requireAdmin, (req, res) => {
+    const rows = db.prepare("SELECT provider, provider_id, email, deleted_at FROM deleted_social ORDER BY deleted_at DESC").all();
+    res.render("admin-social-blocks", { ...res.locals, title: "삭제된 SNS 계정 관리", rows, msg: req.query.msg || "" });
+  });
+  // 차단 해제(재가입 허용): 해당 SNS 계정이 다시 간편로그인하면 회원정보 입력 폼으로 진행됨
+  router.post("/social-blocks/delete", requireAdmin, verifyCsrf, (req, res) => {
+    const { provider, provider_id } = req.body;
+    if (provider && provider_id) {
+      db.prepare("DELETE FROM deleted_social WHERE provider = ? AND provider_id = ?").run(provider, provider_id);
+    }
+    res.redirect("/admin/social-blocks?msg=" + encodeURIComponent("차단을 해제했습니다. 해당 계정은 다시 간편로그인으로 가입할 수 있습니다."));
+  });
+
   // ---------- 기업회원 > 임원사 관리 ----------
   const { generateIntro } = require("../partner-intro");
   // 로고(logo, 이미지) + 기업소개자료(profile) 업로드

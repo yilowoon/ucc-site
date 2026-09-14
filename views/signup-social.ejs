@@ -1,0 +1,65 @@
+<%- include('partials/header') %>
+
+<style>
+  .ss-wrap{max-width:640px;margin:0 auto}
+  .ss-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius-lg);padding:clamp(22px,3vw,32px)}
+  .ss-intro{font-size:.95rem;color:var(--ink-soft);line-height:1.7;margin:0 0 18px}
+  .ss-intro b{color:var(--green-800)}
+  .req-badge{display:inline-block;margin-left:5px;font-size:.72rem;font-weight:700;color:#b53a2e;vertical-align:middle}
+  .opt-badge{display:inline-block;margin-left:5px;font-size:.72rem;font-weight:600;color:var(--muted);vertical-align:middle}
+  .ss-card input[readonly]{background:var(--paper-alt);color:var(--ink-soft)}
+</style>
+
+<section class="page-banner page-banner--sm">
+  <div class="container">
+    <span class="page-banner-en">MEMBERSHIP · APPLY</span>
+    <h1 class="page-banner-title">회원정보 입력</h1>
+  </div>
+</section>
+
+<div class="container page-wrap">
+  <div class="ss-wrap">
+    <div class="ss-card">
+      <p class="ss-intro"><b><%= providerLabel %></b> 계정으로 인증되었습니다. 회원가입을 완료하려면 아래 정보를 입력해 주세요.</p>
+      <% if (error) { %><p class="form-alert err"><%= error %></p><% } %>
+
+      <form method="post" action="/signup/social" class="admin-form-fields" autocomplete="off">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+        <div class="field">
+          <label for="member_type">회원 유형 <span class="req-badge">필수</span></label>
+          <select id="member_type" name="member_type" required>
+            <% types.forEach(function(t){ %>
+              <option value="<%= t %>" <%= (form.member_type === t) ? 'selected' : '' %>><%= t %></option>
+            <% }); %>
+          </select>
+        </div>
+
+        <div class="field"><label for="name">이름 <span class="req-badge">필수</span></label>
+          <input type="text" id="name" name="name" value="<%= esc(form.name || '') %>" autocomplete="name" required /></div>
+
+        <div class="field"><label for="org_name">소속 <span class="req-badge">필수</span> <span class="field-hint">소속기관이 없으면 '도시공동체본부'라고 입력</span></label>
+          <input type="text" id="org_name" name="org_name" value="<%= esc(form.org_name || '') %>" placeholder="소속기관·단체명 (없으면 도시공동체본부)" required /></div>
+
+        <div class="field"><label for="position">직급 <span class="req-badge">필수</span></label>
+          <input type="text" id="position" name="position" value="<%= esc(form.position || '') %>" placeholder="예: 대표, 팀장, 연구원" required /></div>
+
+        <div class="field"><label for="job">하시는 일 <span class="req-badge">필수</span></label>
+          <input type="text" id="job" name="job" value="<%= esc(form.job || '') %>" placeholder="담당 업무·활동" required /></div>
+
+        <div class="field"><label for="interest">관심 분야 <span class="req-badge">필수</span></label>
+          <input type="text" id="interest" name="interest" value="<%= esc(form.interest || '') %>" placeholder="예: 사회적경제, 도시재생, 협동조합" required /></div>
+
+        <div class="field"><label for="email">이메일 <span class="req-badge">필수</span></label>
+          <input type="email" id="email" name="email" value="<%= esc(form.email || '') %>" placeholder="이메일 주소" required <%= (form.email) ? 'readonly' : '' %> /></div>
+
+        <div class="field"><label for="phone">연락처 <span class="req-badge">필수</span> <span class="field-hint">숫자만 입력</span></label>
+          <input type="tel" id="phone" name="phone" value="<%= esc(form.phone || '') %>" inputmode="numeric" pattern="[0-9]{9,11}" maxlength="11" placeholder="숫자만 입력 (예: 01012345678)" oninput="this.value=this.value.replace(/[^0-9]/g,'')" required /></div>
+
+        <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top:8px;">회원가입 완료</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>
