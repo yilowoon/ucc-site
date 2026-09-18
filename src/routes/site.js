@@ -254,7 +254,7 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     ...res.locals, title: "함께하는 사람들",
     ogTitle: "함께하는 사람들 | 사단법인 도시공동체본부",
     ogDescription: "이사회·고문·자문위원 등 도시공동체본부와 함께하는 분들을 소개합니다.",
-    ogImage: "/img/og-together.jpg?v=1",
+    ogImage: "/img/og-together.png?v=2",
   }));
   // 정회원/준회원 페이지 — 통일 구조: 설명 + 개인/기업/단체 구분 + 명단(회원유형 열 포함)
   function renderGrade(grade, en, lead) {
