@@ -129,7 +129,12 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   router.get("/projects/community", (req, res) => res.render("community", { ...res.locals, title: "커뮤니티모임" }));
   router.get("/projects/convergence", (req, res) => res.render("convergence", { ...res.locals, title: "문화예술과학융합" }));
   // 엑스시그마 플랫폼 — 독립 레이아웃(자체 head·스타일) 페이지
-  router.get("/projects/xsigma", (req, res) => res.render("xsigma", { ...res.locals, title: "엑스시그마 플랫폼" }));
+  router.get("/projects/xsigma", (req, res) => res.render("xsigma", {
+    ...res.locals, title: "엑스시그마 플랫폼",
+    ogTitle: "엑스시그마 플랫폼 | 사단법인 도시공동체본부",
+    ogDescription: "지역의 난제를 바깥의 지식과 연결해 현장에서 검증하는 개방형 문제해결 플랫폼",
+    ogImage: "/img/og-xsigma.png?v=1",
+  }));
 
   // ---------- 알림마당: 뉴스레터 (사회적경제 등 키워드 뉴스 큐레이션) ----------
   router.get("/newsletter", (req, res) => {
