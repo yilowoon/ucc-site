@@ -24,7 +24,8 @@ try { require("dns").setDefaultResultOrder("ipv4first"); } catch (e) {}
       const k = s.slice(0, i).trim();
       let v = s.slice(i + 1).trim();
       if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1);
-      if (!(k in process.env)) process.env[k] = v;
+      // 실제 환경변수가 '값이 있으면' 우선(export/pm2 env). 미설정이거나 빈 값이면 .env 로 채운다.
+      if (!process.env[k]) process.env[k] = v;
     }
     console.log("[env] .env 로드됨");
   } catch (e) { /* 무시 */ }
