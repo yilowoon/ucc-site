@@ -815,9 +815,13 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     return res.redirect("/login?next=" + encodeURIComponent(req.originalUrl));
   }
 
-  // ---------- 회원 전용: 일정 캘린더(구글 캘린더 iCal 연동) ----------
+  // ---------- 회원(또는 관리자) 전용: 일정 캘린더(구글 캘린더 iCal 연동) ----------
   const gcal = require("../gcal");
-  router.get("/members/calendar", requireMember, async (req, res) => {
+  function requireMemberOrAdmin(req, res, next) {
+    if (req.session && (req.session.member || req.session.admin)) return next();
+    return res.redirect("/login?next=" + encodeURIComponent(req.originalUrl));
+  }
+  router.get("/members/calendar", requireMemberOrAdmin, async (req, res) => {
     const now = new Date(Date.now() + 9 * 3600 * 1000); // KST
     let year, month;
     if (/^\d{4}-\d{2}$/.test(req.query.ym || "")) { year = +req.query.ym.slice(0, 4); month = +req.query.ym.slice(5, 7); }
@@ -839,7 +843,7 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const today = now.getUTCFullYear() + "-" + String(now.getUTCMonth() + 1).padStart(2, "0") + "-" + String(now.getUTCDate()).padStart(2, "0");
     res.render("member-calendar", { ...res.locals, title: "일정 캘린더", year, month, weeks, prevYm, nextYm, ym: prefix, today, configured: gcal.isConfigured() });
   });
-  router.get("/members/calendar/day.json", requireMember, async (req, res) => {
+  router.get("/members/calendar/day.json", requireMemberOrAdmin, async (req, res) => {
     const date = String(req.query.date || "");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.json({ ok: false, error: "bad-date" });
     try {

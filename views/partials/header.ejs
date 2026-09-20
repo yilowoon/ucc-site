@@ -111,8 +111,10 @@
               <li><a href="/members/associate">준회원</a></li>
             </ul>
           </li>
-          <% if (isMember) { %>
+          <% if (isMember || isAdmin) { %>
             <li><a href="/members/calendar">일정 캘린더</a></li>
+          <% } %>
+          <% if (isMember) { %>
             <li><a href="/mypage">마이페이지</a></li>
             <li><a href="#" class="nav-cta" onclick="document.getElementById('mLogout').submit();return false;">로그아웃</a></li>
           <% } else { %>
@@ -175,6 +177,9 @@
         <a class="sub-link" href="/members/group">– 단체회원</a>
         <a class="sub-link" href="/members/associate">준회원</a>
       </details>
+      <% if (isMember || isAdmin) { %>
+        <a href="/members/calendar">일정 캘린더</a>
+      <% } %>
       <% if (isMember) { %>
         <a href="/mypage">마이페이지</a>
         <a href="#" onclick="document.getElementById('mLogout').submit();return false;">로그아웃</a>
