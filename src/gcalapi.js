@@ -29,7 +29,14 @@ function loadSA() {
   } catch (e) {}
   return null;
 }
-const CAL_ID = () => (process.env.GOOGLE_CALENDAR_ID || "").trim();
+const CAL_ID = () => {
+  let v = (process.env.GOOGLE_CALENDAR_ID || "").trim();
+  if (!v) return "";
+  // 실수로 '퍼가기(embed)/공개 URL'을 넣은 경우 src= 파라미터에서 실제 캘린더 ID 추출
+  const m = v.match(/[?&]src=([^&]+)/);
+  if (m) { try { v = decodeURIComponent(m[1]); } catch (e) { v = m[1]; } }
+  return v;
+};
 function isConfigured() { return !!(loadSA() && CAL_ID()); }
 
 const b64url = (b) => Buffer.from(b).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
