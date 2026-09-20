@@ -815,6 +815,39 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     return res.redirect("/login?next=" + encodeURIComponent(req.originalUrl));
   }
 
+  // ---------- 회원 전용: 일정 캘린더(구글 캘린더 iCal 연동) ----------
+  const gcal = require("../gcal");
+  router.get("/members/calendar", requireMember, async (req, res) => {
+    const now = new Date(Date.now() + 9 * 3600 * 1000); // KST
+    let year, month;
+    if (/^\d{4}-\d{2}$/.test(req.query.ym || "")) { year = +req.query.ym.slice(0, 4); month = +req.query.ym.slice(5, 7); }
+    else { year = now.getUTCFullYear(); month = now.getUTCMonth() + 1; }
+    if (month < 1) month = 1; if (month > 12) month = 12;
+    const prefix = year + "-" + String(month).padStart(2, "0");
+    const startWeekday = new Date(Date.UTC(year, month - 1, 1)).getUTCDay();
+    const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    let byDay = {};
+    try { byDay = await gcal.monthMap(year, month); } catch (e) {}
+    const cells = [];
+    for (let i = 0; i < startWeekday; i++) cells.push(null);
+    for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, events: byDay[d] || [] });
+    while (cells.length % 7 !== 0) cells.push(null);
+    const weeks = [];
+    for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+    const prevYm = month === 1 ? (year - 1) + "-12" : year + "-" + String(month - 1).padStart(2, "0");
+    const nextYm = month === 12 ? (year + 1) + "-01" : year + "-" + String(month + 1).padStart(2, "0");
+    const today = now.getUTCFullYear() + "-" + String(now.getUTCMonth() + 1).padStart(2, "0") + "-" + String(now.getUTCDate()).padStart(2, "0");
+    res.render("member-calendar", { ...res.locals, title: "일정 캘린더", year, month, weeks, prevYm, nextYm, ym: prefix, today, configured: gcal.isConfigured() });
+  });
+  router.get("/members/calendar/day.json", requireMember, async (req, res) => {
+    const date = String(req.query.date || "");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.json({ ok: false, error: "bad-date" });
+    try {
+      const [events, week] = await Promise.all([gcal.dayEvents(date), gcal.weekEvents(date)]);
+      res.json({ ok: true, date, events, week });
+    } catch (e) { res.json({ ok: false, error: "server" }); }
+  });
+
   router.get("/mypage", requireMember, (req, res) => {
     const m = db.prepare("SELECT * FROM members WHERE id = ?").get(req.session.member.id);
     if (!m) { delete req.session.member; return res.redirect("/login"); }

@@ -380,4 +380,6 @@ app.listen(PORT, () => {
   try { require("./src/globalnews").startKakaoScheduler(); } catch (e) { console.error("[globalnews] 카카오 스케줄러 시작 실패:", e.message); }
   // 준회원 정회원전환 안내 메일 (가입 1주일 경과, 회비 미확인) — 매시간 점검
   try { require("./src/member-reminder").startScheduler(); } catch (e) { console.error("[reminder] 스케줄러 시작 실패:", e.message); }
+  // 회원 캘린더: 구글 캘린더(iCal) 프리페치 + 30분 주기 동기화
+  try { require("./src/gcal").start(); } catch (e) { console.error("[gcal] 시작 실패:", e.message); }
 });

@@ -1,0 +1,143 @@
+<%- include('partials/header') %>
+
+<style>
+  .mc-cell{cursor:pointer;transition:background .12s}
+  .mc-cell:hover{background:var(--paper-warm)}
+  .mc-cell--active{outline:2px solid var(--gold-500);outline-offset:-2px;background:var(--paper-warm)}
+  .cal-event--g{background:var(--green-700);color:#fff}
+  .mc-panel{display:grid;grid-template-columns:1fr 1.4fr;gap:22px;margin-top:26px;align-items:start}
+  @media(max-width:820px){.mc-panel{grid-template-columns:1fr}}
+  .mc-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px}
+  .mc-card h3{margin:0 0 12px;font-size:1.05rem;color:var(--green-800);display:flex;align-items:center;gap:8px}
+  .mc-daylist{list-style:none;padding:0;margin:0}
+  .mc-daylist li{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .mc-daylist li:last-child{border-bottom:0}
+  .mc-time{flex:0 0 88px;font-weight:700;color:var(--green-700);font-variant-numeric:tabular-nums}
+  .mc-sum{font-weight:600;color:var(--ink)}
+  .mc-loc{color:var(--muted);font-size:.86rem;margin-top:2px}
+  .mc-empty{color:var(--muted);padding:10px 0}
+  table.mc-week{width:100%;border-collapse:collapse;font-size:.92rem}
+  table.mc-week th,table.mc-week td{border:1px solid var(--line);padding:9px 10px;vertical-align:top;text-align:left}
+  table.mc-week th{background:var(--paper-warm);white-space:nowrap;width:96px;color:var(--green-800)}
+  table.mc-week tr.is-sel td,table.mc-week tr.is-sel th{background:#fff7e6}
+  table.mc-week .wk-ev{display:block;padding:2px 0}
+  table.mc-week .wk-t{color:var(--green-700);font-weight:700;font-variant-numeric:tabular-nums;margin-right:6px}
+  table.mc-week .wk-none{color:var(--muted)}
+  .mc-notice{background:var(--paper-warm);border:1px solid var(--gold-500);border-radius:var(--radius);padding:16px 18px;color:var(--ink-soft);line-height:1.7;margin-top:20px}
+</style>
+
+<section class="page-banner page-banner--sm">
+  <div class="container">
+    <span class="page-banner-en">MEMBERS · CALENDAR</span>
+    <h1 class="page-banner-title">일정 캘린더</h1>
+  </div>
+</section>
+
+<div class="container page-wrap cal-wrap">
+  <div class="cal-head">
+    <a class="cal-nav" href="/members/calendar?ym=<%= prevYm %>" aria-label="이전 달">‹</a>
+    <h2 class="cal-title"><%= year %>년 <%= month %>월</h2>
+    <a class="cal-nav" href="/members/calendar?ym=<%= nextYm %>" aria-label="다음 달">›</a>
+  </div>
+
+  <% if (!configured) { %>
+    <div class="mc-notice">
+      아직 구글 캘린더가 연결되지 않았습니다. 관리자가 <code>.env</code> 에 <code>GOOGLE_CALENDAR_ICS</code>(구글 캘린더 비공개 iCal 주소)를 설정하면 도시공동체본부 일정이 이곳에 표시됩니다.
+    </div>
+  <% } %>
+
+  <div class="cal-grid" role="grid">
+    <div class="cal-dow cal-dow--sun">일</div>
+    <div class="cal-dow">월</div><div class="cal-dow">화</div><div class="cal-dow">수</div>
+    <div class="cal-dow">목</div><div class="cal-dow">금</div>
+    <div class="cal-dow cal-dow--sat">토</div>
+
+    <% weeks.forEach(function(week){ %>
+      <% week.forEach(function(cell, i){ %>
+        <% if (!cell) { %>
+          <div class="cal-cell cal-cell--empty"></div>
+        <% } else {
+             var dateStr = ym + '-' + String(cell.day).padStart(2,'0');
+             var isToday = dateStr === today;
+             var wk = i === 0 ? ' cal-cell--sun' : (i === 6 ? ' cal-cell--sat' : '');
+        %>
+          <div class="cal-cell mc-cell<%= wk %><%= isToday ? ' cal-cell--today' : '' %>" data-date="<%= dateStr %>" role="gridcell" tabindex="0">
+            <span class="cal-day"><%= cell.day %></span>
+            <% cell.events.slice(0,4).forEach(function(ev){ %>
+              <span class="cal-event cal-event--g" title="<%= esc((ev.time?ev.time+' ':'')+ev.summary) %>"><%= esc((ev.time?ev.time+' ':'')+ev.summary) %></span>
+            <% }); %>
+            <% if (cell.events.length>4){ %><span class="cal-more">+<%= cell.events.length-4 %></span><% } %>
+          </div>
+        <% } %>
+      <% }); %>
+    <% }); %>
+  </div>
+
+  <div class="mc-panel">
+    <div class="mc-card">
+      <h3>📌 <span id="mcDayTitle">날짜를 선택하세요</span></h3>
+      <ul class="mc-daylist" id="mcDayList"><li class="mc-empty">달력에서 날짜를 클릭하면 그날의 주요 업무가 표시됩니다.</li></ul>
+    </div>
+    <div class="mc-card">
+      <h3>🗓️ 주간 업무일정표 <span id="mcWeekRange" style="font-weight:500;color:var(--muted);font-size:.86rem"></span></h3>
+      <table class="mc-week"><tbody id="mcWeekBody"><tr><td class="mc-empty" style="border:0">날짜를 선택하면 해당 주(월~일) 일정표가 표시됩니다.</td></tr></tbody></table>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var grid = document.querySelector('.cal-grid');
+  var dayTitle = document.getElementById('mcDayTitle');
+  var dayList = document.getElementById('mcDayList');
+  var weekBody = document.getElementById('mcWeekBody');
+  var weekRange = document.getElementById('mcWeekRange');
+  var TODAY = <%- JSON.stringify(today) %>;
+  var esc = function(s){ var d=document.createElement('div'); d.textContent=(s==null?'':String(s)); return d.innerHTML; };
+  function fmtK(dk){ var p=dk.split('-'); return p[0]+'.'+p[1]+'.'+p[2]; }
+
+  function render(data, sel){
+    // 주요 업무(해당일)
+    dayTitle.textContent = fmtK(data.date) + ' 주요 업무';
+    if(!data.events.length){ dayList.innerHTML = '<li class="mc-empty">등록된 일정이 없습니다.</li>'; }
+    else {
+      dayList.innerHTML = data.events.map(function(e){
+        return '<li><span class="mc-time">'+(e.allDay?'종일':esc(e.time)+(e.endTime?'~'+esc(e.endTime):''))+'</span>'
+          + '<span><span class="mc-sum">'+esc(e.summary)+'</span>'
+          + (e.location?'<div class="mc-loc">📍 '+esc(e.location)+'</div>':'')+'</span></li>';
+      }).join('');
+    }
+    // 주간 표
+    if(data.week && data.week.length){
+      weekRange.textContent = '('+fmtK(data.week[0].dateKey)+' ~ '+fmtK(data.week[6].dateKey)+')';
+      weekBody.innerHTML = data.week.map(function(d){
+        var selCls = d.dateKey===sel ? ' class="is-sel"' : '';
+        var evs = d.events.length
+          ? d.events.map(function(e){ return '<span class="wk-ev">'+(e.allDay?'':'<span class="wk-t">'+esc(e.time)+'</span>')+esc(e.summary)+'</span>'; }).join('')
+          : '<span class="wk-none">—</span>';
+        var isToday = d.dateKey===TODAY ? ' ★' : '';
+        return '<tr'+selCls+'><th>'+d.weekday+' <small style="color:var(--muted)">'+d.dateKey.slice(5)+isToday+'</small></th><td>'+evs+'</td></tr>';
+      }).join('');
+    }
+  }
+
+  function load(date, cell){
+    document.querySelectorAll('.mc-cell--active').forEach(function(c){ c.classList.remove('mc-cell--active'); });
+    if(cell) cell.classList.add('mc-cell--active');
+    dayTitle.textContent = fmtK(date)+' 불러오는 중…';
+    fetch('/members/calendar/day.json?date='+encodeURIComponent(date))
+      .then(function(r){ return r.json(); })
+      .then(function(d){ if(d.ok) render(d, date); else dayList.innerHTML='<li class="mc-empty">불러오지 못했습니다.</li>'; })
+      .catch(function(){ dayList.innerHTML='<li class="mc-empty">네트워크 오류.</li>'; });
+  }
+
+  grid.addEventListener('click', function(e){ var c=e.target.closest('.mc-cell'); if(c) load(c.dataset.date, c); });
+  grid.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ var c=e.target.closest('.mc-cell'); if(c){ e.preventDefault(); load(c.dataset.date, c); } } });
+
+  // 로드 시 오늘(이번 달에 있으면) 자동 선택
+  var todayCell = document.querySelector('.mc-cell[data-date="'+TODAY+'"]');
+  if(todayCell) load(TODAY, todayCell);
+})();
+</script>
+
+<%- include('partials/footer') %>
