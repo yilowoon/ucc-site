@@ -3,7 +3,11 @@
   <div class="admin-head">
     <div>
       <h1>일정 관리</h1>
-      <p class="admin-sub">멤버쉽캘린더에 표시되는 일정을 등록·수정·삭제합니다. (구글 캘린더 일정과 함께 표시됩니다)</p>
+      <% if (typeof twoWay !== 'undefined' && twoWay) { %>
+        <p class="admin-sub">✅ 구글 캘린더와 <b>양방향 연동</b> 중 — 여기서 등록·수정·삭제하면 <b>구글 캘린더에도 즉시 반영</b>됩니다.</p>
+      <% } else { %>
+        <p class="admin-sub">멤버쉽캘린더에 표시되는 일정을 등록·수정·삭제합니다. (구글 캘린더 일정과 함께 표시 · 현재는 사이트 단방향)</p>
+      <% } %>
     </div>
     <div class="admin-head-actions">
       <a class="btn btn-neutral btn-sm" href="/members/calendar" target="_blank" rel="noopener">멤버쉽캘린더 보기</a>

@@ -32,3 +32,8 @@ public/img/hero/Gemini_*.png
 # 게시 도구 자격증명
 .env.publish
 tools/*.local.*
+
+# 구글 서비스 계정 키(비밀 — 절대 커밋 금지)
+gcal-service*.json
+service-account*.json
+*-service-account*.json

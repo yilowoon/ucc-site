@@ -600,31 +600,55 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     res.redirect("/admin/members");
   });
 
-  // ---------- 회원 캘린더 일정 관리(사이트 등록 일정) ----------
+  // ---------- 멤버쉽캘린더 일정 관리 ----------
+  // 구글 Calendar API(서비스 계정)가 설정되면 구글 캘린더에 직접 CRUD(양방향),
+  // 아니면 로컬 DB(cal_events)에 저장(단방향 + iCal 읽기).
+  const gcalapi = require("../gcalapi");
   const timeOk = (t) => t === "" || /^\d{2}:\d{2}$/.test(t);
-  router.get("/schedule", requireAdmin, (req, res) => {
-    res.render("admin-schedule", { ...res.locals, title: "일정 관리", events: calevents.listForAdmin(), error: null, edit: null, msg: req.query.msg || "" });
+  const cal = {
+    api: () => gcalapi.isConfigured(),
+    list: async () => (gcalapi.isConfigured() ? await gcalapi.listForAdmin() : calevents.listForAdmin()),
+    get: async (id) => (gcalapi.isConfigured() ? await gcalapi.get(id) : calevents.get(parseInt(id, 10))),
+    add: async (p) => (gcalapi.isConfigured() ? await gcalapi.insert(p) : calevents.add(p)),
+    update: async (id, p) => (gcalapi.isConfigured() ? await gcalapi.update(id, p) : calevents.update(parseInt(id, 10), p)),
+    remove: async (id) => (gcalapi.isConfigured() ? await gcalapi.remove(id) : calevents.remove(parseInt(id, 10))),
+  };
+  const twoWay = () => gcalapi.isConfigured();
+
+  router.get("/schedule", requireAdmin, async (req, res) => {
+    let events = []; try { events = await cal.list(); } catch (e) { console.error("[schedule] 목록 실패:", e.message); }
+    res.render("admin-schedule", { ...res.locals, title: "일정 관리", events, error: req.query.err || null, edit: null, msg: req.query.msg || "", twoWay: twoWay() });
   });
-  router.get("/schedule/:id/edit", requireAdmin, (req, res) => {
-    const ev = calevents.get(parseInt(req.params.id, 10));
+  router.get("/schedule/:id/edit", requireAdmin, async (req, res) => {
+    let ev = null, events = [];
+    try { ev = await cal.get(req.params.id); events = await cal.list(); } catch (e) {}
     if (!ev) return res.redirect("/admin/schedule");
-    res.render("admin-schedule", { ...res.locals, title: "일정 관리", events: calevents.listForAdmin(), error: null, edit: ev, msg: "" });
+    res.render("admin-schedule", { ...res.locals, title: "일정 관리", events, error: null, edit: ev, msg: "", twoWay: twoWay() });
   });
-  router.post("/schedule", requireAdmin, verifyCsrf, (req, res) => {
+  router.post("/schedule", requireAdmin, verifyCsrf, async (req, res) => {
     const date = (req.body.event_date || "").trim();
     const title = (req.body.title || "").trim();
     const st = (req.body.start_time || "").trim();
     const et = (req.body.end_time || "").trim();
-    const id = parseInt(req.body.id, 10) || 0;
-    const fail = (msg) => res.status(400).render("admin-schedule", { ...res.locals, title: "일정 관리", events: calevents.listForAdmin(), error: msg, edit: id ? { id, event_date: date, start_time: st, end_time: et, title, location: req.body.location, memo: req.body.memo } : null, msg: "" });
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !title) return fail("날짜(YYYY-MM-DD)와 제목을 정확히 입력해 주세요.");
-    if (!timeOk(st) || !timeOk(et)) return fail("시간은 HH:MM 형식으로 입력하거나 비워두세요(종일).");
+    const id = (req.body.id || "").trim();
+    const render400 = async (msg) => {
+      let events = []; try { events = await cal.list(); } catch (e) {}
+      res.status(400).render("admin-schedule", { ...res.locals, title: "일정 관리", events, error: msg, edit: id ? { id, event_date: date, start_time: st, end_time: et, title, location: req.body.location, memo: req.body.memo } : null, msg: "", twoWay: twoWay() });
+    };
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !title) return render400("날짜(YYYY-MM-DD)와 제목을 정확히 입력해 주세요.");
+    if (!timeOk(st) || !timeOk(et)) return render400("시간은 HH:MM 형식으로 입력하거나 비워두세요(종일).");
     const payload = { event_date: date, start_time: st, end_time: et, title, location: (req.body.location || "").trim(), memo: (req.body.memo || "").trim() };
-    if (id) calevents.update(id, payload); else calevents.add(payload);
+    try {
+      if (id) await cal.update(id, payload); else await cal.add(payload);
+    } catch (e) {
+      console.error("[schedule] 저장 실패:", e.message);
+      return render400("저장 실패: " + e.message + (twoWay() ? " (구글 캘린더 권한/설정을 확인하세요)" : ""));
+    }
     res.redirect("/admin/schedule?msg=" + encodeURIComponent(id ? "일정이 수정되었습니다." : "일정이 등록되었습니다."));
   });
-  router.post("/schedule/:id/delete", requireAdmin, verifyCsrf, (req, res) => {
-    calevents.remove(parseInt(req.params.id, 10));
+  router.post("/schedule/:id/delete", requireAdmin, verifyCsrf, async (req, res) => {
+    try { await cal.remove(req.params.id); }
+    catch (e) { return res.redirect("/admin/schedule?err=" + encodeURIComponent("삭제 실패: " + e.message)); }
     res.redirect("/admin/schedule?msg=" + encodeURIComponent("일정이 삭제되었습니다."));
   });
 

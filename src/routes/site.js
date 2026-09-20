@@ -816,15 +816,18 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   }
 
   // ---------- 회원(또는 관리자) 전용: 멤버쉽캘린더(구글 캘린더 iCal + 사이트 등록 일정) ----------
-  const gcal = require("../gcal");
-  const calevents = require("../calevents");
+  const gcal = require("../gcal");         // iCal 읽기(단방향)
+  const gcalapi = require("../gcalapi");   // Calendar API(양방향)
+  const calevents = require("../calevents"); // 로컬 일정
   function requireMemberOrAdmin(req, res, next) {
     if (req.session && (req.session.member || req.session.admin)) return next();
     return res.redirect("/login?next=" + encodeURIComponent(req.originalUrl));
   }
+  const calConfigured = () => gcalapi.isConfigured() || gcal.isConfigured();
   const sortEv = (a) => a.sort((x, y) => (x.allDay === y.allDay ? String(x.time).localeCompare(String(y.time)) : (x.allDay ? -1 : 1)));
-  // 특정일: 구글 + 사이트 일정 병합
+  // 특정일 이벤트: API 설정 시 구글 단일 소스, 아니면 iCal + 사이트 일정 병합
   async function combinedDay(dateKey) {
+    if (gcalapi.isConfigured()) { try { return sortEv(await gcalapi.dayEvents(dateKey)); } catch (e) { return []; } }
     let g = []; try { g = await gcal.dayEvents(dateKey); } catch (e) {}
     return sortEv([...g, ...calevents.dayEvents(dateKey)]);
   }
@@ -838,10 +841,13 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const startWeekday = new Date(Date.UTC(year, month - 1, 1)).getUTCDay();
     const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
     let byDay = {};
-    try { byDay = await gcal.monthMap(year, month); } catch (e) {}
-    // 사이트 등록 일정 병합
-    const sMap = calevents.monthMap(year, month);
-    for (const d of Object.keys(sMap)) { byDay[d] = sortEv([...(byDay[d] || []), ...sMap[d]]); }
+    if (gcalapi.isConfigured()) {
+      try { byDay = await gcalapi.monthMap(year, month); } catch (e) { byDay = {}; }
+    } else {
+      try { byDay = await gcal.monthMap(year, month); } catch (e) {}
+      const sMap = calevents.monthMap(year, month);
+      for (const d of Object.keys(sMap)) { byDay[d] = sortEv([...(byDay[d] || []), ...sMap[d]]); }
+    }
     const cells = [];
     for (let i = 0; i < startWeekday; i++) cells.push(null);
     for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, events: byDay[d] || [] });
@@ -851,7 +857,7 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const prevYm = month === 1 ? (year - 1) + "-12" : year + "-" + String(month - 1).padStart(2, "0");
     const nextYm = month === 12 ? (year + 1) + "-01" : year + "-" + String(month + 1).padStart(2, "0");
     const today = now.getUTCFullYear() + "-" + String(now.getUTCMonth() + 1).padStart(2, "0") + "-" + String(now.getUTCDate()).padStart(2, "0");
-    res.render("member-calendar", { ...res.locals, title: "멤버쉽캘린더", year, month, weeks, prevYm, nextYm, ym: prefix, today, configured: gcal.isConfigured() });
+    res.render("member-calendar", { ...res.locals, title: "멤버쉽캘린더", year, month, weeks, prevYm, nextYm, ym: prefix, today, configured: calConfigured() });
   });
   router.get("/members/calendar/day.json", requireMemberOrAdmin, async (req, res) => {
     const date = String(req.query.date || "");
