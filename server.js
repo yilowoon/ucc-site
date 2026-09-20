@@ -212,6 +212,10 @@ app.use((req, res, next) => {
 const THREAT_PATTERNS = [
   { re: /(wp-json|wp-login|wp-admin|wp-content|wp-includes|xmlrpc\.php|wlwmanifest|wp-config)/i, cat: "wordpress" },
   { re: /(\/\.env|\/\.git|\/\.aws|\/\.ssh|\/\.htaccess|\/\.htpasswd|\.sql(\?|$)|\.bak(\?|$))/i, cat: "secret" },
+  // 점 없는 비밀/설정 탐색 경로(/env, /credentials, /id_rsa, /aws/s3/credentials, Dockerfile 등)
+  { re: /(\/env\b|\/credentials|\/secret|\/id_rsa|\/id_dsa|\/aws\/|\/s3\/|\/dockerfile|\/rakefile|\/gemfile|\/composer\.(json|lock)|\/package\.json|\/config\.(json|php|ya?ml))/i, cat: "secret" },
+  // 서버 상태·디버그 정보 노출 탐색(phpinfo, profiler, actuator 등)
+  { re: /(\/server-status|\/nginx_status|\/phpinfo|\/_profiler|\/_ignition|\/actuator|\/telescope)/i, cat: "appscan" },
   { re: /(phpmyadmin|\/pma\b|adminer|dbadmin|\/administrator)/i, cat: "dbadmin" },
   { re: /(vendor\/phpunit|eval-stdin|\/cgi-bin|boaform|GponForm|\/shell|\/cmd\b|jndi:|\$\{)/i, cat: "rce" },
   { re: /(\.\.\/|\.\.%2f|%2e%2e|\/etc\/passwd)/i, cat: "traversal" },
