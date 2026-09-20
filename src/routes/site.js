@@ -815,11 +815,18 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     return res.redirect("/login?next=" + encodeURIComponent(req.originalUrl));
   }
 
-  // ---------- 회원(또는 관리자) 전용: 일정 캘린더(구글 캘린더 iCal 연동) ----------
+  // ---------- 회원(또는 관리자) 전용: 일정 캘린더(구글 캘린더 iCal + 사이트 등록 일정) ----------
   const gcal = require("../gcal");
+  const calevents = require("../calevents");
   function requireMemberOrAdmin(req, res, next) {
     if (req.session && (req.session.member || req.session.admin)) return next();
     return res.redirect("/login?next=" + encodeURIComponent(req.originalUrl));
+  }
+  const sortEv = (a) => a.sort((x, y) => (x.allDay === y.allDay ? String(x.time).localeCompare(String(y.time)) : (x.allDay ? -1 : 1)));
+  // 특정일: 구글 + 사이트 일정 병합
+  async function combinedDay(dateKey) {
+    let g = []; try { g = await gcal.dayEvents(dateKey); } catch (e) {}
+    return sortEv([...g, ...calevents.dayEvents(dateKey)]);
   }
   router.get("/members/calendar", requireMemberOrAdmin, async (req, res) => {
     const now = new Date(Date.now() + 9 * 3600 * 1000); // KST
@@ -832,6 +839,9 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
     let byDay = {};
     try { byDay = await gcal.monthMap(year, month); } catch (e) {}
+    // 사이트 등록 일정 병합
+    const sMap = calevents.monthMap(year, month);
+    for (const d of Object.keys(sMap)) { byDay[d] = sortEv([...(byDay[d] || []), ...sMap[d]]); }
     const cells = [];
     for (let i = 0; i < startWeekday; i++) cells.push(null);
     for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, events: byDay[d] || [] });
@@ -847,7 +857,16 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const date = String(req.query.date || "");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.json({ ok: false, error: "bad-date" });
     try {
-      const [events, week] = await Promise.all([gcal.dayEvents(date), gcal.weekEvents(date)]);
+      const [Y, M, D] = date.split("-").map(Number);
+      const base = new Date(Date.UTC(Y, M - 1, D));
+      const dow = base.getUTCDay();
+      const mon = new Date(base.getTime() + (dow === 0 ? -6 : 1 - dow) * 86400000);
+      const names = ["월", "화", "수", "목", "금", "토", "일"];
+      const pad = (n) => String(n).padStart(2, "0");
+      const weekKeys = [];
+      for (let i = 0; i < 7; i++) { const d = new Date(mon.getTime() + i * 86400000); weekKeys.push(`${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`); }
+      const [events, ...weekDays] = await Promise.all([combinedDay(date), ...weekKeys.map((k) => combinedDay(k))]);
+      const week = weekKeys.map((k, i) => ({ dateKey: k, weekday: names[i], events: weekDays[i] }));
       res.json({ ok: true, date, events, week });
     } catch (e) { res.json({ ok: false, error: "server" }); }
   });

@@ -235,6 +235,21 @@ try { db.exec("ALTER TABLE newsletter ADD COLUMN content TEXT NOT NULL DEFAULT '
 // newsletter: 조회수
 try { db.exec("ALTER TABLE newsletter ADD COLUMN views INTEGER NOT NULL DEFAULT 0"); } catch (e) {}
 
+// 회원 캘린더용 사이트 일정(관리자 직접 등록) — 구글 캘린더 일정과 함께 표시
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS cal_events (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_date TEXT NOT NULL,                 -- YYYY-MM-DD (KST)
+    start_time TEXT NOT NULL DEFAULT '',      -- 'HH:MM' 또는 '' (종일)
+    end_time   TEXT NOT NULL DEFAULT '',
+    title      TEXT NOT NULL,
+    location   TEXT NOT NULL DEFAULT '',
+    memo       TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+  );`);
+  db.exec("CREATE INDEX IF NOT EXISTS idx_cal_events_date ON cal_events(event_date, start_time)");
+} catch (e) {}
+
 // 앱 설정 KV(민감 토큰 등 — data/ucc.db 는 커밋 제외이므로 비밀 저장에 적합)
 try {
   db.exec(`CREATE TABLE IF NOT EXISTS app_settings (

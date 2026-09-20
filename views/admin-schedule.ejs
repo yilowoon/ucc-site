@@ -1,0 +1,73 @@
+<%- include('partials/header') %>
+<div class="container admin-wrap">
+  <div class="admin-head">
+    <div>
+      <h1>일정 관리</h1>
+      <p class="admin-sub">회원 캘린더에 표시되는 일정을 등록·수정·삭제합니다. (구글 캘린더 일정과 함께 표시됩니다)</p>
+    </div>
+    <div class="admin-head-actions">
+      <a class="btn btn-neutral btn-sm" href="/members/calendar" target="_blank" rel="noopener">캘린더 보기</a>
+      <a class="btn btn-neutral btn-sm" href="/admin">← 대시보드</a>
+    </div>
+  </div>
+
+  <% if (msg) { %><p class="form-alert ok"><%= msg %></p><% } %>
+  <% if (error) { %><p class="form-alert err"><%= error %></p><% } %>
+
+  <div class="admin-auth-card" style="max-width:760px;margin-top:8px;">
+    <h2 style="margin-top:0;"><%= edit ? '일정 수정' : '새 일정 등록' %></h2>
+    <form method="post" action="/admin/schedule" class="admin-form-fields">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <% if (edit) { %><input type="hidden" name="id" value="<%= edit.id %>" /><% } %>
+      <div class="write-grid" style="grid-template-columns:1fr 1fr 1fr;gap:14px;">
+        <div class="field"><label for="event_date">날짜 <span class="field-hint">필수</span></label>
+          <input type="date" id="event_date" name="event_date" value="<%= esc(edit ? edit.event_date : '') %>" required /></div>
+        <div class="field"><label for="start_time">시작 시간 <span class="field-hint">비우면 종일</span></label>
+          <input type="time" id="start_time" name="start_time" value="<%= esc(edit ? edit.start_time : '') %>" /></div>
+        <div class="field"><label for="end_time">종료 시간 <span class="field-hint">선택</span></label>
+          <input type="time" id="end_time" name="end_time" value="<%= esc(edit ? edit.end_time : '') %>" /></div>
+      </div>
+      <div class="field"><label for="title">제목 <span class="field-hint">필수</span></label>
+        <input type="text" id="title" name="title" value="<%= esc(edit ? edit.title : '') %>" placeholder="예: 이사회 정기회의" required /></div>
+      <div class="field"><label for="location">장소 <span class="field-hint">선택</span></label>
+        <input type="text" id="location" name="location" value="<%= esc(edit ? edit.location : '') %>" placeholder="예: 본부 회의실" /></div>
+      <div class="field"><label for="memo">메모 <span class="field-hint">선택</span></label>
+        <input type="text" id="memo" name="memo" value="<%= esc(edit ? edit.memo : '') %>" placeholder="비고" /></div>
+      <div style="display:flex;gap:8px;">
+        <button type="submit" class="btn btn-primary"><%= edit ? '수정 저장' : '일정 등록' %></button>
+        <% if (edit) { %><a class="btn btn-neutral" href="/admin/schedule">취소</a><% } %>
+      </div>
+    </form>
+  </div>
+
+  <div class="admin-auth-card" style="max-width:760px;margin-top:16px;">
+    <h2 style="margin-top:0;">등록된 일정 (<%= events.length %>)</h2>
+    <% if (!events.length) { %>
+      <p class="field-hint">등록된 사이트 일정이 없습니다.</p>
+    <% } else { %>
+      <ul class="admin-list">
+        <li class="admin-list-head" aria-hidden="true" style="display:flex;gap:8px;">
+          <span style="flex:0 0 110px;">날짜</span>
+          <span style="flex:0 0 96px;">시간</span>
+          <span style="flex:1;">제목 / 장소</span>
+          <span style="flex:0 0 96px;text-align:right;">관리</span>
+        </li>
+        <% events.forEach(function(e){ %>
+          <li class="admin-row" style="display:flex;gap:8px;align-items:center;">
+            <span style="flex:0 0 110px;font-variant-numeric:tabular-nums;"><%= e.event_date %></span>
+            <span style="flex:0 0 96px;color:var(--green-700);font-weight:700;"><%= e.start_time ? (e.start_time + (e.end_time ? '~'+e.end_time : '')) : '종일' %></span>
+            <span style="flex:1;"><b><%= esc(e.title) %></b><% if (e.location) { %> <span class="field-hint">· <%= esc(e.location) %></span><% } %></span>
+            <span style="flex:0 0 96px;text-align:right;">
+              <a href="/admin/schedule/<%= e.id %>/edit" class="linkbtn">수정</a>
+              <form action="/admin/schedule/<%= e.id %>/delete" method="post" style="display:inline" onsubmit="return confirm('이 일정을 삭제할까요?');">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <button type="submit" class="linkbtn linkbtn-danger">삭제</button>
+              </form>
+            </span>
+          </li>
+        <% }); %>
+      </ul>
+    <% } %>
+  </div>
+</div>
+<%- include('partials/footer') %>

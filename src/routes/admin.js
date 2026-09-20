@@ -13,6 +13,7 @@ const cfg = require("../config");
 const mailer = require("../mailer"); // 정회원 전환 시 환영 메일 발송
 const oauth = require("../oauth");   // 카카오 인가(나에게 보내기) — baseUrl/state 재사용
 const kakaoMemo = require("../kakao"); // 카카오톡 '나에게 보내기' 자동발송
+const calevents = require("../calevents"); // 회원 캘린더 사이트 일정
 
 // ---- 업로드 설정 ----
 const ALLOWED_EXT = new Set([
@@ -597,6 +598,34 @@ module.exports = function adminRoutes({ verifyCsrf }) {
       db.prepare("DELETE FROM members WHERE id = ?").run(id);
     }
     res.redirect("/admin/members");
+  });
+
+  // ---------- 회원 캘린더 일정 관리(사이트 등록 일정) ----------
+  const timeOk = (t) => t === "" || /^\d{2}:\d{2}$/.test(t);
+  router.get("/schedule", requireAdmin, (req, res) => {
+    res.render("admin-schedule", { ...res.locals, title: "일정 관리", events: calevents.listForAdmin(), error: null, edit: null, msg: req.query.msg || "" });
+  });
+  router.get("/schedule/:id/edit", requireAdmin, (req, res) => {
+    const ev = calevents.get(parseInt(req.params.id, 10));
+    if (!ev) return res.redirect("/admin/schedule");
+    res.render("admin-schedule", { ...res.locals, title: "일정 관리", events: calevents.listForAdmin(), error: null, edit: ev, msg: "" });
+  });
+  router.post("/schedule", requireAdmin, verifyCsrf, (req, res) => {
+    const date = (req.body.event_date || "").trim();
+    const title = (req.body.title || "").trim();
+    const st = (req.body.start_time || "").trim();
+    const et = (req.body.end_time || "").trim();
+    const id = parseInt(req.body.id, 10) || 0;
+    const fail = (msg) => res.status(400).render("admin-schedule", { ...res.locals, title: "일정 관리", events: calevents.listForAdmin(), error: msg, edit: id ? { id, event_date: date, start_time: st, end_time: et, title, location: req.body.location, memo: req.body.memo } : null, msg: "" });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !title) return fail("날짜(YYYY-MM-DD)와 제목을 정확히 입력해 주세요.");
+    if (!timeOk(st) || !timeOk(et)) return fail("시간은 HH:MM 형식으로 입력하거나 비워두세요(종일).");
+    const payload = { event_date: date, start_time: st, end_time: et, title, location: (req.body.location || "").trim(), memo: (req.body.memo || "").trim() };
+    if (id) calevents.update(id, payload); else calevents.add(payload);
+    res.redirect("/admin/schedule?msg=" + encodeURIComponent(id ? "일정이 수정되었습니다." : "일정이 등록되었습니다."));
+  });
+  router.post("/schedule/:id/delete", requireAdmin, verifyCsrf, (req, res) => {
+    calevents.remove(parseInt(req.params.id, 10));
+    res.redirect("/admin/schedule?msg=" + encodeURIComponent("일정이 삭제되었습니다."));
   });
 
   // ---------- 기업회원 > 임원사 관리 ----------
