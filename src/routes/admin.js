@@ -13,6 +13,7 @@ const cfg = require("../config");
 const mailer = require("../mailer"); // 정회원 전환 시 환영 메일 발송
 const oauth = require("../oauth");   // 카카오 인가(나에게 보내기) — baseUrl/state 재사용
 const kakaoMemo = require("../kakao"); // 카카오톡 '나에게 보내기' 자동발송
+const solapi = require("../solapi"); // 카카오 친구톡(솔라피) — 회원 대상 1000자 발송
 const calevents = require("../calevents"); // 회원 캘린더 사이트 일정
 
 // ---- 업로드 설정 ----
@@ -330,10 +331,15 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     if (latest) {
       try { preview = globalnews.buildKakaoShortFromPost(latest); previewPostId = latest.id; } catch (e) {}
     }
+    let ftPreview = "";
+    if (latest) { try { ftPreview = globalnews.buildKakaoMessageFromPost(latest).slice(0, 1000); } catch (e) {} }
     res.render("admin-kakao", {
       ...res.locals,
       title: "카카오톡 자동발송",
       k: kakaoMemo.status(),
+      ft: solapi.status(),
+      ftRecipients: globalnews.memberPhones().length,
+      ftPreview,
       redirectUri: kakaoRedirectUri(req),
       preview,
       previewPostId,
@@ -397,6 +403,35 @@ module.exports = function adminRoutes({ verifyCsrf }) {
   router.post("/kakao-memo/disconnect", requireAdmin, verifyCsrf, (req, res) => {
     kakaoMemo.disconnect();
     res.redirect("/admin/kakao-memo?msg=" + encodeURIComponent("카카오 연결을 해제했습니다."));
+  });
+
+  // ---------- 친구톡(솔라피): 회원 대상 1000자 자동발송 ----------
+  // ON/OFF
+  router.post("/kakao-memo/friendtalk/toggle", requireAdmin, verifyCsrf, (req, res) => {
+    if (!solapi.isConfigured()) {
+      return res.redirect("/admin/kakao-memo?err=" + encodeURIComponent("솔라피 미설정(.env 에 SOLAPI_API_KEY/SECRET/PFID 필요)"));
+    }
+    solapi.setOn(req.body.on === "1");
+    res.redirect("/admin/kakao-memo?msg=" + encodeURIComponent(req.body.on === "1" ? "친구톡 자동발송을 켰습니다. 매일 오전 8시(KST)에 회원들에게 발송됩니다." : "친구톡 자동발송을 껐습니다."));
+  });
+
+  // 테스트 발송 — 관리자 본인 번호로 최신 브리프 전송
+  router.post("/kakao-memo/friendtalk/test", requireAdmin, verifyCsrf, async (req, res) => {
+    try {
+      const to = String(req.body.phone || "").replace(/[^0-9]/g, "");
+      if (to.length < 9) throw new Error("테스트 받을 휴대폰 번호를 입력하세요.");
+      const globalnews = require("../globalnews");
+      const base = (process.env.BASE_URL || oauth.baseUrl(req)).replace(/\/+$/, "");
+      const latest = globalnews.latestGlobalPost();
+      const text = latest
+        ? globalnews.buildKakaoMessageFromPost(latest).slice(0, 1000)
+        : "[테스트] 도시공동체 지구촌소식 브리프 — 친구톡 연동이 정상 작동합니다.";
+      const link = base + "/board/global" + (latest ? "/" + latest.id : "");
+      const r = await solapi.sendFriendtalk([to], text, link);
+      res.redirect("/admin/kakao-memo?msg=" + encodeURIComponent(`친구톡 테스트 발송 요청 완료(${r.count}명). 카카오톡을 확인하세요.`));
+    } catch (e) {
+      res.redirect("/admin/kakao-memo?err=" + encodeURIComponent("친구톡 테스트 실패: " + e.message));
+    }
   });
 
   // ---------- 교육일정(캘린더) 관리 ----------

@@ -1271,6 +1271,35 @@ async function sendTodayKakao(reason = "manual") {
   return { sent: true, postId: post.id, parts: n };
 }
 
+/* ---- 친구톡(솔라피): 회원 대상 1000자 브리프 (별도 멱등) ---- */
+const K_FT_SENT_DAYKEY = "friendtalk_last_sent_daykey";
+
+function memberPhones() {
+  try {
+    return db.prepare("SELECT DISTINCT phone FROM members WHERE phone <> ''").all().map((r) => r.phone);
+  } catch (e) { return []; }
+}
+
+/** 오늘자 브리프를 회원들에게 친구톡으로 발송(하루 1회). 반환 { sent, reason?, count? } */
+async function sendTodayFriendtalk(reason = "manual") {
+  const solapi = require("./solapi");
+  const { getSetting, setSetting } = require("./db");
+  const seq = daySeq(new Date());
+  if (!solapi.isConfigured()) return { sent: false, reason: "not-configured" };
+  if (!solapi.onFlag()) return { sent: false, reason: "off" };
+  if (getSetting(K_FT_SENT_DAYKEY) === seq.key) return { sent: false, reason: "already-sent" };
+  const post = todaysGlobalPost();
+  if (!post) { console.log(`[친구톡] 오늘자 브리프 글이 아직 없어 발송 보류 (${reason})`); return { sent: false, reason: "no-post" }; }
+  const phones = memberPhones();
+  if (!phones.length) return { sent: false, reason: "no-recipients" };
+  const link = `${SITE_BASE_URL()}/board/global/${post.id}`;
+  const text = buildKakaoMessageFromPost(post).slice(0, 1000);
+  const r = await solapi.sendFriendtalk(phones, text, link);
+  setSetting(K_FT_SENT_DAYKEY, seq.key);
+  console.log(`[친구톡] 자동발송 완료 (${reason}) — post ${post.id}, ${r.count}명 · ${seq.key}`);
+  return { sent: true, postId: post.id, count: r.count };
+}
+
 function startKakaoScheduler() {
   const H = 8, M = 0; // 매일 08:00 KST 고정
   let running = false;
@@ -1280,6 +1309,8 @@ function startKakaoScheduler() {
     running = true;
     try { await sendTodayKakao(reason); }
     catch (e) { console.error(`[kakao] 자동발송 오류 (${reason}):`, e.message); }
+    try { await sendTodayFriendtalk(reason); }
+    catch (e) { console.error(`[친구톡] 자동발송 오류 (${reason}):`, e.message); }
     finally { running = false; }
   };
 
@@ -1300,7 +1331,7 @@ function startKakaoScheduler() {
 }
 
 module.exports = {
-  collectOnce, startScheduler, startKakaoScheduler, sendTodayKakao,
+  collectOnce, startScheduler, startKakaoScheduler, sendTodayKakao, sendTodayFriendtalk, memberPhones,
   THEMES, AUTHOR, PERSONA, BOARD,
   buildKakaoMessage, buildKakaoMessageFromPost, buildKakaoShortFromPost,
   latestGlobalPost, todaysGlobalPost, SITE_BASE_URL,

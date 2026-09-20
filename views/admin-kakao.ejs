@@ -52,6 +52,53 @@
   </div>
 
   <div class="admin-auth-card" style="max-width:720px;margin-top:16px;">
+    <h2 style="margin-top:0;">친구톡 — 회원 대상 발송 <span class="field-hint">(1통 1,000자 · 유료 · 솔라피)</span></h2>
+    <p class="admin-sub" style="margin-top:-4px;">
+      매일 오전 8시(KST)에 그날 브리프 <b>전문(최대 1,000자)</b>을 <b>채널을 친구추가한 회원들</b>에게 카카오 친구톡으로 자동 발송합니다.
+    </p>
+    <ul style="line-height:2;list-style:none;padding:0;">
+      <li>솔라피 설정(API KEY/SECRET/PFID):
+        <b style="color:<%= ft.configured ? '#137333' : '#c5221f' %>"><%= ft.configured ? '완료' : '없음(.env 확인)' %></b>
+      </li>
+      <li>발신번호: <b><%= ft.sender || '미설정' %></b></li>
+      <li>자동 발송: <b style="color:<%= ft.on ? '#137333' : '#8a6d00' %>"><%= ft.on ? 'ON' : 'OFF' %></b></li>
+      <li>수신 대상(연락처 등록 회원): <b><%= ftRecipients %></b>명</li>
+      <% if (ft.lastSent) { %><li>최근 발송: <span class="field-hint"><%= ft.lastSent.replace('T',' ').slice(0,16) %></span></li><% } %>
+      <% if (ft.lastError) { %><li style="color:#c5221f;">최근 오류: <span class="field-hint"><%= ft.lastError.slice(0,180) %></span></li><% } %>
+    </ul>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:14px;">
+      <form method="post" action="/admin/kakao-memo/friendtalk/toggle" style="display:inline">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <input type="hidden" name="on" value="<%= ft.on ? '0' : '1' %>" />
+        <button type="submit" class="btn <%= ft.on ? 'btn-ghost-dark' : 'btn-primary' %> btn-sm" <%= ft.configured ? '' : 'disabled' %>><%= ft.on ? '자동발송 끄기' : '자동발송 켜기' %></button>
+      </form>
+
+      <form method="post" action="/admin/kakao-memo/friendtalk/test" style="display:flex;gap:6px;align-items:flex-end;">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <div class="field" style="margin:0;">
+          <label for="ft_phone" style="font-size:.8rem;">테스트 수신번호</label>
+          <input type="tel" id="ft_phone" name="phone" placeholder="01012345678" style="padding:6px 8px;" />
+        </div>
+        <button type="submit" class="btn btn-neutral btn-sm" <%= ft.configured ? '' : 'disabled' %>>친구톡 테스트</button>
+      </form>
+    </div>
+
+    <% if (ftPreview) { %>
+      <details style="margin-top:14px;">
+        <summary style="cursor:pointer;font-weight:700;color:var(--green-700);">친구톡 발송 전문 미리보기 (<%= ftPreview.length %>자)</summary>
+        <pre style="white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:.88rem;line-height:1.6;background:var(--paper-warm);border:1px solid var(--line);border-radius:8px;padding:12px;margin-top:8px;"><%= ftPreview %></pre>
+      </details>
+    <% } %>
+
+    <p class="field-hint" style="line-height:1.7;margin-top:12px;">
+      · 친구톡은 <b>솔라피 계정·카카오 채널·발신프로필(pfId)·충전(유료)</b>이 준비되어야 실제 발송됩니다.<br />
+      · 회원이 카카오 채널을 <b>친구추가</b>하지 않았거나 번호가 없으면 그 회원에게는 전달되지 않습니다.<br />
+      · .env: <code>SOLAPI_API_KEY</code>, <code>SOLAPI_API_SECRET</code>, <code>SOLAPI_PFID</code>, <code>SOLAPI_SENDER</code> (서버에서 직접 입력)
+    </p>
+  </div>
+
+  <div class="admin-auth-card" style="max-width:720px;margin-top:16px;">
     <h2 style="margin-top:0;">카카오톡 발송 메시지 미리보기</h2>
     <p class="field-hint" style="line-height:1.7;margin-top:-4px;">
       실제로 카카오톡 '나에게 보내기'로 전송되는 내용입니다
