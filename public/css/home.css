@@ -401,7 +401,7 @@
 .cal-dow { background: var(--green-800); color: #fff; text-align: center; padding: 10px 0; font-weight: 700; font-size: .9rem; }
 .cal-dow--sun { color: #ffd0c4; }
 .cal-dow--sat { color: #bfe0ff; }
-.cal-cell { background: #fff; min-height: 98px; padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+.cal-cell { background: #fff; min-height: 98px; min-width: 0; padding: 8px; display: flex; flex-direction: column; gap: 4px; }
 .cal-cell--empty { background: var(--paper-warm); }
 .cal-day { font-size: .85rem; font-weight: 700; color: var(--ink-soft); }
 .cal-cell--sun .cal-day { color: #c0392b; }
