@@ -857,7 +857,7 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const prevYm = month === 1 ? (year - 1) + "-12" : year + "-" + String(month - 1).padStart(2, "0");
     const nextYm = month === 12 ? (year + 1) + "-01" : year + "-" + String(month + 1).padStart(2, "0");
     const today = now.getUTCFullYear() + "-" + String(now.getUTCMonth() + 1).padStart(2, "0") + "-" + String(now.getUTCDate()).padStart(2, "0");
-    res.render("member-calendar", { ...res.locals, title: "멤버십캘린더", year, month, weeks, prevYm, nextYm, ym: prefix, today, configured: calConfigured() });
+    res.render("member-calendar", { ...res.locals, title: "멤버십캘린더", ogImage: "/img/og-calendar.png?v=1", year, month, weeks, prevYm, nextYm, ym: prefix, today, configured: calConfigured() });
   });
   router.get("/members/calendar/day.json", requireMemberOrAdmin, async (req, res) => {
     const date = String(req.query.date || "");
