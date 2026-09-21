@@ -831,7 +831,21 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     let g = []; try { g = await gcal.dayEvents(dateKey); } catch (e) {}
     return sortEv([...g, ...calevents.dayEvents(dateKey)]);
   }
-  router.get("/members/calendar", requireMemberOrAdmin, async (req, res) => {
+  router.get("/members/calendar", async (req, res) => {
+    // 회원 전용이지만, OG(링크 미리보기)는 비로그인/크롤러에게도 노출되어야 하므로
+    // 리다이렉트 대신 OG 메타를 포함한 공개 게이트 페이지(200)를 렌더한다.
+    if (!(req.session && (req.session.member || req.session.admin))) {
+      return res.status(200).render("members-gate", {
+        ...res.locals,
+        title: "멤버십캘린더",
+        ogImage: "/img/og-calendar.png?v=1",
+        ogTitle: "멤버십캘린더 | 사단법인 도시공동체본부",
+        ogDescription: "도시공동체본부 회원 전용 — 월간 일정과 주간 업무일정표를 한눈에.",
+        ogUrl: (res.locals.baseUrl || "") + "/members/calendar",
+        gateTitle: "멤버십캘린더",
+        gateDesc: "도시공동체본부의 월간 일정과 주간 업무일정표를 제공하는 회원 전용 캘린더입니다.",
+      });
+    }
     const now = new Date(Date.now() + 9 * 3600 * 1000); // KST
     let year, month;
     if (/^\d{4}-\d{2}$/.test(req.query.ym || "")) { year = +req.query.ym.slice(0, 4); month = +req.query.ym.slice(5, 7); }
