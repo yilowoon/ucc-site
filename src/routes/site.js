@@ -815,7 +815,7 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     return res.redirect("/login?next=" + encodeURIComponent(req.originalUrl));
   }
 
-  // ---------- 회원(또는 관리자) 전용: 멤버쉽캘린더(구글 캘린더 iCal + 사이트 등록 일정) ----------
+  // ---------- 회원(또는 관리자) 전용: 멤버십캘린더(구글 캘린더 iCal + 사이트 등록 일정) ----------
   const gcal = require("../gcal");         // iCal 읽기(단방향)
   const gcalapi = require("../gcalapi");   // Calendar API(양방향)
   const calevents = require("../calevents"); // 로컬 일정
@@ -857,7 +857,7 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const prevYm = month === 1 ? (year - 1) + "-12" : year + "-" + String(month - 1).padStart(2, "0");
     const nextYm = month === 12 ? (year + 1) + "-01" : year + "-" + String(month + 1).padStart(2, "0");
     const today = now.getUTCFullYear() + "-" + String(now.getUTCMonth() + 1).padStart(2, "0") + "-" + String(now.getUTCDate()).padStart(2, "0");
-    res.render("member-calendar", { ...res.locals, title: "멤버쉽캘린더", year, month, weeks, prevYm, nextYm, ym: prefix, today, configured: calConfigured() });
+    res.render("member-calendar", { ...res.locals, title: "멤버십캘린더", year, month, weeks, prevYm, nextYm, ym: prefix, today, configured: calConfigured() });
   });
   router.get("/members/calendar/day.json", requireMemberOrAdmin, async (req, res) => {
     const date = String(req.query.date || "");

@@ -297,8 +297,8 @@ app.locals.blockedIps = blockedIps;
 const INDEX_HTML = fs.readFileSync(path.join(__dirname, "public", "index.html"), "utf8");
 const GUEST_NAV = '<li><a href="/login">로그인</a></li><li><a href="/signup" class="nav-cta">회원가입</a></li>';
 const GUEST_NAV_M = '<a href="/login">로그인</a><a href="/signup">회원가입</a>';
-const CAL_NAV = '<li><a href="/members/calendar">멤버쉽캘린더</a></li>';
-const CAL_NAV_M = '<a href="/members/calendar">멤버쉽캘린더</a>';
+const CAL_NAV = '<li><a href="/members/calendar">멤버십캘린더</a></li>';
+const CAL_NAV_M = '<a href="/members/calendar">멤버십캘린더</a>';
 app.get("/", (req, res) => {
   const base = req.protocol + "://" + req.get("host");
   const member = req.session && req.session.member;
@@ -313,7 +313,7 @@ app.get("/", (req, res) => {
   }
   // 관리자 세션(회원과 별개)에 따른 관리자 메뉴 — 서브페이지(header/footer.ejs)와 동일하게
   const isAdmin = !!(req.session && req.session.admin);
-  // 회원 또는 관리자면 '멤버쉽캘린더' 메뉴를 맨 앞에 노출(서브페이지와 통일)
+  // 회원 또는 관리자면 '멤버십캘린더' 메뉴를 맨 앞에 노출(서브페이지와 통일)
   if (member || isAdmin) { nav = CAL_NAV + nav; navM = CAL_NAV_M + navM; }
   const csrf = req.session.csrf || "";
   let adminNav = "", adminNavM = "";

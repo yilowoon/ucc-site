@@ -635,7 +635,7 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     res.redirect("/admin/members");
   });
 
-  // ---------- 멤버쉽캘린더 일정 관리 ----------
+  // ---------- 멤버십캘린더 일정 관리 ----------
   // 구글 Calendar API(서비스 계정)가 설정되면 구글 캘린더에 직접 CRUD(양방향),
   // 아니면 로컬 DB(cal_events)에 저장(단방향 + iCal 읽기).
   const gcalapi = require("../gcalapi");
