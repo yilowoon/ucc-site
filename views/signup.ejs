@@ -86,7 +86,8 @@
     <h2 class="ms-h c-green">가입 절차</h2>
     <ol class="ms-steps">
       <li><span class="ms-step-no">01</span><strong>온라인 신청</strong><em>아래 회원가입 폼 작성</em></li>
-      <li><span class="ms-step-no">02</span><strong>회비 납부</strong><em>안내 계좌 입금 또는 카드 결제</em></li>
+      <li><span class="ms-step-no">02</span><strong>회비 납부</strong><em>안내 계좌 입금 또는 카드 결제</em>
+        <button type="button" class="ms-fee-btn" id="feeOpen">회비 납부 안내 보기</button></li>
       <li><span class="ms-step-no">03</span><strong>회원증 발급</strong><em>납부 확인 후 디지털 회원증 즉시 발급</em></li>
       <li><span class="ms-step-no">04</span><strong>활동 시작</strong><em>커뮤니티 가입·교육·행사 안내</em></li>
     </ol>
@@ -114,5 +115,96 @@
     </ul>
   </section>
 </div>
+
+<!-- 회비 납부 안내 팝업 -->
+<div class="fee-modal" id="feeModal" aria-hidden="true">
+  <div class="fee-backdrop" data-fee-close></div>
+  <div class="fee-dialog" role="dialog" aria-modal="true" aria-labelledby="feeTitle">
+    <button type="button" class="fee-x" data-fee-close aria-label="닫기">&times;</button>
+    <h3 id="feeTitle" class="fee-title">회비 납부 안내</h3>
+
+    <div class="fee-fees">
+      <div class="fee-row"><span>준회원</span><b class="fee-free">무료</b></div>
+      <div class="fee-row"><span>정회원 · 개인회원</span><b>10,000원</b></div>
+      <div class="fee-row"><span>정회원 · 기업회원</span><b>300,000원</b></div>
+      <div class="fee-row"><span>단체회원</span><b class="fee-free">무료 <em>(2026년 현재 규정)</em></b></div>
+    </div>
+
+    <div class="fee-acct">
+      <div class="fee-acct-head">계좌이체 입금 안내</div>
+      <ul class="fee-acct-info">
+        <li><span>은행</span><b>하나은행</b></li>
+        <li><span>예금주</span><b>사단법인 도시공동체본부</b></li>
+        <li class="fee-num-row"><span>계좌번호</span>
+          <b id="feeAcctNo">602-910286-92405</b>
+          <button type="button" class="fee-copy" id="feeCopy" data-acct="602-910286-92405">복사</button>
+        </li>
+      </ul>
+      <figure class="fee-img">
+        <img src="/img/bank-account.png" alt="사단법인 도시공동체본부 하나은행 계좌 사본" loading="lazy" />
+      </figure>
+      <p class="fee-note">※ 입금 시 <b>신청자 성함</b>으로 보내주세요. 납부 확인 후 관리자가 정회원으로 전환해 드립니다.<br>※ 준회원·단체회원(2026년 현재)은 회비가 없습니다.</p>
+    </div>
+  </div>
+</div>
+
+<style>
+  .ms-fee-btn{display:inline-block;margin-top:8px;padding:7px 15px;border:1.5px solid var(--green-600,#1f6a4f);
+    background:var(--green-700,#1a4a3a);color:#fff;border-radius:8px;font-size:.85rem;font-weight:700;cursor:pointer;transition:background .15s}
+  .ms-fee-btn:hover{background:var(--green-800,#123a2e)}
+  .fee-modal{position:fixed;inset:0;z-index:1000;display:none}
+  .fee-modal.is-open{display:block}
+  .fee-backdrop{position:absolute;inset:0;background:rgba(15,30,24,.55)}
+  .fee-dialog{position:relative;max-width:520px;width:calc(100% - 32px);max-height:calc(100vh - 48px);overflow:auto;
+    margin:40px auto;background:#fff;border-radius:16px;padding:26px 26px 22px;box-shadow:0 30px 70px rgba(0,0,0,.35)}
+  .fee-x{position:absolute;top:12px;right:16px;border:0;background:none;font-size:1.9rem;line-height:1;color:#8a938e;cursor:pointer}
+  .fee-x:hover{color:#333}
+  .fee-title{margin:0 0 16px;font-size:1.3rem;color:var(--green-800,#123a2e);font-weight:800}
+  .fee-fees{border:1px solid var(--line,#e4e2da);border-radius:12px;overflow:hidden;margin-bottom:18px}
+  .fee-row{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;border-bottom:1px solid var(--line,#e4e2da);font-size:.95rem}
+  .fee-row:last-child{border-bottom:0}
+  .fee-row span{color:var(--ink-soft,#3d4a44)}
+  .fee-row b{color:var(--green-800,#123a2e);font-weight:800}
+  .fee-row b.fee-free{color:#2b8a5a}
+  .fee-row b em{font-style:normal;font-weight:600;font-size:.8rem;color:var(--muted,#6b766f)}
+  .fee-acct-head{font-weight:800;color:var(--green-700,#1a4a3a);margin-bottom:10px;font-size:1.02rem}
+  .fee-acct-info{list-style:none;padding:0;margin:0 0 14px}
+  .fee-acct-info li{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:.95rem}
+  .fee-acct-info li span{flex:0 0 66px;color:var(--muted,#6b766f)}
+  .fee-acct-info li b{color:var(--ink,#16211c);font-weight:700}
+  .fee-num-row #feeAcctNo{font-variant-numeric:tabular-nums;font-size:1.08rem;letter-spacing:.3px;color:var(--green-800,#123a2e)}
+  .fee-copy{margin-left:auto;border:1.5px solid var(--gold-500,#cd9b4c);background:#fff;color:#a9781f;
+    border-radius:7px;padding:5px 12px;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap}
+  .fee-copy:hover{background:var(--gold-500,#cd9b4c);color:#fff}
+  .fee-copy.copied{background:#2b8a5a;border-color:#2b8a5a;color:#fff}
+  .fee-img{margin:0 0 12px}
+  .fee-img img{width:100%;height:auto;border:1px solid var(--line,#e4e2da);border-radius:10px;display:block}
+  .fee-note{margin:0;font-size:.82rem;line-height:1.6;color:var(--muted,#6b766f)}
+</style>
+<script>
+(function(){
+  var modal=document.getElementById('feeModal');
+  var openBtn=document.getElementById('feeOpen');
+  if(!modal||!openBtn) return;
+  function open(){modal.classList.add('is-open');modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';}
+  function close(){modal.classList.remove('is-open');modal.setAttribute('aria-hidden','true');document.body.style.overflow='';}
+  openBtn.addEventListener('click',open);
+  modal.querySelectorAll('[data-fee-close]').forEach(function(el){el.addEventListener('click',close);});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&modal.classList.contains('is-open'))close();});
+
+  var copyBtn=document.getElementById('feeCopy');
+  if(copyBtn){
+    copyBtn.addEventListener('click',function(){
+      var num=copyBtn.getAttribute('data-acct');
+      var done=function(){copyBtn.classList.add('copied');var t=copyBtn.textContent;copyBtn.textContent='복사됨 ✓';
+        setTimeout(function(){copyBtn.classList.remove('copied');copyBtn.textContent='복사';},1600);};
+      if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(num).then(done).catch(function(){fallback(num,done);});}
+      else fallback(num,done);
+    });
+  }
+  function fallback(text,cb){var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();try{document.execCommand('copy');cb();}catch(e){}document.body.removeChild(ta);}
+})();
+</script>
 
 <%- include('partials/footer') %>
