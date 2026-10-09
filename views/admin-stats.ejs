@@ -71,12 +71,12 @@
         <h2>유입경로</h2>
         <% if (refRange.custom) { %><span class="ref-badge">구간 설정됨</span><% } else { %><span class="ref-badge ref-badge--all">전체 기간</span><% } %>
       </div>
-      <form class="ref-range" method="get" action="/stats#referrer">
+      <form class="ref-range" method="get" action="/admin/stats#referrer">
         <label>시작 <input type="date" name="from" value="<%= refRange.from %>" <% if (since) { %>min="<%= since %>"<% } %> max="<%= today %>" /></label>
         <span class="ref-tilde">~</span>
         <label>종료 <input type="date" name="to" value="<%= refRange.to %>" <% if (since) { %>min="<%= since %>"<% } %> max="<%= today %>" /></label>
         <button type="submit" class="btn btn-primary btn-sm">적용</button>
-        <a class="btn btn-neutral btn-sm" href="/stats#referrer">전체 기간</a>
+        <a class="btn btn-neutral btn-sm" href="/admin/stats#referrer">전체 기간</a>
       </form>
       <p class="ref-range-note">표시 구간: <b><%= refRange.from %></b> ~ <b><%= refRange.to %></b></p>
       <%
