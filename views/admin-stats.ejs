@@ -1,4 +1,15 @@
 <%- include('partials/header') %>
+<style>
+  #referrer .panel-head{display:flex;align-items:center;gap:10px}
+  .ref-badge{font-size:.74rem;font-weight:700;color:#a9781f;background:#fbf3e2;border:1px solid var(--gold-500,#cd9b4c);border-radius:20px;padding:2px 10px}
+  .ref-badge--all{color:var(--muted,#6b766f);background:var(--paper-warm,#f8f6f0);border-color:var(--line,#e4e2da)}
+  .ref-range{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:4px 0 2px}
+  .ref-range label{display:inline-flex;align-items:center;gap:6px;font-size:.84rem;color:var(--ink-soft,#3d4a44);font-weight:600}
+  .ref-range input[type=date]{padding:6px 8px;border:1px solid var(--line,#e4e2da);border-radius:8px;font-size:.84rem;color:var(--ink,#16211c);background:#fff}
+  .ref-tilde{color:var(--muted,#6b766f)}
+  .ref-range-note{margin:6px 0 2px;font-size:.82rem;color:var(--muted,#6b766f)}
+  .ref-range-note b{color:var(--green-800,#123a2e);font-variant-numeric:tabular-nums}
+</style>
 <div class="container admin-wrap">
   <div class="admin-head">
     <div>
@@ -55,8 +66,19 @@
 
   <div class="panel-grid">
     <!-- 유입경로 도넛 -->
-    <section class="panel">
-      <div class="panel-head"><h2>유입경로</h2></div>
+    <section class="panel" id="referrer">
+      <div class="panel-head">
+        <h2>유입경로</h2>
+        <% if (refRange.custom) { %><span class="ref-badge">구간 설정됨</span><% } else { %><span class="ref-badge ref-badge--all">전체 기간</span><% } %>
+      </div>
+      <form class="ref-range" method="get" action="/stats#referrer">
+        <label>시작 <input type="date" name="from" value="<%= refRange.from %>" <% if (since) { %>min="<%= since %>"<% } %> max="<%= today %>" /></label>
+        <span class="ref-tilde">~</span>
+        <label>종료 <input type="date" name="to" value="<%= refRange.to %>" <% if (since) { %>min="<%= since %>"<% } %> max="<%= today %>" /></label>
+        <button type="submit" class="btn btn-primary btn-sm">적용</button>
+        <a class="btn btn-neutral btn-sm" href="/stats#referrer">전체 기간</a>
+      </form>
+      <p class="ref-range-note">표시 구간: <b><%= refRange.from %></b> ~ <b><%= refRange.to %></b></p>
       <%
         const refColors = { "직접":"var(--ci-green-d)", "검색":"var(--ci-blue-d)", "소셜":"var(--ci-orange-d)", "기타":"#8b98a2" };
         const refTotal = refRows.reduce((s,r)=>s+r.c,0);
@@ -67,7 +89,7 @@
       <div class="donut-wrap">
         <div class="donut" style="background:<%= donut %>"><div class="donut-hole"><b><%= refTotal.toLocaleString() %></b><span>유입</span></div></div>
         <ul class="donut-legend">
-          <% if (!refRows.length) { %><li class="muted">데이터가 아직 없습니다.</li><% } %>
+          <% if (!refRows.length) { %><li class="muted"><%= refRange.custom ? '해당 구간에 외부 유입 데이터가 없습니다.' : '데이터가 아직 없습니다.' %></li><% } %>
           <% refRows.forEach(function(r){ var pct = refTotal ? Math.round(r.c/refTotal*100) : 0; %>
             <li><span class="lg-sw" style="background:<%= refColors[r.source] || '#8b98a2' %>"></span><span class="lg-name"><%= r.source %></span><span class="lg-val"><%= pct %>% <em>(<%= r.c.toLocaleString() %>)</em></span></li>
           <% }); %>

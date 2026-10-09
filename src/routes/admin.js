@@ -820,10 +820,18 @@ module.exports = function adminRoutes({ verifyCsrf }) {
       for (let m = 11; m >= 0; m--) { const d = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() - m, 1));
         monthly.push({ label: (d.getUTCMonth() + 1) + "월", v: uvMonth(d.toISOString().slice(0, 7)) }); } }
 
-    const refRows = db.prepare("SELECT source, COUNT(DISTINCT visitor) AS c FROM visits WHERE source != '내부' AND visitor <> '' GROUP BY source ORDER BY c DESC").all();
+    const since = db.prepare("SELECT MIN(day) AS m FROM visits").get().m;
+
+    // 유입경로: 기간(시작~종료) 설정 가능. 미지정 시 전체 기간.
+    const isDay = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || "");
+    let refFrom = isDay(req.query.from) ? req.query.from : (since || today);
+    let refTo = isDay(req.query.to) ? req.query.to : today;
+    if (refFrom > refTo) { const t = refFrom; refFrom = refTo; refTo = t; } // 뒤바뀌면 교정
+    const refRange = { from: refFrom, to: refTo, custom: isDay(req.query.from) || isDay(req.query.to) };
+    const refRows = db.prepare("SELECT source, COUNT(DISTINCT visitor) AS c FROM visits WHERE source != '내부' AND visitor <> '' AND day BETWEEN ? AND ? GROUP BY source ORDER BY c DESC").all(refFrom, refTo);
+
     const pageRows = db.prepare("SELECT path, COUNT(DISTINCT visitor) AS c FROM visits WHERE visitor <> '' GROUP BY path ORDER BY c DESC LIMIT 8").all();
     const devRows = db.prepare("SELECT device, COUNT(DISTINCT visitor) AS c FROM visits WHERE visitor <> '' GROUP BY device").all();
-    const since = db.prepare("SELECT MIN(day) AS m FROM visits").get().m;
 
     // 일별 상세 테이블: 최근 90일, 일별 총 순방문자 + 유입경로별 순방문자
     const dailyStart = kstDay(89);
@@ -838,7 +846,7 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     srcRows.forEach((r) => { if (dmap[r.day] && r.source in dmap[r.day]) dmap[r.day][r.source] = r.n; });
     const dailyTable = Object.values(dmap).sort((a, b) => (a.day < b.day ? 1 : -1)); // 최근순
 
-    res.render("admin-stats", { ...res.locals, title: "트래픽 통계", summary, daily, weekly, monthly, refRows, pageRows, devRows, since, today, dailyTable });
+    res.render("admin-stats", { ...res.locals, title: "트래픽 통계", summary, daily, weekly, monthly, refRows, refRange, pageRows, devRows, since, today, dailyTable });
   });
 
   // ---------- 접속기록(IP 로그) ----------
