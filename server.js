@@ -41,8 +41,43 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const IS_PROD = process.env.NODE_ENV === "production";
 
+// 서버 지문 숨김 (X-Powered-By: Express 제거)
+app.disable("x-powered-by");
+
 // 리버스 프록시(로드밸런서·터널·PaaS) 뒤에서 HTTPS·쿠키 정상 동작
 app.set("trust proxy", 1);
+
+// ---- 보안 응답 헤더 (전역) ----
+// CSP 허용 외부 호스트: Pretendard(jsdelivr), 카카오 SDK/공유, 다음 우편번호.
+// inline 스크립트·스타일이 다수라 'unsafe-inline' 유지(기능 보존). frame-ancestors/object-src/base-uri 로 실질 방어.
+const CSP = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'self'",
+  "form-action 'self'",
+  "img-src 'self' data: blob: https:",
+  "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+  "font-src 'self' data: https://cdn.jsdelivr.net",
+  "script-src 'self' 'unsafe-inline' https://t1.daumcdn.net https://*.daumcdn.net https://t1.kakaocdn.net https://*.kakaocdn.net https://*.kakao.com",
+  "connect-src 'self' https://*.daum.net https://*.daumcdn.net https://*.kakao.com https://*.kakaocdn.net",
+  "frame-src 'self' https://postcode.map.daum.net https://*.daum.net https://*.kakao.com",
+  "upgrade-insecure-requests",
+].join("; ");
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=(), payment=(), usb=(), interest-cohort=()");
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Content-Security-Policy", CSP);
+  // HSTS: HTTPS 연결에서만(평문 HTTP 응답엔 무의미/부작용). 1년 + 서브도메인 + preload.
+  if (req.secure || req.headers["x-forwarded-proto"] === "https") {
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+  }
+  next();
+});
 if (IS_PROD && (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 16)) {
   console.warn("⚠ 프로덕션에서는 SESSION_SECRET 환경변수(16자 이상)를 반드시 설정하세요.");
 }
