@@ -327,6 +327,30 @@ app.use((req, res, next) => {
 // 관리자에서 차단 목록 조회/해제할 수 있도록 캐시 공유
 app.locals.blockedIps = blockedIps;
 
+// ---- SNS 간편가입 필수정보 게이트 ----
+// 카카오 등 SNS 간편로그인은 연락 가능한 정보(이름·소속·이메일·연락처 등)를 주지 않으므로,
+// 미완료(profile_complete=0) 회원은 정보입력(/mypage/edit)을 마치기 전까지 다른 페이지 이용을 막고
+// 정보입력 페이지로 유도한다. (일반 가입자·관리자·정보 완료 회원은 영향 없음)
+const PROFILE_GATE_ALLOW = [
+  "/mypage/edit", "/mypage/password", "/logout",
+  "/api/", "/auth/", "/css/", "/js/", "/img/", "/uploads/",
+  "/favicon", "/robots", "/.well-known",
+];
+app.use((req, res, next) => {
+  const sess = req.session && req.session.member;
+  if (!sess) return next();
+  const p = req.path;
+  if (p.startsWith("/admin")) return next();
+  if (PROFILE_GATE_ALLOW.some((x) => p === x || p.startsWith(x))) return next();
+  try {
+    const m = db.prepare("SELECT provider, profile_complete FROM members WHERE id = ?").get(sess.id);
+    if (m && m.provider && m.profile_complete === 0) {
+      return res.redirect("/mypage/edit?welcome=1");
+    }
+  } catch (e) { /* 조회 실패 시 통과 */ }
+  next();
+});
+
 // ---- Routes ----
 // 홈: 정적 index.html에 OG 절대 URL(__BASE__)을 요청 호스트 기준으로 주입해 서빙
 const INDEX_HTML = fs.readFileSync(path.join(__dirname, "public", "index.html"), "utf8");

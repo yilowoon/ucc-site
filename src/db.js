@@ -219,6 +219,18 @@ try { db.exec("ALTER TABLE members ADD COLUMN reminder_optout INTEGER NOT NULL D
 try { db.exec("ALTER TABLE members ADD COLUMN provider TEXT NOT NULL DEFAULT ''"); } catch (e) {}    // '' | kakao | naver | google
 try { db.exec("ALTER TABLE members ADD COLUMN provider_id TEXT NOT NULL DEFAULT ''"); } catch (e) {} // 제공사 고유 사용자 ID
 try { db.exec("CREATE INDEX IF NOT EXISTS idx_members_provider ON members(provider, provider_id)"); } catch (e) {}
+// SNS 간편가입 후 필수정보(이름·소속·직급·하는일·관심분야·실제이메일·연락처) 입력 완료 여부
+// 1 = 완료(일반 가입자는 기본 완료), 0 = 미완료 → 로그인 시 정보입력 강제
+try { db.exec("ALTER TABLE members ADD COLUMN profile_complete INTEGER NOT NULL DEFAULT 1"); } catch (e) {}
+// 기존 SNS 가입자 중 연락 정보가 비어 있는 회원은 '미완료'로 표시(다음 로그인 시 입력 유도).
+// 완료 처리된 회원은 모든 필드가 채워져 있어 매 기동 시에도 다시 0으로 바뀌지 않음(멱등).
+try {
+  db.exec(
+    "UPDATE members SET profile_complete = 0 WHERE provider <> '' AND profile_complete = 1 AND (" +
+    "phone = '' OR email LIKE '%@social.ucc' OR org_name = '' OR position = '' OR job = '' OR interest = '' " +
+    "OR name IN ('', '회원', '카카오회원', '네이버회원', '구글회원'))"
+  );
+} catch (e) {}
 // contacts: 문의 확인용 4자리 PIN 해시 · 회원 연동 · 관리자 답변
 try { db.exec("ALTER TABLE contacts ADD COLUMN pw_hash TEXT NOT NULL DEFAULT ''"); } catch (e) {}     // 4자리 PIN(bcrypt)
 try { db.exec("ALTER TABLE contacts ADD COLUMN member_id INTEGER NOT NULL DEFAULT 0"); } catch (e) {} // 회원이 작성한 경우

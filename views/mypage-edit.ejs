@@ -1,4 +1,10 @@
 <%- include('partials/header') %>
+<style>
+  .mp-guide--req{border:1.5px solid #e6a6a0;background:#fdf3f2}
+  .mp-guide-badge--req{background:#c5221f;color:#fff}
+  .mp-req-list{margin:8px 0 0;font-size:.9rem;color:#8a2a22;background:#fff;border:1px solid #f0cfcb;border-radius:8px;padding:10px 12px}
+  .mp-req-list b{color:#c5221f}
+</style>
 
 <section class="page-banner">
   <div class="container">
@@ -17,7 +23,19 @@
     <p class="mp-fee-note">정회원 전환 시 위 회비가 적용됩니다. (회비 납부 확인 후 관리자 승인)</p>
   </aside>
 
-  <% if (typeof welcome !== 'undefined' && welcome) { %>
+  <% var mustComplete = (m && m.provider && Number(m.profile_complete) === 0); %>
+  <% if (mustComplete) { %>
+    <section class="mp-guide mp-guide--req">
+      <div class="mp-guide-head">
+        <span class="mp-guide-badge mp-guide-badge--req">필수 정보 입력</span>
+        <h2 class="mp-guide-title">연락 가능한 정보를 입력해 주세요</h2>
+      </div>
+      <p class="mp-guide-lead">
+        간편로그인(카카오 등)으로 가입하셨습니다. 원활한 회원 관리와 안내를 위해 아래 <b>필수 정보</b>를 입력하고 저장해야 서비스를 이용하실 수 있습니다.
+      </p>
+      <p class="mp-req-list"><b>필수 항목</b> — 이름 · 소속 · 직급 · 하시는 일 · 관심 분야 · 이메일(인증 포함) · 연락처</p>
+    </section>
+  <% } else if (typeof welcome !== 'undefined' && welcome) { %>
     <section class="mp-guide">
       <div class="mp-guide-head">
         <span class="mp-guide-badge">간편로그인 완료</span>

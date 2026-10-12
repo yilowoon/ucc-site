@@ -791,9 +791,9 @@ module.exports = function siteRoutes({ verifyCsrf }) {
         }
         const now = new Date().toISOString();
         const info = db.prepare(
-          "INSERT INTO members (name, email, phone, member_type, org_name, position, job, interest, password_hash, provider, provider_id, created_at) " +
-          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        ).run(prof.name || "회원", finalEmail, "", "개인회원", "도시공동체본부", "", "", "", "", p, prof.providerId, now);
+          "INSERT INTO members (name, email, phone, member_type, org_name, position, job, interest, password_hash, provider, provider_id, profile_complete, created_at) " +
+          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)"
+        ).run(prof.name || "회원", finalEmail, "", "개인회원", "", "", "", "", "", p, prof.providerId, now);
         m = db.prepare("SELECT * FROM members WHERE id = ?").get(info.lastInsertRowid);
         isNew = true;
         console.log(`[oauth] 신규 회원 가입(${p}): #${m.id} ${m.email}`);
@@ -902,7 +902,8 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   router.get("/mypage/edit", requireMember, (req, res) => {
     const m = db.prepare("SELECT * FROM members WHERE id = ?").get(req.session.member.id);
     if (!m) { delete req.session.member; return res.redirect("/login"); }
-    res.render("mypage-edit", { ...res.locals, title: "내 정보 수정", m, error: null, pwError: null, done: null, hasPassword: hasPw(m), welcome: req.query.welcome === "1" });
+    const mustComplete = !!(m.provider && m.profile_complete === 0);
+    res.render("mypage-edit", { ...res.locals, title: "내 정보 수정", m, error: null, pwError: null, done: null, hasPassword: hasPw(m), welcome: req.query.welcome === "1", mustComplete });
   });
 
   // 정보 수정 — 비밀번호 있는 계정만 현재 비밀번호 재확인(소셜 계정은 세션 인증으로 충분)
@@ -940,8 +941,25 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const eduLevel = eduLevels.includes(req.body.edu_level) ? req.body.edu_level : "";
     const major = (req.body.major || "").trim();
     const specialty = (req.body.specialty || "").trim();
+
+    // SNS 간편가입 필수정보 미완료 회원 → 연락 가능한 정보 입력 강제
+    const mustComplete = !!(m.provider && m.profile_complete === 0);
+    if (mustComplete) {
+      const placeholder = ["회원", "카카오회원", "네이버회원", "구글회원"];
+      const miss = [];
+      if (!(req.body.name || "").trim() || placeholder.includes((req.body.name || "").trim())) miss.push("이름");
+      if (!(req.body.org_name || "").trim()) miss.push("소속");
+      if (!(req.body.position || "").trim()) miss.push("직급");
+      if (!(req.body.job || "").trim()) miss.push("하시는 일");
+      if (!(req.body.interest || "").trim()) miss.push("관심 분야");
+      if (!phone) miss.push("연락처");
+      if (!emailToSet || /@social\.ucc$/i.test(emailToSet)) miss.push("이메일(인증 포함)");
+      if (miss.length) return editErr("가입을 완료하려면 다음 필수 정보를 입력해 주세요 — " + miss.join(", "));
+    }
+
     db.prepare("UPDATE members SET email = ?, name = ?, member_type = ?, phone = ?, org_name = ?, position = ?, job = ?, interest = ?, address = ?, address_detail = ?, education = ?, edu_level = ?, major = ?, specialty = ? WHERE id = ?")
       .run(emailToSet, name, memberType, phone, orgName, position, job, interest, address, addressDetail, education, eduLevel, major, specialty, m.id);
+    if (mustComplete) db.prepare("UPDATE members SET profile_complete = 1 WHERE id = ?").run(m.id);
     req.session.member.name = name;
     if (emailToSet !== m.email) delete req.session.emailVerified; // 변경 완료 후 인증상태 소거
 
@@ -957,6 +975,8 @@ module.exports = function siteRoutes({ verifyCsrf }) {
         : " 정회원 전환 신청이 접수되었습니다. 회비(계좌 입금) 확인 후 관리자가 정회원으로 전환해 드립니다.";
     }
 
+    // SNS 필수정보 입력을 방금 완료했으면 게이트 해제 → 마이페이지로 이동
+    if (mustComplete) return res.redirect("/mypage?welcome=1");
     const m2 = db.prepare("SELECT * FROM members WHERE id = ?").get(m.id);
     res.render("mypage-edit", { ...res.locals, title: "내 정보 수정", m: m2, error: null, pwError: null, done: "정보가 저장되었습니다." + convertMsg, hasPassword: hasPw(m2), welcome: false });
   });
