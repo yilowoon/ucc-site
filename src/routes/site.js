@@ -790,18 +790,29 @@ module.exports = function siteRoutes({ verifyCsrf }) {
           finalEmail = `${p}_${prof.providerId}@social.ucc`;
         }
         const now = new Date().toISOString();
+        const realName = (prof.name && !["회원", "카카오회원", "네이버회원", "구글회원"].includes(prof.name)) ? prof.name : (prof.name || "회원");
         const info = db.prepare(
           "INSERT INTO members (name, email, phone, member_type, org_name, position, job, interest, password_hash, provider, provider_id, profile_complete, created_at) " +
           "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)"
-        ).run(prof.name || "회원", finalEmail, "", "개인회원", "", "", "", "", "", p, prof.providerId, now);
+        ).run(realName, finalEmail, prof.phone || "", "개인회원", "", "", "", "", "", p, prof.providerId, now);
         m = db.prepare("SELECT * FROM members WHERE id = ?").get(info.lastInsertRowid);
         isNew = true;
         console.log(`[oauth] 신규 회원 가입(${p}): #${m.id} ${m.email}`);
+      } else {
+        // 기존 SNS 회원 재로그인 — 비어 있던 연락정보를 이번 동의로 받은 값으로 보완(덮어쓰지 않음)
+        const sets = [], vals = [];
+        if (prof.phone && !String(m.phone || "").trim()) { sets.push("phone = ?"); vals.push(prof.phone); }
+        if (prof.email && /@social\.ucc$/i.test(m.email || "")) { // 가짜 이메일이면 실제 이메일로 교체(중복 아닐 때만)
+          const dup = db.prepare("SELECT id FROM members WHERE email = ? AND id <> ?").get(prof.email, m.id);
+          if (!dup) { sets.push("email = ?"); vals.push(prof.email); }
+        }
+        if (prof.name && ["회원", "카카오회원", "네이버회원", "구글회원"].includes(m.name || "")) { sets.push("name = ?"); vals.push(prof.name); }
+        if (sets.length) { vals.push(m.id); db.prepare("UPDATE members SET " + sets.join(", ") + " WHERE id = ?").run(...vals); m = db.prepare("SELECT * FROM members WHERE id = ?").get(m.id); }
       }
 
       req.session.member = { id: m.id, name: m.name, loginAt: Date.now() };
-      // 신규 가입 또는 정보 미완성(연락처 없음) → 마이페이지로 이동해 정보 입력 유도
-      const incomplete = isNew || !String(m.phone || "").trim();
+      // SNS 필수정보 미완료 회원은 정보입력 페이지로 유도(전역 게이트와 동일 기준)
+      const incomplete = !!(m.provider && m.profile_complete === 0);
       return res.redirect(incomplete ? "/mypage/edit?welcome=1" : (st.next || "/"));
     } catch (e) {
       console.error(`[oauth] ${p} 콜백 오류:`, e.message);

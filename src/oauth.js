@@ -40,9 +40,11 @@ const PROVIDERS = {
     authUrl: "https://kauth.kakao.com/oauth/authorize",
     tokenUrl: "https://kauth.kakao.com/oauth/token",
     userUrl: "https://kapi.kakao.com/v2/user/me",
-    // 카카오 scope는 쉼표(,)로 구분. 닉네임만 요청(가장 기본, 검수 불필요).
-    // 이메일까지 받으려면 동의항목에서 account_email 을 '사용'으로 켠 뒤 "profile_nickname,account_email" 로 변경.
-    scope: "profile_nickname",
+    // 카카오 scope(쉼표 구분): 닉네임·이메일·이름·전화번호 동의 요청 → 동의 화면 표시 + 회원정보 수집.
+    // ※ 이메일/이름/전화번호는 카카오 '비즈앱(비즈니스 인증)' 전환이 되어 있어야 수집됩니다.
+    //   (전화번호는 동의항목에서 '선택 동의'면 사용자가 거부 가능 → 미제공 시 마이페이지에서 입력)
+    //   .env 의 KAKAO_SCOPE 로 override 가능.
+    scope: process.env.KAKAO_SCOPE || "profile_nickname,account_email,name,phone_number",
     // 자동(무동의) 로그인 방지: 매 로그인마다 로그인·동의 절차를 다시 거치게 한다.
     auth: { prompt: "login" },
   },
@@ -146,7 +148,9 @@ async function exchange(p, code, redirectUri, state) {
     return {
       providerId: String(d.id || ""),
       email: (acc.email || "").toLowerCase(),
-      name: (acc.profile && acc.profile.nickname) || acc.name || "카카오회원",
+      // 실명(name) 우선, 없으면 닉네임
+      name: acc.name || (acc.profile && acc.profile.nickname) || "카카오회원",
+      phone: normKrPhone(acc.phone_number),
     };
   }
   if (p === "naver") {
@@ -155,6 +159,7 @@ async function exchange(p, code, redirectUri, state) {
       providerId: String(r.id || ""),
       email: (r.email || "").toLowerCase(),
       name: r.name || r.nickname || "네이버회원",
+      phone: normKrPhone(r.mobile || r.mobile_e164),
     };
   }
   // google
@@ -162,7 +167,15 @@ async function exchange(p, code, redirectUri, state) {
     providerId: String(d.sub || ""),
     email: (d.email || "").toLowerCase(),
     name: d.name || "구글회원",
+    phone: "",
   };
+}
+
+// 전화번호 정규화: "+82 10-1234-5678" → "01012345678"
+function normKrPhone(v) {
+  let s = String(v || "").replace(/[^0-9]/g, "");
+  if (s.startsWith("82")) s = "0" + s.slice(2);
+  return s;
 }
 
 /** 앱-사용자 연결 해제(동의 기록 초기화) — 재로그인 시 동의항목이 다시 표시되게 한다.
