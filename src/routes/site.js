@@ -922,7 +922,8 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const m = db.prepare("SELECT * FROM members WHERE id = ?").get(req.session.member.id);
     if (!m) { delete req.session.member; return res.redirect("/login"); }
     const editErr = (msg) => res.status(400).render("mypage-edit", { ...res.locals, title: "내 정보 수정", m, error: msg, pwError: null, done: null, hasPassword: hasPw(m), welcome: false });
-    if (hasPw(m) && !bcrypt.compareSync(req.body.current || "", m.password_hash)) {
+    // 소셜 로그인 계정은 세션(소셜 인증)으로 충분 — 사이트 비밀번호 확인 생략
+    if (hasPw(m) && !m.provider && !bcrypt.compareSync(req.body.current || "", m.password_hash)) {
       return editErr("현재 비밀번호가 올바르지 않습니다.");
     }
     // 이메일 변경 — 새 이메일이면 인증(session.emailVerified) 필수 + 중복 검사
@@ -998,7 +999,8 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     if (!m) { delete req.session.member; return res.redirect("/login"); }
     const cur = req.body.current || "", np = req.body.newpw || "", cf = req.body.confirm || "";
     const back = (pwError, done) => res.render("mypage-edit", { ...res.locals, title: "내 정보 수정", m, error: null, pwError, done, hasPassword: hasPw(m), welcome: false });
-    if (hasPw(m) && !bcrypt.compareSync(cur, m.password_hash)) return back("현재 비밀번호가 올바르지 않습니다.", null);
+    // 소셜 로그인 계정은 현재 비밀번호 확인 없이 설정/변경 가능(세션 인증으로 충분)
+    if (hasPw(m) && !m.provider && !bcrypt.compareSync(cur, m.password_hash)) return back("현재 비밀번호가 올바르지 않습니다.", null);
     if (np.length < 8) return back("새 비밀번호는 8자 이상이어야 합니다.", null);
     if (np !== cf) return back("새 비밀번호 확인이 일치하지 않습니다.", null);
     db.prepare("UPDATE members SET password_hash = ? WHERE id = ?").run(bcrypt.hashSync(np, 10), m.id);

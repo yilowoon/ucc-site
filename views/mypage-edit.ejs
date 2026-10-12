@@ -10,7 +10,7 @@
   <div class="container">
     <span class="page-banner-en">MY PAGE</span>
     <h1 class="page-banner-title">내 정보 수정</h1>
-    <p class="page-banner-desc"><%= hasPassword ? '정보를 변경하려면 보안을 위해 현재 비밀번호를 입력해야 합니다.' : '소셜 로그인 계정입니다. 아래에서 정보를 입력·완성해 주세요.' %></p>
+    <p class="page-banner-desc"><%= m.provider ? '소셜 로그인 계정입니다. 비밀번호 입력 없이 정보를 수정할 수 있습니다.' : (hasPassword ? '정보를 변경하려면 보안을 위해 현재 비밀번호를 입력해야 합니다.' : '아래에서 정보를 입력·완성해 주세요.') %></p>
   </div>
 </section>
 
@@ -137,9 +137,8 @@
         </div>
         <div class="field"><label for="major">최종전공 <span class="field-hint">선택</span></label><input type="text" id="major" name="major" value="<%= esc(m.major || '') %>" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="예: 도시공학" /></div>
         <div class="field"><label for="specialty">전문분야 <span class="field-hint">선택</span></label><input type="text" id="specialty" name="specialty" value="<%= esc(m.specialty || '') %>" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" placeholder="예: ESG 경영·지역개발 컨설팅" /></div>
-        <% if (hasPassword) { %>
-          <div class="field field--gate"><label for="current">현재 비밀번호 <span class="field-hint">보안 확인</span></label><input type="password" id="current" name="current" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" required />
-          <% if (m.provider) { %><p class="field-hint" style="margin-top:6px">※ 카카오 등 소셜 계정의 비밀번호가 아니라, 이 사이트에서 직접 설정하신 비밀번호입니다. (설정한 적이 없으면 아래 ‘비밀번호 설정’에서 먼저 지정하세요)</p><% } %></div>
+        <% if (hasPassword && !m.provider) { %>
+          <div class="field field--gate"><label for="current">현재 비밀번호 <span class="field-hint">보안 확인</span></label><input type="password" id="current" name="current" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" required /></div>
         <% } %>
         <button type="submit" class="btn btn-primary btn-block">정보 저장</button>
       </form>
@@ -147,19 +146,21 @@
 
     <!-- 비밀번호 변경/설정 -->
     <div class="mypage-card">
-      <h2 class="mypage-h"><%= hasPassword ? '비밀번호 변경' : '비밀번호 설정' %></h2>
-      <% if (!hasPassword) { %>
-        <p class="mypage-notice" style="margin-bottom:18px">소셜 로그인 계정입니다. 비밀번호를 설정하면 <b>이메일+비밀번호로도 로그인</b>할 수 있습니다. (선택 사항)</p>
+      <h2 class="mypage-h"><%= (hasPassword && !m.provider) ? '비밀번호 변경' : '비밀번호 설정' %></h2>
+      <% if (m.provider) { %>
+        <p class="mypage-notice" style="margin-bottom:18px">카카오 등 <b>소셜 로그인 계정</b>입니다. 로그인은 소셜 계정으로 하시면 되고, 여기서 비밀번호를 설정하면 <b>이메일+비밀번호로도</b> 로그인할 수 있습니다. (선택 사항 · 소셜 계정 비밀번호와 무관)</p>
+      <% } else if (!hasPassword) { %>
+        <p class="mypage-notice" style="margin-bottom:18px">비밀번호를 설정하면 <b>이메일+비밀번호로도 로그인</b>할 수 있습니다. (선택 사항)</p>
       <% } %>
       <% if (pwError) { %><p class="form-alert err"><%= pwError %></p><% } %>
       <form method="post" action="/mypage/password" class="admin-form-fields">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <% if (hasPassword) { %>
+        <% if (hasPassword && !m.provider) { %>
           <div class="field"><label for="pw_current">현재 비밀번호</label><input type="password" id="pw_current" name="current" autocomplete="current-password" required /></div>
         <% } %>
         <div class="field"><label for="newpw">새 비밀번호 <span class="field-hint">8자 이상</span></label><input type="password" id="newpw" name="newpw" autocomplete="new-password" required minlength="8" /></div>
         <div class="field"><label for="pw_confirm">새 비밀번호 확인</label><input type="password" id="pw_confirm" name="confirm" autocomplete="new-password" required minlength="8" /></div>
-        <button type="submit" class="btn btn-neutral btn-block"><%= hasPassword ? '비밀번호 변경' : '비밀번호 설정' %></button>
+        <button type="submit" class="btn btn-neutral btn-block"><%= (hasPassword && !m.provider) ? '비밀번호 변경' : '비밀번호 설정' %></button>
       </form>
     </div>
   </div>
