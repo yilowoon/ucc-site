@@ -71,7 +71,13 @@ app.use((req, res, next) => {
   res.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=(), payment=(), usb=(), interest-cohort=()");
   res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
   res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("X-Permitted-Cross-Domain-Policies", "none");
   res.setHeader("Content-Security-Policy", CSP);
+  // 인증·민감 페이지는 캐시 금지(로그인·관리자·마이페이지·가입 등)
+  if (/^\/(admin|mypage|login|logout|signup|auth)(\/|$)/.test(req.path)) {
+    res.setHeader("Cache-Control", "no-store, max-age=0");
+    res.setHeader("Pragma", "no-cache");
+  }
   // HSTS: HTTPS 연결에서만(평문 HTTP 응답엔 무의미/부작용). 1년 + 서브도메인 + preload.
   if (req.secure || req.headers["x-forwarded-proto"] === "https") {
     res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
