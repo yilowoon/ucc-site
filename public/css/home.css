@@ -656,6 +656,7 @@
 .directors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
 .dir-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-lg);
   overflow: hidden; box-shadow: var(--shadow-sm); position: relative;
+  --dir-neon: #39ff14; --dir-neon-hi: #e4ffc4; /* 기본: 녹색(섹션별로 override) */
   transition: transform .26s var(--ease), box-shadow .26s var(--ease); }
 .dir-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
 
@@ -665,20 +666,24 @@
   content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 3px;
   background: conic-gradient(from var(--dir-ang),
     transparent 0deg 55%,
-    rgba(57,255,20,.18) 66%,
-    #39ff14 80%, #e4ffc4 88%, #39ff14 95%,
-    rgba(57,255,20,.18) 99%, transparent 100%);
+    color-mix(in srgb, var(--dir-neon) 20%, transparent) 66%,
+    var(--dir-neon) 80%, var(--dir-neon-hi) 88%, var(--dir-neon) 95%,
+    color-mix(in srgb, var(--dir-neon) 20%, transparent) 99%, transparent 100%);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   mask-composite: exclude;
   opacity: 0; transition: opacity .25s ease; pointer-events: none; z-index: 2;
-  filter: drop-shadow(0 0 6px rgba(57,255,20,.75));
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--dir-neon) 75%, transparent));
 }
 .dir-card:hover::after { opacity: 1; animation: dir-border-run 2.4s linear infinite; }
 @keyframes dir-border-run { to { --dir-ang: 360deg; } }
+/* 역할별 러닝 테두리 컬러 — 도시공동체본부 CI 3색(형광) */
+#senior-advisors .dir-card { --dir-neon: #39ff14; --dir-neon-hi: #e4ffc4; } /* 고문: 녹색 */
+#advisors .dir-card        { --dir-neon: #12e0ff; --dir-neon-hi: #c7fbff; } /* 자문위원: 시안 */
+#directors .dir-card       { --dir-neon: #ff9a1f; --dir-neon-hi: #ffe3b3; } /* 이사: 오렌지 */
 /* @property 미지원 브라우저 폴백: 정적 형광 테두리 글로우 */
 @supports not (background: conic-gradient(from var(--dir-ang), #000, #fff)) {
-  .dir-card:hover { box-shadow: 0 0 0 2px #39ff14, 0 0 14px rgba(57,255,20,.55); }
+  .dir-card:hover { box-shadow: 0 0 0 2px var(--dir-neon), 0 0 14px color-mix(in srgb, var(--dir-neon) 55%, transparent); }
 }
 @media (prefers-reduced-motion: reduce) {
   .dir-card:hover::after { animation: none; }
