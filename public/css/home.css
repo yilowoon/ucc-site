@@ -655,9 +655,34 @@
 
 .directors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
 .dir-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-lg);
-  overflow: hidden; box-shadow: var(--shadow-sm);
+  overflow: hidden; box-shadow: var(--shadow-sm); position: relative;
   transition: transform .26s var(--ease), box-shadow .26s var(--ease); }
 .dir-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+
+/* 롤오버 시 형광 녹색 테두리가 프레임을 따라 도는 효과 */
+@property --dir-ang { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+.dir-card::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 3px;
+  background: conic-gradient(from var(--dir-ang),
+    transparent 0deg 55%,
+    rgba(57,255,20,.18) 66%,
+    #39ff14 80%, #e4ffc4 88%, #39ff14 95%,
+    rgba(57,255,20,.18) 99%, transparent 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0; transition: opacity .25s ease; pointer-events: none; z-index: 2;
+  filter: drop-shadow(0 0 6px rgba(57,255,20,.75));
+}
+.dir-card:hover::after { opacity: 1; animation: dir-border-run 2.4s linear infinite; }
+@keyframes dir-border-run { to { --dir-ang: 360deg; } }
+/* @property 미지원 브라우저 폴백: 정적 형광 테두리 글로우 */
+@supports not (background: conic-gradient(from var(--dir-ang), #000, #fff)) {
+  .dir-card:hover { box-shadow: 0 0 0 2px #39ff14, 0 0 14px rgba(57,255,20,.55); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dir-card:hover::after { animation: none; }
+}
 /* 사진(상임대표와 동일한 3:4 프레이밍) / 이니셜 플레이스홀더 */
 .dir-photo { width: 100%; aspect-ratio: 3 / 4; overflow: hidden; background: var(--paper-warm); }
 .dir-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
