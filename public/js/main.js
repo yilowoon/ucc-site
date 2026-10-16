@@ -65,10 +65,10 @@
                   '<span class="nl-feature-foot">' + esc(nl.source || "") +
                     (nl.date ? " · " + esc(nl.date) : "") + ' <span class="brief-arrow">→</span></span>' +
                 "</div>" +
-                '<div class="nl-feature-imgs">' +
-                  '<span class="nl-feature-img" style="background-image:url(\'' + encodeURI(nl.image1) + "')\"></span>" +
-                  '<span class="nl-feature-img" style="background-image:url(\'' + encodeURI(nl.image2) + "')\"></span>" +
-                "</div>" +
+                (nl.image1 ?
+                  '<div class="nl-feature-imgs nl-feature-imgs--single">' +
+                    '<span class="nl-feature-img" style="background-image:url(\'' + encodeURI(nl.image1) + "')\"></span>" +
+                  "</div>" : "") +
               "</a>"
             );
           }

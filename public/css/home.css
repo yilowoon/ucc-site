@@ -1062,6 +1062,8 @@ a.seg-btn { display: inline-block; text-decoration: none; }
 .nl-feature-foot { margin-top: auto; padding-top: 16px; font-size: .86rem; font-weight: 700; color: var(--muted); }
 .nl-feature-foot .brief-arrow { color: var(--gold-500); }
 .nl-feature-imgs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+/* 메인에서는 이미지 1장만 노출 → 영역 전체를 채움(세부 페이지는 2장 유지) */
+.nl-feature-imgs.nl-feature-imgs--single { grid-template-columns: 1fr; }
 .nl-feature-img { border-radius: 12px; background: var(--paper-warm) center/cover no-repeat; min-height: 180px; }
 
 /* ===== 뉴스레터 목록 페이지 ===== */
@@ -1083,6 +1085,7 @@ a.seg-btn { display: inline-block; text-decoration: none; }
 @media (max-width: 720px) {
   .nl-feature { grid-template-columns: 1fr; gap: 20px; }
   .nl-feature-imgs { grid-template-columns: 1fr 1fr; }
+  .nl-feature-imgs.nl-feature-imgs--single { grid-template-columns: 1fr; }
   .nl-feature-img { min-height: 130px; }
   .nl-item { grid-template-columns: 1fr; }
   .nl-imgs { max-width: 320px; }
