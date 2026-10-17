@@ -234,6 +234,7 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   // ---------- 배움터: 주요과정소개 · ESG전문가과정 (전용 뷰) ----------
   router.get("/learn/courses", (req, res) => res.render("courses", { ...res.locals, title: "주요과정소개" }));
   router.get("/learn/esg", (req, res) => res.render("esg", { ...res.locals, title: "ESG전문가과정" }));
+  router.get("/learn/ai", (req, res) => res.render("ai", { ...res.locals, title: "AI활용전문가과정" }));
 
   // ---------- 배움터: 교육신청하기 ----------
   router.get("/learn/apply", (req, res) => {
