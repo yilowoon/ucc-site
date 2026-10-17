@@ -833,10 +833,11 @@
 }
 
 /* ===== 주요과정소개 (courses) ===== */
-.course-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.course-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
 .course-card { display: flex; flex-direction: column; background: var(--paper); border: 1px solid var(--line); border-top: 4px solid var(--ci-green); border-radius: 16px; padding: 30px 32px; box-shadow: var(--shadow-sm); transition: transform .26s var(--ease), box-shadow .26s var(--ease); }
 .course-card:hover { transform: translateY(-5px); box-shadow: var(--shadow); }
 .course-card--green { border-top-color: var(--ci-green-d); }
+.course-card--blue { border-top-color: var(--ci-blue-d); }
 .course-card--orange { border-top-color: var(--ci-orange-d); }
 .course-en { font-size: .74rem; font-weight: 800; letter-spacing: .1em; color: var(--muted); }
 .course-title { font-size: 1.5rem; font-weight: 800; color: var(--green-800); margin: 6px 0 12px; }
@@ -844,6 +845,7 @@
 .course-points { list-style: none; margin: 0 0 24px; padding: 0; display: grid; gap: 11px; }
 .course-points li { position: relative; padding-left: 74px; font-size: .96rem; color: var(--ink-soft); line-height: 1.5; }
 .course-points li strong { position: absolute; left: 0; top: 0; width: 60px; font-size: .74rem; font-weight: 800; color: #fff; text-align: center; padding: 3px 0; border-radius: 999px; background: var(--ci-green-d); }
+.course-card--blue .course-points li strong { background: var(--ci-blue-d); }
 .course-card--orange .course-points li strong { background: var(--ci-orange-d); color: #3a2610; }
 .course-more { align-self: flex-start; margin-top: auto; }
 
