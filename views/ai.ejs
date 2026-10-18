@@ -124,6 +124,17 @@
   .final-cta h2{font-size:clamp(1.5rem,3.6vw,2.2rem);font-weight:800;margin:0 0 14px;letter-spacing:-.5px}
   .final-cta p{color:rgba(255,255,255,.88);font-size:1.05rem;line-height:1.7;margin:0 0 28px}
   .final-cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  /* 핵심 역량 배너 */
+  .lp-band{text-align:center;color:#fff;padding:clamp(48px,7vw,78px) 0;background:radial-gradient(120% 130% at 50% 0%, #1f5540, #0e2a20 72%);position:relative;overflow:hidden}
+  .lp-band::after{content:"";position:absolute;left:50%;top:-100px;width:420px;height:420px;transform:translateX(-50%);background:radial-gradient(circle, rgba(205,155,76,.2), transparent 68%);pointer-events:none}
+  .lp-band .container{position:relative;z-index:1}
+  .lp-band-lead{font-size:clamp(1.1rem,2.6vw,1.5rem);font-weight:700;color:#e9efe9;margin:0 0 8px}
+  .lp-band-title{font-size:clamp(1.7rem,4.4vw,2.6rem);font-weight:800;margin:0 0 14px;letter-spacing:-.5px}
+  .lp-band-title b{color:#ffd98a}
+  .lp-band-sub{color:rgba(255,255,255,.82);font-size:1.02rem;line-height:1.7;max-width:620px;margin:0 auto 26px}
+  .lp-band-sub b{color:#ffe6b0}
+  .lp-band-stack{list-style:none;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:0;padding:0}
+  .lp-band-stack li{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:11px 20px;font-weight:700;font-size:.96rem}
   .lp-sticky{position:fixed;left:0;right:0;bottom:0;z-index:90;display:flex;align-items:center;justify-content:space-between;gap:14px;background:rgba(14,42,32,.97);color:#fff;padding:12px 18px;box-shadow:0 -6px 24px rgba(0,0,0,.25);transform:translateY(110%);transition:transform .3s var(--ease)}
   .lp-sticky.is-show{transform:translateY(0)}
   .lp-sticky-text{font-weight:800;font-size:1rem}
@@ -213,6 +224,20 @@
       <article class="esg-mod esg-mod--blue"><div class="esg-mod-head"><span class="esg-mod-no">대상 C</span><h3 class="esg-mod-title">소상공인 · 자영업</h3></div><ul class="esg-mod-list"><li>마케팅·콘텐츠·고객응대 AI 활용</li><li>매출·운영에 바로 쓰는 실전 도구</li></ul></article>
       <article class="esg-mod esg-mod--feature"><div class="esg-mod-head"><span class="esg-mod-no">대상 D</span><h3 class="esg-mod-title">AI 활용 전문가·강사</h3><span class="esg-mod-badge">전문가</span></div><ul class="esg-mod-list"><li>AI 에이전트·자동화 심화</li><li>강사·컨설턴트 양성 트랙</li></ul></article>
     </div>
+  </div>
+</section>
+
+<!-- 핵심 역량 배너 -->
+<section class="lp-band">
+  <div class="container">
+    <p class="lp-band-lead">데이터 분석부터 보고서 자동화까지!</p>
+    <h2 class="lp-band-title">Claude 활용 <b>에이전트(Gemini) 구축</b></h2>
+    <p class="lp-band-sub">생성형 AI와 AI 에이전트로, 반복되는 분석·보고 업무를 스스로 처리하는 <b>나만의 자동화</b>를 완성합니다.</p>
+    <ul class="lp-band-stack">
+      <li>🧠 생성형 AI 활용 (Claude · Gemini)</li>
+      <li>🤖 AI 에이전트 · 업무 자동화</li>
+      <li>📊 데이터 분석 · 리포트 자동화</li>
+    </ul>
   </div>
 </section>
 
