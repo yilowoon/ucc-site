@@ -138,11 +138,13 @@
   .lp-band-sub b{color:#ffe6b0}
   .lp-band-stack{list-style:none;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:0;padding:0}
   .lp-band-stack li{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:11px 20px;font-weight:700;font-size:.96rem}
-  .lp-sticky{position:fixed;left:0;right:0;bottom:0;z-index:90;display:flex;align-items:center;justify-content:space-between;gap:14px;background:rgba(14,42,32,.97);color:#fff;padding:12px 18px;box-shadow:0 -6px 24px rgba(0,0,0,.25);transform:translateY(110%);transition:transform .3s var(--ease)}
+  .lp-sticky{position:fixed;left:0;right:0;bottom:0;z-index:90;display:flex;align-items:center;justify-content:center;background:rgba(14,42,32,.97);color:#fff;padding:12px 88px 12px 24px;box-shadow:0 -6px 24px rgba(0,0,0,.25);transform:translateY(110%);transition:transform .3s var(--ease)}
   .lp-sticky.is-show{transform:translateY(0)}
-  .lp-sticky-text{font-weight:800;font-size:1rem}
-  .lp-sticky .btn{padding:11px 22px;white-space:nowrap}
-  @media(max-width:420px){.lp-sticky-text{font-size:.9rem}.lp-sticky{padding:10px 14px}}
+  .lp-sticky-inner{display:flex;align-items:center;justify-content:center;gap:22px;flex-wrap:wrap;text-align:center}
+  .lp-sticky-text{font-weight:700;font-size:1.02rem;line-height:1.45}
+  .lp-sticky-text b{color:#ffd98a}
+  .lp-sticky .btn{padding:11px 24px;white-space:nowrap}
+  @media(max-width:560px){.lp-sticky-text{font-size:.84rem}.lp-sticky-inner{gap:10px}.lp-sticky{padding:9px 70px 9px 14px}}
 </style>
 
 <!-- 히어로 -->
@@ -514,8 +516,10 @@
 
 <!-- 모바일 고정 신청 바 -->
 <div class="lp-sticky" id="lpSticky" aria-hidden="true">
-  <span class="lp-sticky-text">AI활용전문가과정</span>
-  <a class="btn btn-primary" href="/learn/apply">교육 신청하기</a>
+  <div class="lp-sticky-inner">
+    <span class="lp-sticky-text">지금 당신도 AI로 생산성을 높이고 싶으신가요?<br>그럼 <b>AI활용전문가과정</b>을 지금 바로 신청하세요.</span>
+    <a class="btn btn-primary" href="/learn/apply">교육 신청하기</a>
+  </div>
 </div>
 <script>
 (function(){
