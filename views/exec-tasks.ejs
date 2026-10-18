@@ -19,7 +19,11 @@
   .tk-field .fk{font-size:.74rem;font-weight:800;color:var(--muted);display:block;margin-bottom:2px}
   .tk-issue{background:#fdf3f2;border:1px solid #f0cfcb;border-radius:8px;padding:8px 10px}
   .tk-issue .fk{color:#c5221f}
-  .tk-actions{margin-top:12px;display:flex;gap:10px}
+  .tk-progress{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+  .tk-progress label{display:block;font-size:.74rem;font-weight:800;color:var(--muted);margin-bottom:5px}
+  .tk-progress textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:.9rem;font-family:inherit;resize:vertical;min-height:46px}
+  .tk-progress button{margin-top:8px}
+  .tk-actions{margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 </style>
 <div class="container admin-wrap">
   <div class="admin-head">
@@ -78,6 +82,12 @@
             <% if (t.progress) { %><div class="tk-field"><span class="fk">진행 상황</span><%= esc(t.progress) %></div><% } %>
             <% if (t.issues) { %><div class="tk-field tk-issue"><span class="fk">이슈 / 문제</span><%= esc(t.issues) %></div><% } %>
             <% if (t.detail) { %><div class="tk-field"><span class="fk">상세 / 맥락</span><%= esc(t.detail) %></div><% } %>
+            <form class="tk-progress" action="/exec/tasks/<%= t.id %>/progress" method="post">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <label>추가사항 및 향후계획</label>
+              <textarea name="note" rows="2" placeholder="진행 상황에 누적될 내용을 입력하세요 (예: 10/20 MOU 초안 회신 받음, 다음 주 검토 회의)"></textarea>
+              <button type="submit" class="btn btn-neutral btn-sm">업데이트</button>
+            </form>
             <div class="tk-actions">
               <% if (t.status !== '완료') { %>
                 <form action="/exec/tasks/<%= t.id %>/status" method="post" style="display:inline" onsubmit="return confirm('이 업무를 완료 처리할까요?');">

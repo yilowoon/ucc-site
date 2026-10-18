@@ -52,6 +52,17 @@ function updateTask(id, t) {
   db.prepare("UPDATE tasks SET title=?, status=?, progress=?, manager=?, participants=?, issues=?, detail=?, updated_at=? WHERE id=?")
     .run(String(t.title || "제목 없음").slice(0, 200), status, s(t.progress), s(t.manager, 80), s(t.participants, 200), s(t.issues), s(t.detail), now, id);
 }
+function appendTaskProgress(id, note, author) {
+  const t = getTask(id);
+  if (!t) return;
+  const body = String(note == null ? "" : note).trim();
+  if (!body) return;
+  const stamp = new Date().toISOString().slice(0, 10);
+  const who = String(author || "").trim();
+  const entry = "• [" + stamp + (who ? " · " + who : "") + "] " + body;
+  const next = (t.progress ? t.progress + "\n" : "") + entry;
+  db.prepare("UPDATE tasks SET progress = ?, updated_at = ? WHERE id = ?").run(s(next), new Date().toISOString(), id);
+}
 function setTaskStatus(id, status) {
   if (!STATUSES.includes(status)) return;
   db.prepare("UPDATE tasks SET status = ?, updated_at = ? WHERE id = ?").run(status, new Date().toISOString(), id);
@@ -137,4 +148,4 @@ function stats() {
   return { counts, logCount: db.prepare("SELECT COUNT(*) AS n FROM meeting_logs").get().n, taskTotal: db.prepare("SELECT COUNT(*) AS n FROM tasks").get().n };
 }
 
-module.exports = { STATUSES, addLog, listLogs, getLog, logMessages, removeLog, listTasks, getTask, addTask, updateTask, setTaskStatus, removeTask, extractTasksAI, stats };
+module.exports = { STATUSES, addLog, listLogs, getLog, logMessages, removeLog, listTasks, getTask, addTask, updateTask, setTaskStatus, appendTaskProgress, removeTask, extractTasksAI, stats };
