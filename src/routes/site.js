@@ -93,6 +93,12 @@ function fixName(name) { try { return Buffer.from(name, "latin1").toString("utf8
 module.exports = function siteRoutes({ verifyCsrf }) {
   const router = express.Router();
 
+  // 배움터(/learn/*) 공통 OG 이미지 — 개별 라우트에서 ogImage 를 지정하지 않으면 적용
+  router.use("/learn", (req, res, next) => {
+    if (!res.locals.ogImage) res.locals.ogImage = "/img/og-learn.png?v=1";
+    next();
+  });
+
   // ---------- 소개 챗봇 API ----------
   router.get("/api/chat/config", (req, res) => {
     res.json({ greeting: chatkb.GREETING, suggestions: chatkb.SUGGESTIONS });
