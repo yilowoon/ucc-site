@@ -39,6 +39,26 @@
   .ba-after p b{color:var(--green-800)}
   .ba-arrow{display:grid;place-items:center;color:var(--ci-green-d);font-size:1.5rem;font-weight:800}
   @media(max-width:420px){.ba-card{grid-template-columns:1fr}.ba-arrow{transform:rotate(90deg)}}
+  /* PROJECT 04 대표(협력) 프로젝트 */
+  .proj-feature{margin-top:22px;background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:30px 32px;box-shadow:var(--shadow-sm);border-top:5px solid var(--ci-orange-d)}
+  .proj-feature-tags{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .pf-no{font-size:.76rem;font-weight:800;letter-spacing:.08em;color:var(--ci-orange-d)}
+  .pf-badge{font-size:.76rem;font-weight:800;color:#fff;background:var(--green-700);border-radius:999px;padding:4px 12px}
+  .proj-feature-title{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:800;color:var(--green-800);margin:0 0 10px;letter-spacing:-.5px}
+  .proj-feature-title b{color:var(--ci-orange-d)}
+  .proj-feature-lede{color:var(--ink-soft);font-size:1rem;line-height:1.7;margin:0}
+  .proj-feature-lede b{color:var(--green-800)}
+  .proj-feature-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:24px 0}
+  .pf-step{display:flex;gap:12px;background:var(--paper-warm);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .pf-step-no{flex:0 0 auto;font-size:1.1rem;font-weight:800;color:var(--ci-orange-d)}
+  .pf-step h4{margin:0 0 5px;font-size:.98rem;color:var(--green-800)}
+  .pf-step p{margin:0;font-size:.86rem;color:var(--ink-soft);line-height:1.5}
+  .proj-feature-impact{display:flex;gap:14px;align-items:center;background:linear-gradient(135deg, rgba(205,155,76,.12), rgba(91,185,110,.1));border:1px solid rgba(205,155,76,.3);border-radius:12px;padding:16px 20px}
+  .pf-impact-ico{font-size:1.8rem;line-height:1}
+  .proj-feature-impact p{margin:0;font-size:.98rem;line-height:1.6;color:var(--ink-soft)}
+  .proj-feature-impact p b{color:var(--green-800)}
+  @media(max-width:860px){.proj-feature-steps{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:480px){.proj-feature-steps{grid-template-columns:1fr}.proj-feature{padding:24px 20px}}
   .point-list{display:grid;gap:16px}
   .point-row{display:flex;gap:22px;align-items:flex-start;background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--ci-blue);border-radius:16px;padding:26px 30px;box-shadow:var(--shadow-sm);transition:transform .22s var(--ease),box-shadow .22s var(--ease)}
   .point-row:hover{transform:translateX(4px);box-shadow:var(--shadow)}
@@ -204,6 +224,28 @@
         </article>
       <% }); %>
     </div>
+
+    <!-- PROJECT 04 · 목원대 협력 대표 프로젝트 -->
+    <article class="proj-feature">
+      <div class="proj-feature-main">
+        <div class="proj-feature-tags">
+          <span class="pf-no">PROJECT 04</span>
+          <span class="pf-badge">목원대학교 협력 프로젝트</span>
+        </div>
+        <h3 class="proj-feature-title">AI 에이전트로 완성하는 <b>진로설계 · 취업매칭</b></h3>
+        <p class="proj-feature-lede">진로탐색·진로분석부터 기업 매칭, 취업 준비까지 — <b>취업의 전 과정을 AI 에이전트로 직접 구축</b>하며 체계적인 취업준비 역량을 기릅니다. 배우면서(AI 에이전트) 동시에 준비하는(취업) <b>1석 2조</b> 프로젝트입니다.</p>
+      </div>
+      <div class="proj-feature-steps">
+        <div class="pf-step"><span class="pf-step-no">01</span><div><h4>진로 탐색·분석</h4><p>적성·역량과 학교생활을 바탕으로 나의 진로 방향을 진단·분석</p></div></div>
+        <div class="pf-step"><span class="pf-step-no">02</span><div><h4>기업 탐색·자가진단</h4><p>전망 높은 기업 정보를 탐색하고, 기업이 원하는 인재상에 맞는지 자가진단</p></div></div>
+        <div class="pf-step"><span class="pf-step-no">03</span><div><h4>인재상 기반 기업 매칭</h4><p>진단 결과에 따라 나에게 맞는 기업을 매칭</p></div></div>
+        <div class="pf-step"><span class="pf-step-no">04</span><div><h4>진로설계·취업준비 자동화</h4><p>매칭 기업의 인재상에 맞춰 준비 과정을 설계·자동화</p></div></div>
+      </div>
+      <div class="proj-feature-impact">
+        <span class="pf-impact-ico" aria-hidden="true">🤝</span>
+        <p><b>지역기업을 잘 모르는 학생</b>과 <b>역량 있는 인재 채용이 어려운 기업</b> 사이의 <b>언매칭·미스매칭 문제</b>를 AI 에이전트로 해결합니다.</p>
+      </div>
+    </article>
   </div>
 </section>
 
