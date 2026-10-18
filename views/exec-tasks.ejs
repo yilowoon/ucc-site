@@ -64,11 +64,24 @@
   .tk-progress textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:.9rem;font-family:inherit;resize:vertical;min-height:46px}
   .tk-progress button{margin-top:8px}
   .tk-actions{margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  /* 모달(레이어) */
+  dialog.tk-modal{width:min(640px,94vw);max-height:92vh;border:none;border-radius:16px;padding:0;box-shadow:0 18px 50px rgba(0,0,0,.28)}
+  dialog.tk-modal::backdrop{background:rgba(20,28,24,.5)}
+  .tk-modal-head{position:sticky;top:0;background:var(--paper);display:flex;justify-content:space-between;align-items:center;gap:10px;padding:18px 22px;border-bottom:1px solid var(--line);z-index:2}
+  .tk-modal-head h2{margin:0;font-size:1.2rem;color:var(--green-800)}
+  .tk-modal-x{border:none;background:transparent;font-size:1.5rem;line-height:1;color:var(--muted);cursor:pointer;padding:2px 6px}
+  .tk-modal-body{padding:18px 22px;overflow-y:auto;max-height:calc(92vh - 140px)}
+  .tk-modal-foot{position:sticky;bottom:0;background:var(--paper);display:flex;gap:8px;justify-content:flex-end;padding:14px 22px;border-top:1px solid var(--line)}
+  .tk-form .field{margin-bottom:12px}
+  .tk-form label{display:block;font-size:.82rem;font-weight:700;color:var(--ink-soft);margin-bottom:5px}
+  .tk-form .step-due-wrap{display:flex}
+  .tk-newbtn{background:var(--gold-500,#c79a3b);color:#23180a;border:1px solid var(--gold-600,#b9893a);font-weight:800}
 </style>
 <div class="container admin-wrap">
   <div class="admin-head">
     <div><h1>업무관리</h1><p class="admin-sub">임원 업무의 진행·이슈·담당을 한눈에 관리합니다. (이슈 → 진행중 → 대기 → 보류 → 완료 순 정렬)</p></div>
     <div class="admin-head-actions">
+      <button type="button" class="btn btn-sm tk-newbtn" onclick="openCreate()">+ 새 업무 등록</button>
       <a class="btn btn-neutral btn-sm" href="/exec/meetings">회의록 관리</a>
       <a class="btn btn-neutral btn-sm" href="/exec">← 업무관리</a>
     </div>
@@ -77,64 +90,17 @@
   <% if (msg) { %><p class="form-alert ok"><%= msg %></p><% } %>
   <% if (err) { %><p class="form-alert err"><%= err %></p><% } %>
 
-  <div class="tk-grid">
-    <!-- 등록/수정 폼 -->
-    <div class="admin-auth-card tk-form">
-      <h2 style="margin-top:0;"><%= edit ? '업무 수정' : '새 업무 등록' %></h2>
-      <form method="post" action="/exec/tasks">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <% if (edit) { %><input type="hidden" name="id" value="<%= edit.id %>" /><% } %>
-        <div class="field"><label>업무명</label><input type="text" name="title" value="<%= esc(edit ? edit.title : '') %>" required placeholder="예: 충남연구원 AI 스터디그룹 운영" /></div>
-        <div class="field"><label>상태</label>
-          <select name="status">
-            <% STATUSES.forEach(function(st){ %><option value="<%= st %>" <%= edit && edit.status===st ? 'selected' : '' %>><%= st %></option><% }); %>
-          </select>
-        </div>
-        <div class="field"><label>담당(매니징)</label><input type="text" name="manager" value="<%= esc(edit ? edit.manager : '') %>" placeholder="예: 이형구" /></div>
-        <div class="field"><label>참여자</label><input type="text" name="participants" value="<%= esc(edit ? edit.participants : '') %>" placeholder="쉼표로 구분" /></div>
-        <!-- 진행 상황(단계): 진행률은 단계 완료 비율로 자동 계산 -->
-        <div class="field">
-          <label>진행 상황 (단계) — 진행률 자동계산</label>
-          <div id="stepList" class="step-list">
-            <% var _steps = edit ? parseSteps(edit.steps) : []; if (!_steps.length) { _steps = [{label:'',done:false},{label:'',done:false},{label:'',done:false}]; } %>
-            <% _steps.forEach(function(sp, i){ %>
-              <div class="step-row">
-                <span class="step-no"><%= i+1 %></span>
-                <input type="text" class="step-label-in" name="step_label" value="<%= esc(sp.label) %>" placeholder="단계 내용 (예: 공고 확인 / 지원서 작성 / 최종 제출)" oninput="recalcRate()" />
-                <label class="step-due-wrap">완료예정 <input type="date" class="step-due-in" name="step_due" value="<%= esc(sp.due || '') %>" /></label>
-                <input type="hidden" name="step_done" value="<%= sp.done ? '1' : '0' %>" />
-                <button type="button" class="step-done<%= sp.done ? ' on' : '' %>" onclick="toggleStepBtn(this)"><%= sp.done ? '완료됨' : '완료' %></button>
-                <button type="button" class="step-del" title="단계 삭제" onclick="delStep(this)">×</button>
-              </div>
-            <% }); %>
-          </div>
-          <div class="step-foot">
-            <button type="button" class="btn btn-neutral btn-sm" onclick="addStep()">+ 단계 추가</button>
-            <span class="step-rate">예상 진행률 <b id="rateView">0</b>%</span>
-          </div>
-        </div>
-        <div class="field"><label>완료예정일</label><input type="date" name="due_date" value="<%= edit ? esc(edit.due_date || '') : '' %>" /></div>
-        <div class="field"><label>이슈 / 문제</label><textarea name="issues" placeholder="막힌 지점·결정 필요 사항"><%= esc(edit ? edit.issues : '') %></textarea></div>
-        <div class="field"><label>상세 / 맥락</label><textarea name="detail" placeholder="배경·세부 내용"><%= esc(edit ? edit.detail : '') %></textarea></div>
-        <div class="field"><label>진행 기록 (누적 메모·선택)</label><textarea name="progress" placeholder="AI 정리·추가사항이 누적되는 기록"><%= esc(edit ? edit.progress : '') %></textarea></div>
-        <div style="display:flex;gap:8px;">
-          <button type="submit" class="btn btn-primary"><%= edit ? '수정 저장' : '업무 등록' %></button>
-          <% if (edit) { %><a class="btn btn-neutral" href="/exec/tasks">취소</a><% } %>
-        </div>
-      </form>
+  <!-- 업무 목록 (전체 폭) -->
+  <div class="tk-list-wrap">
+    <% if (!tasks.length) { %>
+      <div class="admin-auth-card"><p class="field-hint" style="margin:0">등록된 업무가 없습니다. 위 ‘+ 새 업무 등록’으로 추가하거나, 회의록에서 ‘AI로 업무 정리’를 해보세요.</p></div>
+    <% } %>
+    <% if (tasks.length) { %>
+    <div class="tk-listhead">
+      <span class="lh-title">업무명</span><span class="lh-st">상태</span><span class="lh-upd">마지막 업데이트</span>
     </div>
-
-    <!-- 업무 목록 -->
-    <div>
-      <% if (!tasks.length) { %>
-        <div class="admin-auth-card"><p class="field-hint" style="margin:0">등록된 업무가 없습니다. 왼쪽에서 직접 등록하거나, 회의록에서 ‘AI로 업무 정리’를 해보세요.</p></div>
-      <% } %>
-      <% if (tasks.length) { %>
-      <div class="tk-listhead">
-        <span class="lh-title">업무명</span><span class="lh-st">상태</span><span class="lh-upd">마지막 업데이트</span>
-      </div>
-      <% } %>
-      <div class="tk-cards">
+    <% } %>
+    <div class="tk-cards">
         <% tasks.forEach(function(t){ var openIt = (edit && edit.id === t.id) || (typeof openId !== 'undefined' && openId === t.id); %>
           <details class="tk-item tk-item--<%= t.status %>"<%= openIt ? ' open' : '' %> id="task-<%= t.id %>">
             <summary class="tk-sum">
@@ -196,7 +162,7 @@
                   <button type="submit" class="btn btn-neutral btn-sm">↺ 다시 열기</button>
                 </form>
               <% } %>
-              <a href="/exec/tasks?edit=<%= t.id %>#top" class="btn btn-neutral btn-sm">수정</a>
+              <button type="button" class="btn btn-neutral btn-sm" onclick="openEdit(<%= t.id %>)">수정</button>
               <form action="/exec/tasks/<%= t.id %>/delete" method="post" style="display:inline" onsubmit="return confirm('이 업무를 삭제할까요?');">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                 <button type="submit" class="linkbtn linkbtn-danger">삭제</button>
@@ -206,10 +172,111 @@
           </details>
         <% }); %>
       </div>
-    </div>
   </div>
 </div>
+
+<!-- 새 업무/수정 모달(레이어) -->
+<dialog id="taskDlg" class="tk-modal">
+  <form method="post" action="/exec/tasks" class="tk-form" id="taskForm">
+    <div class="tk-modal-head">
+      <h2 id="dlgTitle">새 업무 등록</h2>
+      <button type="button" class="tk-modal-x" onclick="closeDlg()" aria-label="닫기">×</button>
+    </div>
+    <div class="tk-modal-body">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <input type="hidden" name="id" id="tfId" value="" />
+      <div class="field"><label>업무명</label><input type="text" name="title" id="tfTitle" required placeholder="예: 충남연구원 AI 스터디그룹 운영" /></div>
+      <div class="field"><label>상태</label>
+        <select name="status" id="tfStatus">
+          <% STATUSES.forEach(function(st){ %><option value="<%= st %>"><%= st %></option><% }); %>
+        </select>
+      </div>
+      <div class="field"><label>담당(매니징)</label><input type="text" name="manager" id="tfManager" placeholder="예: 이형구" /></div>
+      <div class="field"><label>참여자</label><input type="text" name="participants" id="tfParticipants" placeholder="쉼표로 구분" /></div>
+      <div class="field">
+        <label>진행 상황 (단계) — 진행률 자동계산</label>
+        <div id="stepList" class="step-list"></div>
+        <div class="step-foot">
+          <button type="button" class="btn btn-neutral btn-sm" onclick="addStep()">+ 단계 추가</button>
+          <span class="step-rate">예상 진행률 <b id="rateView">0</b>%</span>
+        </div>
+      </div>
+      <div class="field"><label>완료예정일(업무 전체)</label><input type="date" name="due_date" id="tfDue" /></div>
+      <div class="field"><label>이슈 / 문제</label><textarea name="issues" id="tfIssues" placeholder="막힌 지점·결정 필요 사항"></textarea></div>
+      <div class="field"><label>상세 / 맥락</label><textarea name="detail" id="tfDetail" placeholder="배경·세부 내용"></textarea></div>
+      <div class="field"><label>진행 기록 (누적 메모·선택)</label><textarea name="progress" id="tfProgress" placeholder="AI 정리·추가사항이 누적되는 기록"></textarea></div>
+    </div>
+    <div class="tk-modal-foot">
+      <button type="button" class="btn btn-neutral" onclick="closeDlg()">취소</button>
+      <button type="submit" class="btn btn-primary" id="dlgSave">업무 등록</button>
+    </div>
+  </form>
+</dialog>
+<script id="tasksData" type="application/json"><%- JSON.stringify(tasks.map(function(t){ return {id:t.id,title:t.title,status:t.status,manager:t.manager,participants:t.participants,due_date:t.due_date||'',issues:t.issues,detail:t.detail,progress:t.progress,steps:parseSteps(t.steps)}; })).replace(/</g,'\\u003c') %></script>
+
 <script>
+  var TASK_MAP = {};
+  (function(){ try { JSON.parse(document.getElementById('tasksData').textContent).forEach(function(t){ TASK_MAP[t.id] = t; }); } catch(e){} })();
+  var dlg = document.getElementById('taskDlg');
+
+  function escAttr(s){ return (s==null?'':String(s)); }
+  function stepRowHtml(label, done, due){
+    return '<div class="step-row">' +
+      '<span class="step-no"></span>' +
+      '<input type="text" class="step-label-in" name="step_label" value="" placeholder="단계 내용 (예: 공고 확인 / 지원서 작성 / 최종 제출)" oninput="recalcRate()" />' +
+      '<label class="step-due-wrap">완료예정 <input type="date" class="step-due-in" name="step_due" value="" /></label>' +
+      '<input type="hidden" name="step_done" value="' + (done ? '1':'0') + '" />' +
+      '<button type="button" class="step-done' + (done?' on':'') + '" onclick="toggleStepBtn(this)">' + (done?'완료됨':'완료') + '</button>' +
+      '<button type="button" class="step-del" title="단계 삭제" onclick="delStep(this)">×</button>' +
+    '</div>';
+  }
+  function setSteps(steps){
+    var list = document.getElementById('stepList');
+    list.innerHTML = '';
+    if (!steps || !steps.length) steps = [{label:'',done:false,due:''},{label:'',done:false,due:''},{label:'',done:false,due:''}];
+    steps.forEach(function(sp){
+      var tmp = document.createElement('div'); tmp.innerHTML = stepRowHtml(sp.label, !!sp.done, sp.due);
+      var row = tmp.firstChild;
+      row.querySelector('input[name="step_label"]').value = sp.label || '';
+      row.querySelector('input[name="step_due"]').value = sp.due || '';
+      list.appendChild(row);
+    });
+    renumberSteps(); recalcRate();
+  }
+  function openCreate(){
+    document.getElementById('dlgTitle').textContent = '새 업무 등록';
+    document.getElementById('dlgSave').textContent = '업무 등록';
+    document.getElementById('tfId').value = '';
+    document.getElementById('tfTitle').value = '';
+    document.getElementById('tfStatus').value = '진행중';
+    document.getElementById('tfManager').value = '';
+    document.getElementById('tfParticipants').value = '';
+    document.getElementById('tfDue').value = '';
+    document.getElementById('tfIssues').value = '';
+    document.getElementById('tfDetail').value = '';
+    document.getElementById('tfProgress').value = '';
+    setSteps(null);
+    dlg.showModal();
+  }
+  function openEdit(id){
+    var t = TASK_MAP[id]; if (!t) return;
+    document.getElementById('dlgTitle').textContent = '업무 수정';
+    document.getElementById('dlgSave').textContent = '수정 저장';
+    document.getElementById('tfId').value = t.id;
+    document.getElementById('tfTitle').value = t.title || '';
+    document.getElementById('tfStatus').value = t.status || '진행중';
+    document.getElementById('tfManager').value = t.manager || '';
+    document.getElementById('tfParticipants').value = t.participants || '';
+    document.getElementById('tfDue').value = t.due_date || '';
+    document.getElementById('tfIssues').value = t.issues || '';
+    document.getElementById('tfDetail').value = t.detail || '';
+    document.getElementById('tfProgress').value = t.progress || '';
+    setSteps(t.steps);
+    dlg.showModal();
+  }
+  function closeDlg(){ dlg.close(); }
+  dlg.addEventListener('click', function(e){ if (e.target === dlg) dlg.close(); }); // 배경 클릭 닫기
+
   function recalcRate(){
     var rows = document.querySelectorAll('#stepList .step-row');
     var total = 0, done = 0;
