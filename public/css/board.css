@@ -71,9 +71,15 @@
 .post-view-head { padding: 28px 30px; border-bottom: 1px solid var(--line); background: #fcfbf7; }
 .post-view-title { font-size: clamp(1.3rem, 3.4vw, 1.8rem); color: var(--green-900); margin: 8px 0 14px; }
 .post-view-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: .88rem; color: var(--muted); }
-.post-images { display: flex; flex-direction: column; gap: 16px; padding: 26px 30px 0; }
+/* PC: 2열 그리드. 짝수는 2개씩, 홀수(3개 이상)는 나머지 1개를 전체 폭으로 */
+.post-images { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 26px 30px 0; align-items: start; }
 .post-image { margin: 0; }
-.post-image img { width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--line); }
+.post-image img { width: 100%; height: auto; border-radius: var(--radius-sm); border: 1px solid var(--line); display: block; }
+.post-images .post-image:last-child:nth-child(odd) { grid-column: 1 / -1; }
+@media (max-width: 640px) {
+  .post-images { grid-template-columns: 1fr; }
+  .post-images .post-image:last-child:nth-child(odd) { grid-column: auto; }
+}
 .post-content { padding: 26px 30px 32px; font-size: 1.05rem; line-height: 1.85; color: var(--ink-soft); word-break: break-word; }
 .post-files { padding: 0 30px 28px; }
 .post-files h3 { font-size: .95rem; color: var(--green-800); margin-bottom: 12px; }
