@@ -119,7 +119,7 @@
             <form class="tk-progress" action="/exec/tasks/<%= t.id %>/progress" method="post">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
               <label>추가사항 및 향후계획</label>
-              <textarea name="note" rows="2" placeholder="진행 상황에 누적될 내용을 입력하세요 (예: 10/20 MOU 초안 회신 받음, 다음 주 검토 회의)"></textarea>
+              <textarea name="note" rows="2" required placeholder="진행 상황에 누적될 내용을 입력하세요 (예: 10/20 MOU 초안 회신 받음, 다음 주 검토 회의)"></textarea>
               <button type="submit" class="btn btn-neutral btn-sm">업데이트</button>
             </form>
             <div class="tk-actions">

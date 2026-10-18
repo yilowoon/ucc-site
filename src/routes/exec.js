@@ -100,6 +100,7 @@ module.exports = function execRoutes({ verifyCsrf }) {
   });
   // 처리 후 해당 업무가 펼쳐진 채 유지되도록 open 앵커로 리다이렉트
   const backToTask = (id, msg) => "/exec/tasks?open=" + id + "&msg=" + encodeURIComponent(msg) + "#task-" + id;
+  const backToTaskErr = (id, err) => "/exec/tasks?open=" + id + "&err=" + encodeURIComponent(err) + "#task-" + id;
   router.post("/tasks", requireExec, verifyCsrf, (req, res) => {
     const b = req.body;
     if (!(b.title || "").trim()) return res.redirect("/exec/tasks?err=" + encodeURIComponent("업무명을 입력하세요."));
@@ -110,7 +111,7 @@ module.exports = function execRoutes({ verifyCsrf }) {
     const id = parseInt(req.params.id, 10);
     const note = (req.body.note || "").trim();
     if (!meetings.getTask(id)) return res.redirect("/exec/tasks?err=" + encodeURIComponent("업무를 찾을 수 없습니다."));
-    if (!note) return res.redirect("/exec/tasks?err=" + encodeURIComponent("추가할 내용을 입력하세요."));
+    if (!note) return res.redirect(backToTaskErr(id, "추가할 내용을 입력하세요."));
     meetings.appendTaskProgress(id, note, req.execName);
     res.redirect(backToTask(id, "진행 상황을 업데이트했습니다."));
   });
@@ -118,7 +119,7 @@ module.exports = function execRoutes({ verifyCsrf }) {
     const id = parseInt(req.params.id, 10);
     const status = (req.body.status || "").trim();
     if (!meetings.getTask(id)) return res.redirect("/exec/tasks?err=" + encodeURIComponent("업무를 찾을 수 없습니다."));
-    if (!meetings.STATUSES.includes(status)) return res.redirect("/exec/tasks?err=" + encodeURIComponent("상태값이 올바르지 않습니다."));
+    if (!meetings.STATUSES.includes(status)) return res.redirect(backToTaskErr(id, "상태값이 올바르지 않습니다."));
     meetings.setTaskStatus(id, status);
     const note = status === "완료" ? "업무를 완료 처리했습니다." : ("업무 상태를 ‘" + status + "’(으)로 변경했습니다.");
     res.redirect(backToTask(id, note));
