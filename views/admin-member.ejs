@@ -71,6 +71,18 @@
         </div>
       <% } %>
 
+      <div class="member-exec" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line);display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <span>임원 권한:
+          <b style="color:<%= m.is_exec ? '#137333' : 'var(--muted)' %>"><%= m.is_exec ? '승인됨(업무관리 접근 가능)' : '일반 회원' %></b>
+        </span>
+        <form action="/admin/members/<%= m.id %>/exec" method="post" style="display:inline"
+              onsubmit="return confirm('<%= esc(m.name) %> 님의 임원 권한을 <%= m.is_exec ? "해제" : "승인" %>할까요?');">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <input type="hidden" name="back" value="/admin/members/<%= m.id %>" />
+          <button type="submit" class="btn <%= m.is_exec ? 'btn-ghost-dark' : 'btn-primary' %> btn-sm"><%= m.is_exec ? '임원 해제' : '임원으로 승인' %></button>
+        </form>
+      </div>
+
       <form action="/admin/members/<%= m.id %>/delete" method="post" class="member-delete"
             onsubmit="return confirm('이 회원을 삭제하시겠습니까? 되돌릴 수 없습니다.');">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />

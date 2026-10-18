@@ -1,0 +1,94 @@
+<%- include('partials/header') %>
+<style>
+  .tk-grid{display:grid;grid-template-columns:360px 1fr;gap:20px;align-items:start}
+  @media(max-width:900px){.tk-grid{grid-template-columns:1fr}}
+  .tk-form .field{margin-bottom:12px}
+  .tk-form label{display:block;font-size:.82rem;font-weight:700;color:var(--ink-soft);margin-bottom:5px}
+  .tk-form input,.tk-form select,.tk-form textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:.92rem;font-family:inherit}
+  .tk-form textarea{resize:vertical;min-height:60px}
+  .tk-cards{display:grid;gap:14px}
+  .tk-card{background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow-sm)}
+  .tk-card--이슈{border-left-color:#c5221f}.tk-card--진행중{border-left-color:#1b93c6}.tk-card--대기{border-left-color:#8a6d00}.tk-card--보류{border-left-color:#8a939c}.tk-card--완료{border-left-color:#2b8a5a}
+  .tk-card-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+  .tk-title{font-size:1.1rem;font-weight:800;color:var(--green-800);margin:0}
+  .st-badge{font-size:.72rem;font-weight:800;border-radius:999px;padding:3px 10px;color:#fff;white-space:nowrap}
+  .st-이슈{background:#c5221f}.st-진행중{background:#1b93c6}.st-대기{background:#8a6d00}.st-보류{background:#8a939c}.st-완료{background:#2b8a5a}
+  .tk-meta{display:flex;gap:16px;flex-wrap:wrap;margin:10px 0;font-size:.86rem}
+  .tk-meta .mk{color:var(--muted);font-weight:700;margin-right:5px}
+  .tk-field{margin-top:8px;font-size:.9rem;line-height:1.6;color:var(--ink-soft);white-space:pre-wrap}
+  .tk-field .fk{font-size:.74rem;font-weight:800;color:var(--muted);display:block;margin-bottom:2px}
+  .tk-issue{background:#fdf3f2;border:1px solid #f0cfcb;border-radius:8px;padding:8px 10px}
+  .tk-issue .fk{color:#c5221f}
+  .tk-actions{margin-top:12px;display:flex;gap:10px}
+</style>
+<div class="container admin-wrap">
+  <div class="admin-head">
+    <div><h1>업무관리</h1><p class="admin-sub">임원 업무의 진행·이슈·담당을 한눈에 관리합니다. (이슈 → 진행중 → 대기 → 보류 → 완료 순 정렬)</p></div>
+    <div class="admin-head-actions">
+      <a class="btn btn-neutral btn-sm" href="/exec/meetings">회의록 관리</a>
+      <a class="btn btn-neutral btn-sm" href="/exec">← 업무관리</a>
+    </div>
+  </div>
+
+  <% if (msg) { %><p class="form-alert ok"><%= msg %></p><% } %>
+  <% if (err) { %><p class="form-alert err"><%= err %></p><% } %>
+
+  <div class="tk-grid">
+    <!-- 등록/수정 폼 -->
+    <div class="admin-auth-card tk-form">
+      <h2 style="margin-top:0;"><%= edit ? '업무 수정' : '새 업무 등록' %></h2>
+      <form method="post" action="/exec/tasks">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <% if (edit) { %><input type="hidden" name="id" value="<%= edit.id %>" /><% } %>
+        <div class="field"><label>업무명</label><input type="text" name="title" value="<%= esc(edit ? edit.title : '') %>" required placeholder="예: 충남연구원 AI 스터디그룹 운영" /></div>
+        <div class="field"><label>상태</label>
+          <select name="status">
+            <% STATUSES.forEach(function(st){ %><option value="<%= st %>" <%= edit && edit.status===st ? 'selected' : '' %>><%= st %></option><% }); %>
+          </select>
+        </div>
+        <div class="field"><label>담당(매니징)</label><input type="text" name="manager" value="<%= esc(edit ? edit.manager : '') %>" placeholder="예: 이형구" /></div>
+        <div class="field"><label>참여자</label><input type="text" name="participants" value="<%= esc(edit ? edit.participants : '') %>" placeholder="쉼표로 구분" /></div>
+        <div class="field"><label>진행 상황</label><textarea name="progress" placeholder="현재 어디까지 진행되었는지"><%= esc(edit ? edit.progress : '') %></textarea></div>
+        <div class="field"><label>이슈 / 문제</label><textarea name="issues" placeholder="막힌 지점·결정 필요 사항"><%= esc(edit ? edit.issues : '') %></textarea></div>
+        <div class="field"><label>상세 / 맥락</label><textarea name="detail" placeholder="배경·세부 내용"><%= esc(edit ? edit.detail : '') %></textarea></div>
+        <div style="display:flex;gap:8px;">
+          <button type="submit" class="btn btn-primary"><%= edit ? '수정 저장' : '업무 등록' %></button>
+          <% if (edit) { %><a class="btn btn-neutral" href="/exec/tasks">취소</a><% } %>
+        </div>
+      </form>
+    </div>
+
+    <!-- 업무 목록 -->
+    <div>
+      <% if (!tasks.length) { %>
+        <div class="admin-auth-card"><p class="field-hint" style="margin:0">등록된 업무가 없습니다. 왼쪽에서 직접 등록하거나, 회의록에서 ‘AI로 업무 정리’를 해보세요.</p></div>
+      <% } %>
+      <div class="tk-cards">
+        <% tasks.forEach(function(t){ %>
+          <article class="tk-card tk-card--<%= t.status %>">
+            <div class="tk-card-head">
+              <h3 class="tk-title"><%= esc(t.title) %></h3>
+              <span class="st-badge st-<%= t.status %>"><%= t.status %></span>
+            </div>
+            <div class="tk-meta">
+              <% if (t.manager) { %><span><span class="mk">담당</span><%= esc(t.manager) %></span><% } %>
+              <% if (t.participants) { %><span><span class="mk">참여</span><%= esc(t.participants) %></span><% } %>
+              <% if (t.updated_at) { %><span><span class="mk">갱신</span><%= fmtDate(t.updated_at) %></span><% } %>
+            </div>
+            <% if (t.progress) { %><div class="tk-field"><span class="fk">진행 상황</span><%= esc(t.progress) %></div><% } %>
+            <% if (t.issues) { %><div class="tk-field tk-issue"><span class="fk">이슈 / 문제</span><%= esc(t.issues) %></div><% } %>
+            <% if (t.detail) { %><div class="tk-field"><span class="fk">상세 / 맥락</span><%= esc(t.detail) %></div><% } %>
+            <div class="tk-actions">
+              <a href="/exec/tasks?edit=<%= t.id %>#top" class="btn btn-neutral btn-sm">수정</a>
+              <form action="/exec/tasks/<%= t.id %>/delete" method="post" style="display:inline" onsubmit="return confirm('이 업무를 삭제할까요?');">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <button type="submit" class="linkbtn linkbtn-danger">삭제</button>
+              </form>
+            </div>
+          </article>
+        <% }); %>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('partials/footer') %>

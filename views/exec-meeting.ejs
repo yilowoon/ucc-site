@@ -1,0 +1,57 @@
+<%- include('partials/header') %>
+<style>
+  .chat{max-height:620px;overflow-y:auto;background:var(--paper-warm);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .chat-day{text-align:center;color:var(--muted);font-size:.78rem;margin:14px 0 8px;font-weight:700}
+  .msg{display:grid;grid-template-columns:96px 1fr;gap:12px;padding:6px 0;align-items:start}
+  .msg .who{font-weight:700;color:var(--green-800);font-size:.86rem;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .msg .body{font-size:.92rem;color:var(--ink);line-height:1.55;white-space:pre-wrap;word-break:break-word}
+  .msg .t{color:var(--muted);font-size:.72rem;margin-left:8px}
+  @media(max-width:560px){.msg{grid-template-columns:1fr}.msg .who{text-align:left}}
+</style>
+<div class="container admin-wrap">
+  <div class="admin-head">
+    <div>
+      <h1><%= esc(log.title) %></h1>
+      <p class="admin-sub"><%= log.msg_count %>개 메시지 · <%= log.period_from %><%= log.period_to && log.period_to !== log.period_from ? ' ~ ' + log.period_to : '' %> · 참여: <%= esc(log.participants) %></p>
+    </div>
+    <div class="admin-head-actions">
+      <a class="btn btn-neutral btn-sm" href="/exec/meetings">← 목록</a>
+      <a class="btn btn-neutral btn-sm" href="/exec/tasks">업무 보드</a>
+    </div>
+  </div>
+
+  <% if (msg) { %><p class="form-alert ok"><%= msg %></p><% } %>
+  <% if (err) { %><p class="form-alert err"><%= err %></p><% } %>
+
+  <div class="admin-auth-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+      <h2 style="margin:0;">AI 업무 정리</h2>
+      <form method="post" action="/exec/meetings/<%= log.id %>/extract" onsubmit="this.querySelector('button').disabled=true;this.querySelector('button').textContent='AI 분석 중… (최대 1분)';">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit" class="btn btn-primary">🤖 AI로 업무 정리</button>
+      </form>
+    </div>
+    <p class="field-hint" style="margin-top:8px">이 대화에서 진행 중/결정된 업무를 AI가 추출해 <b>업무 보드</b>에 등록합니다. 기존 업무와 같으면 자동 연결·갱신됩니다. (AI 설정이 없거나 실패하면 업무 보드에서 직접 등록할 수 있습니다)</p>
+    <% if (log.summary) { %>
+      <div style="margin-top:14px;background:var(--paper-warm);border:1px solid var(--line);border-radius:10px;padding:14px 16px;">
+        <b style="color:var(--green-800)">AI 요약</b>
+        <p style="margin:6px 0 0;line-height:1.7;color:var(--ink-soft);white-space:pre-wrap"><%= esc(log.summary) %></p>
+      </div>
+    <% } %>
+  </div>
+
+  <div class="admin-auth-card" style="margin-top:16px;">
+    <h2 style="margin-top:0;">대화 내용</h2>
+    <div class="chat">
+      <% var lastDay=''; messages.forEach(function(m){ var day=(m.msg_at||'').slice(0,10); %>
+        <% if (day && day!==lastDay) { lastDay=day; %><div class="chat-day"><%= day %></div><% } %>
+        <div class="msg">
+          <span class="who"><%= esc(m.sender) %></span>
+          <span class="body"><%= esc(m.content) %><span class="t"><%= (m.msg_at||'').slice(11) %></span></span>
+        </div>
+      <% }); %>
+      <% if (!messages.length) { %><p class="field-hint">메시지가 없습니다.</p><% } %>
+    </div>
+  </div>
+</div>
+<%- include('partials/footer') %>

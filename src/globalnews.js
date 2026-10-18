@@ -1335,4 +1335,5 @@ module.exports = {
   THEMES, AUTHOR, PERSONA, BOARD,
   buildKakaoMessage, buildKakaoMessageFromPost, buildKakaoShortFromPost,
   latestGlobalPost, todaysGlobalPost, SITE_BASE_URL,
+  llm, // 범용 Gemini JSON 호출(임원 업무관리 AI 정리 등 재사용)
 };

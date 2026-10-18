@@ -216,6 +216,49 @@ try { db.exec("ALTER TABLE members ADD COLUMN reminder_sent INTEGER NOT NULL DEF
 try { db.exec("ALTER TABLE members ADD COLUMN reminder_sent_at TEXT NOT NULL DEFAULT ''"); } catch (e) {}
 try { db.exec("ALTER TABLE members ADD COLUMN reminder_optout INTEGER NOT NULL DEFAULT 0"); } catch (e) {}   // '준회원 유지' 선택 → 더 안 보냄
 // SNS 간편로그인 연동(카카오/네이버/구글)
+// 임원(이사 등) 승인 여부 — 임원 전용 업무관리 접근 권한
+try { db.exec("ALTER TABLE members ADD COLUMN is_exec INTEGER NOT NULL DEFAULT 0"); } catch (e) {}
+// 임원 업무관리: 카카오톡 대화 업로드(회의록) + 파싱 메시지 + 업무(task)
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS meeting_logs (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    title       TEXT NOT NULL,
+    period_from TEXT NOT NULL DEFAULT '',
+    period_to   TEXT NOT NULL DEFAULT '',
+    msg_count   INTEGER NOT NULL DEFAULT 0,
+    participants TEXT NOT NULL DEFAULT '',   -- 쉼표 구분 발신자 목록
+    filename    TEXT NOT NULL DEFAULT '',
+    summary     TEXT NOT NULL DEFAULT '',    -- AI 요약(선택)
+    uploaded_by TEXT NOT NULL DEFAULT '',
+    created_at  TEXT NOT NULL
+  );`);
+  db.exec(`CREATE TABLE IF NOT EXISTS meeting_messages (
+    id      INTEGER PRIMARY KEY AUTOINCREMENT,
+    log_id  INTEGER NOT NULL,
+    seq     INTEGER NOT NULL DEFAULT 0,
+    msg_at  TEXT NOT NULL DEFAULT '',        -- 'YYYY-MM-DD HH:MM'
+    sender  TEXT NOT NULL DEFAULT '',
+    content TEXT NOT NULL DEFAULT ''
+  );`);
+  db.exec("CREATE INDEX IF NOT EXISTS idx_meeting_messages_log ON meeting_messages(log_id, seq)");
+  db.exec(`CREATE TABLE IF NOT EXISTS tasks (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    title       TEXT NOT NULL,
+    status      TEXT NOT NULL DEFAULT '진행중',  -- 대기 | 진행중 | 보류 | 완료 | 이슈
+    progress    TEXT NOT NULL DEFAULT '',        -- 진행 상황 설명
+    manager     TEXT NOT NULL DEFAULT '',        -- 담당(매니징)
+    participants TEXT NOT NULL DEFAULT '',        -- 참여자
+    issues      TEXT NOT NULL DEFAULT '',         -- 이슈/문제
+    detail      TEXT NOT NULL DEFAULT '',         -- 상세/맥락
+    log_id      INTEGER NOT NULL DEFAULT 0,       -- 관련 회의록(0=없음)
+    sort_order  INTEGER NOT NULL DEFAULT 0,
+    created_by  TEXT NOT NULL DEFAULT '',
+    created_at  TEXT NOT NULL,
+    updated_at  TEXT NOT NULL DEFAULT ''
+  );`);
+  db.exec("CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status, sort_order, id)");
+} catch (e) {}
+
 try { db.exec("ALTER TABLE members ADD COLUMN provider TEXT NOT NULL DEFAULT ''"); } catch (e) {}    // '' | kakao | naver | google
 try { db.exec("ALTER TABLE members ADD COLUMN provider_id TEXT NOT NULL DEFAULT ''"); } catch (e) {} // 제공사 고유 사용자 ID
 try { db.exec("CREATE INDEX IF NOT EXISTS idx_members_provider ON members(provider, provider_id)"); } catch (e) {}

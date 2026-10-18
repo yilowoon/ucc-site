@@ -36,6 +36,7 @@ const cfg = require("./src/config");
 const boardRoutes = require("./src/routes/board");
 const adminRoutes = require("./src/routes/admin");
 const siteRoutes = require("./src/routes/site");
+const execRoutes = require("./src/routes/exec");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -161,6 +162,9 @@ function baseLocals(req) {
     isAdmin: !!(req.session && req.session.admin),
     adminName: req.session && req.session.admin ? req.session.admin.username : null,
     isMember: !!(req.session && req.session.member),
+    isExec: !!(req.session && req.session.admin) || (req.session && req.session.member
+      ? !!((db.prepare("SELECT is_exec FROM members WHERE id = ?").get(req.session.member.id) || {}).is_exec)
+      : false),
     memberName: req.session && req.session.member ? req.session.member.name : null,
     // 주의: EJS의 <%= %> 는 이미 HTML 이스케이프한다. 템플릿의 모든 esc() 호출은 <%= %> 안에 있으므로
     // esc 를 실제 이스케이프 함수로 두면 이중 이스케이프(&#39; → &amp;#39; → 화면에 "&#39;")가 발생한다.
@@ -409,6 +413,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/admin", adminRoutes({ baseLocals, verifyCsrf }));
+app.use("/exec", execRoutes({ verifyCsrf }));
 app.use("/board", boardRoutes({ baseLocals }));
 app.use("/", siteRoutes({ verifyCsrf }));
 

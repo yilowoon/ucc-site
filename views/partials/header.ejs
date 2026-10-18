@@ -115,6 +115,9 @@
           <% if (isMember || isAdmin) { %>
             <li><a href="/members/calendar">멤버십캘린더</a></li>
           <% } %>
+          <% if (typeof isExec !== 'undefined' && isExec) { %>
+            <li><a href="/exec" class="nav-admin">업무관리</a></li>
+          <% } %>
           <% if (isMember) { %>
             <li><a href="/mypage">마이페이지</a></li>
             <li><a href="#" class="nav-cta" onclick="document.getElementById('mLogout').submit();return false;">로그아웃</a></li>
@@ -181,6 +184,9 @@
       </details>
       <% if (isMember || isAdmin) { %>
         <a href="/members/calendar">멤버십캘린더</a>
+      <% } %>
+      <% if (typeof isExec !== 'undefined' && isExec) { %>
+        <a href="/exec">업무관리</a>
       <% } %>
       <% if (isMember) { %>
         <a href="/mypage">마이페이지</a>

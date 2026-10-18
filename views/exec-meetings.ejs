@@ -1,0 +1,48 @@
+<%- include('partials/header') %>
+<div class="container admin-wrap">
+  <div class="admin-head">
+    <div><h1>회의록(대화) 관리</h1><p class="admin-sub">카카오톡 ‘대화 내보내기(.txt)’ 파일을 올리면 메시지를 파싱해 저장하고, AI로 업무를 정리할 수 있습니다.</p></div>
+    <a class="btn btn-neutral btn-sm" href="/exec">← 업무관리</a>
+  </div>
+
+  <% if (msg) { %><p class="form-alert ok"><%= msg %></p><% } %>
+  <% if (err) { %><p class="form-alert err"><%= err %></p><% } %>
+
+  <div class="admin-auth-card" style="max-width:760px;">
+    <h2 style="margin-top:0;">대화 업로드</h2>
+    <form method="post" action="/exec/meetings/upload" enctype="multipart/form-data" class="admin-form-fields">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <div class="field"><label for="title">제목 <span class="field-hint">선택 — 비우면 파일명 사용</span></label>
+        <input type="text" id="title" name="title" placeholder="예: 임원 단톡 10월 3주차" /></div>
+      <div class="field"><label for="file">카카오톡 대화 파일(.txt)</label>
+        <input type="file" id="file" name="file" accept=".txt,text/plain" required /></div>
+      <button type="submit" class="btn btn-primary">업로드 &amp; 파싱</button>
+    </form>
+    <p class="field-hint" style="margin-top:12px;line-height:1.7">
+      ※ 카카오톡 PC/모바일 모두 지원합니다. (PC: 채팅방 → 메뉴 → 대화 내보내기 / 모바일: 채팅방 설정 → 대화 내보내기 → 텍스트)<br>
+      ※ 업로드한 대화 원문은 임원만 열람할 수 있습니다.
+    </p>
+  </div>
+
+  <div class="admin-auth-card" style="max-width:760px;margin-top:16px;">
+    <h2 style="margin-top:0;">업로드된 회의록 (<%= logs.length %>)</h2>
+    <% if (!logs.length) { %><p class="field-hint">아직 업로드된 대화가 없습니다.</p><% } else { %>
+      <ul class="admin-list">
+        <% logs.forEach(function(l){ %>
+          <li class="admin-row" style="display:flex;gap:10px;align-items:center;">
+            <span style="flex:1;min-width:0;">
+              <a href="/exec/meetings/<%= l.id %>" style="font-weight:700;color:var(--green-800)"><%= esc(l.title) %></a>
+              <div class="field-hint"><%= l.msg_count %>개 메시지 · <%= l.period_from %><%= l.period_to && l.period_to !== l.period_from ? ' ~ ' + l.period_to : '' %> · 참여 <%= esc(l.participants) %></div>
+            </span>
+            <a href="/exec/meetings/<%= l.id %>" class="btn btn-neutral btn-sm">열기</a>
+            <form action="/exec/meetings/<%= l.id %>/delete" method="post" style="display:inline" onsubmit="return confirm('이 회의록(대화)을 삭제할까요? 메시지도 함께 삭제됩니다.');">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button type="submit" class="linkbtn linkbtn-danger">삭제</button>
+            </form>
+          </li>
+        <% }); %>
+      </ul>
+    <% } %>
+  </div>
+</div>
+<%- include('partials/footer') %>

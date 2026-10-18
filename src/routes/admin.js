@@ -549,7 +549,7 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     const m = db.prepare(
       "SELECT id, member_type, name, org_name, position, job, interest, email, phone, " +
       "biz_ceo, biz_sector, biz_website, biz_logo, biz_profile, biz_profile_name, " +
-      "grade, fee_paid, fee_paid_at, confirmed_at, created_at FROM members WHERE id = ?"
+      "grade, fee_paid, fee_paid_at, confirmed_at, is_exec, created_at FROM members WHERE id = ?"
     ).get(id);
     if (!m) {
       return res.status(404).render("message", {
@@ -597,6 +597,15 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     const back = safeBack(req.body.back);
     db.prepare("UPDATE members SET grade = '준회원', fee_paid = 0, fee_paid_at = '', confirmed_at = '' WHERE id = ?")
       .run(id);
+    res.redirect(back);
+  });
+
+  // 임원 승인/해제 토글 — 임원 전용 업무관리 접근 권한
+  router.post("/members/:id/exec", requireAdmin, verifyCsrf, (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const back = safeBack(req.body.back);
+    const cur = db.prepare("SELECT is_exec FROM members WHERE id = ?").get(id);
+    if (cur) db.prepare("UPDATE members SET is_exec = ? WHERE id = ?").run(cur.is_exec ? 0 : 1, id);
     res.redirect(back);
   });
 
