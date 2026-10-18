@@ -39,6 +39,17 @@
   .ba-after p b{color:var(--green-800)}
   .ba-arrow{display:grid;place-items:center;color:var(--ci-green-d);font-size:1.5rem;font-weight:800}
   @media(max-width:420px){.ba-card{grid-template-columns:1fr}.ba-arrow{transform:rotate(90deg)}}
+  /* 교육 현장 */
+  .onsite-photo{position:relative;border-radius:18px;overflow:hidden;box-shadow:var(--shadow);margin:0 0 26px;aspect-ratio:16/9}
+  .onsite-photo img{width:100%;height:100%;object-fit:cover;display:block}
+  .onsite-photo figcaption{position:absolute;left:0;right:0;bottom:0;padding:48px 28px 22px;color:#fff;font-size:1.02rem;font-weight:600;background:linear-gradient(to top, rgba(11,33,25,.88), rgba(11,33,25,.2) 70%, transparent)}
+  .onsite-highlights{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .onsite-hl{text-align:center;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:26px 20px;box-shadow:var(--shadow-sm);transition:transform .22s var(--ease),box-shadow .22s var(--ease)}
+  .onsite-hl:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+  .onsite-hl .oh-ico{font-size:2rem;line-height:1;display:block;margin-bottom:10px}
+  .onsite-hl h4{margin:0 0 6px;color:var(--green-800);font-size:1.08rem}
+  .onsite-hl p{margin:0;color:var(--ink-soft);font-size:.92rem;line-height:1.55}
+  @media(max-width:720px){.onsite-highlights{grid-template-columns:1fr}.onsite-photo{aspect-ratio:4/3}}
   /* PROJECT 04 대표(협력) 프로젝트 */
   .proj-feature{margin-top:22px;background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:30px 32px;box-shadow:var(--shadow-sm);border-top:5px solid var(--ci-orange-d)}
   .proj-feature-tags{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
@@ -307,8 +318,27 @@
   </div>
 </section>
 
+<!-- 교육 현장 -->
+<section class="section" id="onsite">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-green">교육 현장</h2><span class="section-en">ON-SITE</span></div>
+    </div>
+    <p class="section-lede">강의를 듣기만 하는 교육이 아닙니다. <strong>직접 노트북을 열고 몰입해서 실습하는 현장</strong>에서, 동료·멘토와 함께 배우고 성장합니다.</p>
+    <figure class="onsite-photo">
+      <img src="/img/ai-class.webp" alt="AI활용전문가과정 교육 현장 — 수강생들이 노트북으로 실습하는 모습" loading="lazy" />
+      <figcaption>몰입형 실습 중심 교육 — 배운 내용을 바로 내 손으로 만들어 봅니다.</figcaption>
+    </figure>
+    <div class="onsite-highlights">
+      <div class="onsite-hl"><span class="oh-ico">💻</span><h4>몰입형 실습 공간</h4><p>이론보다 실습. 직접 만들며 익히는 프로젝트 중심 환경</p></div>
+      <div class="onsite-hl"><span class="oh-ico">🧑‍🏫</span><h4>현장 밀착 멘토링</h4><p>막히는 지점은 현장에서 바로 전문가의 피드백으로 해결</p></div>
+      <div class="onsite-hl"><span class="oh-ico">🤝</span><h4>동료와 함께 성장</h4><p>혼자가 아니라 함께 배우고, 수료 후에도 이어지는 커뮤니티</p></div>
+    </div>
+  </div>
+</section>
+
 <!-- 신청 절차 -->
-<section class="section" id="apply">
+<section class="section section--alt" id="apply">
   <div class="container">
     <div class="section-head">
       <div><h2 class="section-title c-green">신청 절차</h2><span class="section-en">HOW TO APPLY</span></div>
@@ -324,7 +354,7 @@
 </section>
 
 <!-- FAQ -->
-<section class="section section--alt" id="faq">
+<section class="section" id="faq">
   <div class="container">
     <div class="section-head">
       <div><h2 class="section-title c-orange">자주 묻는 질문</h2><span class="section-en">FAQ</span></div>
