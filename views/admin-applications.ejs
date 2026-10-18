@@ -1,24 +1,86 @@
 <%- include('partials/header') %>
+<style>
+  .app-wrap{overflow-x:auto}
+  .app-table{width:100%;border-collapse:collapse;font-size:.94rem;min-width:720px}
+  .app-table th{text-align:left;padding:14px 22px;color:var(--muted);font-size:.78rem;font-weight:800;letter-spacing:.02em;border-bottom:2px solid var(--line);white-space:nowrap}
+  .app-table td{padding:16px 22px;border-bottom:1px solid var(--line);color:var(--ink-soft);vertical-align:middle}
+  .app-row{cursor:pointer;transition:background .12s}
+  .app-row:hover,.app-row.is-open{background:var(--paper-warm)}
+  .app-name{font-weight:700;color:var(--green-800)}
+  .app-caret{color:var(--muted);font-size:.78rem;display:inline-block;margin-left:6px;transition:transform .15s}
+  .app-row.is-open .app-caret{transform:rotate(90deg);color:var(--ci-green-d)}
+  .app-phone{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .app-course{color:var(--ink)}
+  .app-email{color:var(--green-700);font-weight:600;word-break:break-all}
+  .app-date{display:inline-block;background:var(--paper-warm);border:1px solid var(--line);border-radius:7px;padding:4px 10px;font-weight:700;color:var(--ink-soft);font-size:.84rem;white-space:nowrap}
+  .app-detail > td{background:var(--paper-warm);padding:0}
+  .app-detail-inner{padding:20px 24px}
+  .app-detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px 28px;margin-bottom:14px}
+  .app-detail-grid > div{display:flex;flex-direction:column;gap:3px}
+  .dl-k{font-size:.74rem;font-weight:800;color:var(--muted)}
+  .dl-v{color:var(--ink);font-weight:600;word-break:break-all}
+  .dl-v a{color:var(--ci-green-d)}
+  .app-msg{border-top:1px dashed var(--line);padding-top:14px}
+  .app-msg .dl-k{display:block;margin-bottom:4px}
+  .app-msg p{margin:0;color:var(--ink-soft);line-height:1.65;white-space:pre-wrap}
+</style>
 <div class="container admin-wrap">
   <div class="admin-head">
-    <div><h1>교육신청 내역</h1><p class="admin-sub">접수된 교육 신청 목록입니다.</p></div>
+    <div><h1>교육신청 내역</h1><p class="admin-sub">접수된 교육 신청 목록입니다. <span class="field-hint">행을 클릭하면 세부 내용을 볼 수 있습니다.</span></p></div>
     <a class="btn btn-neutral btn-sm" href="/admin">대시보드</a>
   </div>
-  <ul class="admin-list">
-    <li class="admin-list-head" aria-hidden="true">
-      <span class="col-board">신청일</span><span class="col-title">이름 · 연락처</span>
-      <span class="col-date">과정</span><span class="col-views"></span><span class="col-act">이메일</span>
-    </li>
-    <% if (!apps.length) { %><li class="post-empty">접수된 신청이 없습니다.</li><% } %>
-    <% apps.forEach(function(a){ %>
-      <li class="admin-row">
-        <span class="col-board"><span class="board-tag"><%= fmtDate(a.created_at) %></span></span>
-        <span class="col-title"><strong><%= esc(a.name) %></strong> <span class="field-hint"><%= esc(a.phone) %></span><% if (a.message) { %><br><span class="field-hint"><%= esc(a.message) %></span><% } %></span>
-        <span class="col-date"><%= esc(a.course) %></span>
-        <span class="col-views"></span>
-        <span class="col-act"><a href="mailto:<%= esc(a.email) %>" class="linkbtn"><%= esc(a.email) %></a></span>
-      </li>
-    <% }); %>
-  </ul>
+
+  <% if (!apps.length) { %>
+    <p class="post-empty">접수된 신청이 없습니다.</p>
+  <% } else { %>
+  <div class="app-wrap">
+    <table class="app-table">
+      <colgroup>
+        <col style="width:13%"><col style="width:15%"><col style="width:19%"><col style="width:28%"><col style="width:25%">
+      </colgroup>
+      <thead>
+        <tr><th>신청일</th><th>이름</th><th>연락처</th><th>과정</th><th>이메일</th></tr>
+      </thead>
+      <tbody>
+        <% apps.forEach(function(a, i){ %>
+          <tr class="app-row" data-d="appd<%= i %>">
+            <td><span class="app-date"><%= fmtDate(a.created_at) %></span></td>
+            <td class="app-name"><%= esc(a.name) %><span class="app-caret">▸</span></td>
+            <td class="app-phone"><%= a.phone ? esc(a.phone) : '-' %></td>
+            <td class="app-course"><%= a.course ? esc(a.course) : '-' %></td>
+            <td class="app-email"><%= esc(a.email) %></td>
+          </tr>
+          <tr class="app-detail" id="appd<%= i %>" hidden>
+            <td colspan="5">
+              <div class="app-detail-inner">
+                <div class="app-detail-grid">
+                  <div><span class="dl-k">이름</span><span class="dl-v"><%= esc(a.name) %></span></div>
+                  <div><span class="dl-k">연락처</span><span class="dl-v"><%= a.phone ? esc(a.phone) : '-' %></span></div>
+                  <div><span class="dl-k">이메일</span><span class="dl-v"><a href="mailto:<%= esc(a.email) %>"><%= esc(a.email) %></a></span></div>
+                  <div><span class="dl-k">신청 과정</span><span class="dl-v"><%= a.course ? esc(a.course) : '-' %></span></div>
+                  <div><span class="dl-k">신청일시</span><span class="dl-v"><%= fmtDateTime(a.created_at) %></span></div>
+                </div>
+                <div class="app-msg">
+                  <span class="dl-k">문의 / 요청 사항</span>
+                  <% if (a.message) { %><p><%- nl2br(a.message) %></p><% } else { %><p class="field-hint">(작성된 내용 없음)</p><% } %>
+                </div>
+              </div>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
 </div>
+<script>
+  document.querySelectorAll('.app-row').forEach(function(r){
+    r.addEventListener('click', function(){
+      var d = document.getElementById(r.dataset.d);
+      if (!d) return;
+      if (d.hasAttribute('hidden')) { d.removeAttribute('hidden'); r.classList.add('is-open'); }
+      else { d.setAttribute('hidden',''); r.classList.remove('is-open'); }
+    });
+  });
+</script>
 <%- include('partials/footer') %>
