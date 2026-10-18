@@ -37,20 +37,24 @@ function listTasks() {
     .sort((a, b) => (order[a.status] ?? 9) - (order[b.status] ?? 9));
 }
 function getTask(id) { return db.prepare("SELECT * FROM tasks WHERE id = ?").get(id); }
+const clampRate = (v) => { const n = parseInt(v, 10); return isNaN(n) ? 0 : Math.max(0, Math.min(100, n)); };
+const normDate = (v) => { const m = String(v || "").match(/\d{4}-\d{2}-\d{2}/); return m ? m[0] : ""; };
 function addTask(t) {
   const now = new Date().toISOString();
   const status = STATUSES.includes(t.status) ? t.status : "진행중";
+  const rate = status === "완료" ? 100 : clampRate(t.rate);
   const info = db.prepare(
-    "INSERT INTO tasks (title, status, progress, manager, participants, issues, detail, log_id, created_by, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)"
+    "INSERT INTO tasks (title, status, progress, manager, participants, issues, detail, log_id, rate, due_date, created_by, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"
   ).run(String(t.title || "제목 없음").slice(0, 200), status, s(t.progress), s(t.manager, 80), s(t.participants, 200),
-        s(t.issues), s(t.detail), parseInt(t.log_id, 10) || 0, s(t.created_by, 80), now, now);
+        s(t.issues), s(t.detail), parseInt(t.log_id, 10) || 0, rate, normDate(t.due_date), s(t.created_by, 80), now, now);
   return info.lastInsertRowid;
 }
 function updateTask(id, t) {
   const now = new Date().toISOString();
   const status = STATUSES.includes(t.status) ? t.status : "진행중";
-  db.prepare("UPDATE tasks SET title=?, status=?, progress=?, manager=?, participants=?, issues=?, detail=?, updated_at=? WHERE id=?")
-    .run(String(t.title || "제목 없음").slice(0, 200), status, s(t.progress), s(t.manager, 80), s(t.participants, 200), s(t.issues), s(t.detail), now, id);
+  const rate = status === "완료" ? 100 : clampRate(t.rate);
+  db.prepare("UPDATE tasks SET title=?, status=?, progress=?, manager=?, participants=?, issues=?, detail=?, rate=?, due_date=?, updated_at=? WHERE id=?")
+    .run(String(t.title || "제목 없음").slice(0, 200), status, s(t.progress), s(t.manager, 80), s(t.participants, 200), s(t.issues), s(t.detail), rate, normDate(t.due_date), now, id);
 }
 function appendTaskProgress(id, note, author) {
   const t = getTask(id);
@@ -65,7 +69,11 @@ function appendTaskProgress(id, note, author) {
 }
 function setTaskStatus(id, status) {
   if (!STATUSES.includes(status)) return;
-  db.prepare("UPDATE tasks SET status = ?, updated_at = ? WHERE id = ?").run(status, new Date().toISOString(), id);
+  if (status === "완료") {
+    db.prepare("UPDATE tasks SET status = ?, rate = 100, updated_at = ? WHERE id = ?").run(status, new Date().toISOString(), id);
+  } else {
+    db.prepare("UPDATE tasks SET status = ?, updated_at = ? WHERE id = ?").run(status, new Date().toISOString(), id);
+  }
 }
 function removeTask(id) { db.prepare("DELETE FROM tasks WHERE id = ?").run(id); }
 const s = (v, n = 4000) => String(v == null ? "" : v).slice(0, n);

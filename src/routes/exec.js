@@ -30,9 +30,12 @@ module.exports = function execRoutes({ verifyCsrf }) {
 
   // 대시보드
   router.get("/", requireExec, (req, res) => {
+    const d = new Date();
+    const wd = ["일", "월", "화", "수", "목", "금", "토"][d.getDay()];
+    const today = `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${wd})`;
     res.render("exec-dashboard", {
-      ...res.locals, title: "임원 업무관리",
-      stats: meetings.stats(), logs: meetings.listLogs().slice(0, 5), tasks: meetings.listTasks().slice(0, 6),
+      ...res.locals, title: "임원 업무관리", today,
+      stats: meetings.stats(), logs: meetings.listLogs().slice(0, 8), tasks: meetings.listTasks().slice(0, 12),
     });
   });
 

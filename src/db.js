@@ -258,6 +258,8 @@ try {
   );`);
   db.exec("CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status, sort_order, id)");
 } catch (e) {}
+try { db.exec("ALTER TABLE tasks ADD COLUMN rate INTEGER NOT NULL DEFAULT 0"); } catch (e) {}   // 진행률(0~100)
+try { db.exec("ALTER TABLE tasks ADD COLUMN due_date TEXT NOT NULL DEFAULT ''"); } catch (e) {} // 완료예정일(YYYY-MM-DD)
 
 try { db.exec("ALTER TABLE members ADD COLUMN provider TEXT NOT NULL DEFAULT ''"); } catch (e) {}    // '' | kakao | naver | google
 try { db.exec("ALTER TABLE members ADD COLUMN provider_id TEXT NOT NULL DEFAULT ''"); } catch (e) {} // 제공사 고유 사용자 ID

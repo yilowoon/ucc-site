@@ -19,6 +19,10 @@
   .tk-field .fk{font-size:.74rem;font-weight:800;color:var(--muted);display:block;margin-bottom:2px}
   .tk-issue{background:#fdf3f2;border:1px solid #f0cfcb;border-radius:8px;padding:8px 10px}
   .tk-issue .fk{color:#c5221f}
+  .tk-rate{display:flex;align-items:center;gap:10px;margin:8px 0 2px}
+  .tk-rate-bar{flex:1;height:8px;background:var(--paper-warm,#eee);border:1px solid var(--line);border-radius:999px;overflow:hidden}
+  .tk-rate-bar span{display:block;height:100%;background:linear-gradient(90deg,#1b93c6,#2b8a5a);border-radius:999px}
+  .tk-rate-num{font-size:.8rem;font-weight:800;color:var(--green-800);min-width:38px;text-align:right}
   .tk-progress{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
   .tk-progress label{display:block;font-size:.74rem;font-weight:800;color:var(--muted);margin-bottom:5px}
   .tk-progress textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:.9rem;font-family:inherit;resize:vertical;min-height:46px}
@@ -52,6 +56,10 @@
         </div>
         <div class="field"><label>담당(매니징)</label><input type="text" name="manager" value="<%= esc(edit ? edit.manager : '') %>" placeholder="예: 이형구" /></div>
         <div class="field"><label>참여자</label><input type="text" name="participants" value="<%= esc(edit ? edit.participants : '') %>" placeholder="쉼표로 구분" /></div>
+        <div style="display:flex;gap:10px">
+          <div class="field" style="flex:1"><label>진행률 (%)</label><input type="number" name="rate" min="0" max="100" step="5" value="<%= edit ? (edit.rate || 0) : 0 %>" /></div>
+          <div class="field" style="flex:1"><label>완료예정일</label><input type="date" name="due_date" value="<%= edit ? esc(edit.due_date || '') : '' %>" /></div>
+        </div>
         <div class="field"><label>진행 상황</label><textarea name="progress" placeholder="현재 어디까지 진행되었는지"><%= esc(edit ? edit.progress : '') %></textarea></div>
         <div class="field"><label>이슈 / 문제</label><textarea name="issues" placeholder="막힌 지점·결정 필요 사항"><%= esc(edit ? edit.issues : '') %></textarea></div>
         <div class="field"><label>상세 / 맥락</label><textarea name="detail" placeholder="배경·세부 내용"><%= esc(edit ? edit.detail : '') %></textarea></div>
@@ -77,7 +85,12 @@
             <div class="tk-meta">
               <% if (t.manager) { %><span><span class="mk">담당</span><%= esc(t.manager) %></span><% } %>
               <% if (t.participants) { %><span><span class="mk">참여</span><%= esc(t.participants) %></span><% } %>
+              <% if (t.due_date) { %><span><span class="mk">완료예정</span><%= esc(t.due_date) %></span><% } %>
               <% if (t.updated_at) { %><span><span class="mk">갱신</span><%= fmtDate(t.updated_at) %></span><% } %>
+            </div>
+            <div class="tk-rate">
+              <div class="tk-rate-bar"><span style="width:<%= Math.max(0, Math.min(100, t.rate || 0)) %>%"></span></div>
+              <span class="tk-rate-num"><%= t.rate || 0 %>%</span>
             </div>
             <% if (t.progress) { %><div class="tk-field"><span class="fk">진행 상황</span><%= esc(t.progress) %></div><% } %>
             <% if (t.issues) { %><div class="tk-field tk-issue"><span class="fk">이슈 / 문제</span><%= esc(t.issues) %></div><% } %>
