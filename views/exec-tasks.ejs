@@ -94,7 +94,7 @@
       </div>
       <% } %>
       <div class="tk-cards">
-        <% tasks.forEach(function(t){ var openIt = edit && edit.id === t.id; %>
+        <% tasks.forEach(function(t){ var openIt = (edit && edit.id === t.id) || (typeof openId !== 'undefined' && openId === t.id); %>
           <details class="tk-item tk-item--<%= t.status %>"<%= openIt ? ' open' : '' %> id="task-<%= t.id %>">
             <summary class="tk-sum">
               <span class="caret">▶</span>

@@ -93,14 +93,18 @@ module.exports = function execRoutes({ verifyCsrf }) {
     const edit = req.query.edit ? meetings.getTask(parseInt(req.query.edit, 10)) : null;
     res.render("exec-tasks", {
       ...res.locals, title: "업무관리", STATUSES: meetings.STATUSES,
-      tasks: meetings.listTasks(), logs: meetings.listLogs(), edit, msg: req.query.msg || "", err: req.query.err || "",
+      tasks: meetings.listTasks(), logs: meetings.listLogs(), edit,
+      openId: parseInt(req.query.open, 10) || 0,
+      msg: req.query.msg || "", err: req.query.err || "",
     });
   });
+  // 처리 후 해당 업무가 펼쳐진 채 유지되도록 open 앵커로 리다이렉트
+  const backToTask = (id, msg) => "/exec/tasks?open=" + id + "&msg=" + encodeURIComponent(msg) + "#task-" + id;
   router.post("/tasks", requireExec, verifyCsrf, (req, res) => {
     const b = req.body;
     if (!(b.title || "").trim()) return res.redirect("/exec/tasks?err=" + encodeURIComponent("업무명을 입력하세요."));
-    if (b.id) { meetings.updateTask(parseInt(b.id, 10), b); res.redirect("/exec/tasks?msg=" + encodeURIComponent("업무를 수정했습니다.")); }
-    else { meetings.addTask({ ...b, created_by: req.execName }); res.redirect("/exec/tasks?msg=" + encodeURIComponent("업무를 등록했습니다.")); }
+    if (b.id) { const id = parseInt(b.id, 10); meetings.updateTask(id, b); res.redirect(backToTask(id, "업무를 수정했습니다.")); }
+    else { const id = meetings.addTask({ ...b, created_by: req.execName }); res.redirect(backToTask(id, "업무를 등록했습니다.")); }
   });
   router.post("/tasks/:id/progress", requireExec, verifyCsrf, (req, res) => {
     const id = parseInt(req.params.id, 10);
@@ -108,7 +112,7 @@ module.exports = function execRoutes({ verifyCsrf }) {
     if (!meetings.getTask(id)) return res.redirect("/exec/tasks?err=" + encodeURIComponent("업무를 찾을 수 없습니다."));
     if (!note) return res.redirect("/exec/tasks?err=" + encodeURIComponent("추가할 내용을 입력하세요."));
     meetings.appendTaskProgress(id, note, req.execName);
-    res.redirect("/exec/tasks?msg=" + encodeURIComponent("진행 상황을 업데이트했습니다."));
+    res.redirect(backToTask(id, "진행 상황을 업데이트했습니다."));
   });
   router.post("/tasks/:id/status", requireExec, verifyCsrf, (req, res) => {
     const id = parseInt(req.params.id, 10);
@@ -117,7 +121,7 @@ module.exports = function execRoutes({ verifyCsrf }) {
     if (!meetings.STATUSES.includes(status)) return res.redirect("/exec/tasks?err=" + encodeURIComponent("상태값이 올바르지 않습니다."));
     meetings.setTaskStatus(id, status);
     const note = status === "완료" ? "업무를 완료 처리했습니다." : ("업무 상태를 ‘" + status + "’(으)로 변경했습니다.");
-    res.redirect("/exec/tasks?msg=" + encodeURIComponent(note));
+    res.redirect(backToTask(id, note));
   });
   router.post("/tasks/:id/delete", requireExec, verifyCsrf, (req, res) => {
     meetings.removeTask(parseInt(req.params.id, 10));
