@@ -36,6 +36,10 @@
   .tk-rate-bar{flex:1;height:8px;background:var(--paper-warm,#eee);border:1px solid var(--line);border-radius:999px;overflow:hidden}
   .tk-rate-bar span{display:block;height:100%;background:linear-gradient(90deg,#1b93c6,#2b8a5a);border-radius:999px}
   .tk-rate-num{font-size:.8rem;font-weight:800;color:var(--green-800);min-width:38px;text-align:right}
+  /* 단계별 균등 분할 진행바 */
+  .tk-seg{flex:1;display:flex;gap:3px;height:11px}
+  .tk-seg .seg{flex:1;background:var(--paper-warm,#eee);border:1px solid var(--line);border-radius:4px;transition:background .15s}
+  .tk-seg .seg.on{background:#2b8a5a;border-color:#2b8a5a}
   /* 폼 단계 편집기 */
   .step-list{display:grid;gap:10px}
   .step-row{display:flex;flex-direction:column;gap:8px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--paper-warm,#faf9f5)}
@@ -120,7 +124,13 @@
             </div>
             <% var cardSteps = parseSteps(t.steps); %>
             <div class="tk-rate">
-              <div class="tk-rate-bar"><span style="width:<%= Math.max(0, Math.min(100, t.rate || 0)) %>%"></span></div>
+              <% if (cardSteps.length) { %>
+                <div class="tk-seg" title="단계 <%= cardSteps.filter(function(s0){return s0.done;}).length %>/<%= cardSteps.length %> 완료">
+                  <% cardSteps.forEach(function(sp, i){ %><span class="seg<%= sp.done ? ' on' : '' %>" title="<%= i+1 %>. <%= esc(sp.label) %><%= sp.done ? ' (완료)' : '' %>"></span><% }); %>
+                </div>
+              <% } else { %>
+                <div class="tk-rate-bar"><span style="width:<%= Math.max(0, Math.min(100, t.rate || 0)) %>%"></span></div>
+              <% } %>
               <span class="tk-rate-num"><%= t.rate || 0 %>%</span>
             </div>
             <% if (cardSteps.length) { %>
