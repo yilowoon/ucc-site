@@ -6,9 +6,22 @@
   .tk-form label{display:block;font-size:.82rem;font-weight:700;color:var(--ink-soft);margin-bottom:5px}
   .tk-form input,.tk-form select,.tk-form textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:.92rem;font-family:inherit}
   .tk-form textarea{resize:vertical;min-height:60px}
-  .tk-cards{display:grid;gap:14px}
-  .tk-card{background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow-sm)}
-  .tk-card--이슈{border-left-color:#c5221f}.tk-card--진행중{border-left-color:#1b93c6}.tk-card--대기{border-left-color:#8a6d00}.tk-card--보류{border-left-color:#8a939c}.tk-card--완료{border-left-color:#2b8a5a}
+  .tk-listhead{display:flex;align-items:center;gap:12px;padding:4px 16px 8px;font-size:.76rem;font-weight:800;color:var(--muted)}
+  .tk-listhead .lh-title{flex:1;padding-left:22px}
+  .tk-listhead .lh-st{flex:none;width:52px;text-align:center}
+  .tk-listhead .lh-upd{flex:none;white-space:nowrap}
+  .tk-cards{display:grid;gap:10px}
+  .tk-item{background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:12px;box-shadow:var(--shadow-sm);overflow:hidden}
+  .tk-item--이슈{border-left-color:#c5221f}.tk-item--진행중{border-left-color:#1b93c6}.tk-item--대기{border-left-color:#8a6d00}.tk-item--보류{border-left-color:#8a939c}.tk-item--완료{border-left-color:#2b8a5a}
+  .tk-sum{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:13px 16px;user-select:none}
+  .tk-sum::-webkit-details-marker{display:none}
+  .tk-sum .caret{flex:none;color:var(--muted);transition:transform .15s;font-size:.8rem}
+  .tk-item[open] .tk-sum .caret{transform:rotate(90deg)}
+  .tk-sum .s-title{flex:1;min-width:0;font-weight:800;color:var(--green-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tk-sum .s-upd{flex:none;color:var(--muted);font-size:.8rem;white-space:nowrap}
+  .tk-sum:hover{background:#fcfbf7}
+  .tk-item[open] .tk-sum{border-bottom:1px solid var(--line)}
+  .tk-body{padding:14px 18px 18px}
   .tk-card-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
   .tk-title{font-size:1.1rem;font-weight:800;color:var(--green-800);margin:0}
   .st-badge{font-size:.72rem;font-weight:800;border-radius:999px;padding:3px 10px;color:#fff;white-space:nowrap}
@@ -75,13 +88,21 @@
       <% if (!tasks.length) { %>
         <div class="admin-auth-card"><p class="field-hint" style="margin:0">등록된 업무가 없습니다. 왼쪽에서 직접 등록하거나, 회의록에서 ‘AI로 업무 정리’를 해보세요.</p></div>
       <% } %>
+      <% if (tasks.length) { %>
+      <div class="tk-listhead">
+        <span class="lh-title">업무명</span><span class="lh-st">상태</span><span class="lh-upd">마지막 업데이트</span>
+      </div>
+      <% } %>
       <div class="tk-cards">
-        <% tasks.forEach(function(t){ %>
-          <article class="tk-card tk-card--<%= t.status %>">
-            <div class="tk-card-head">
-              <h3 class="tk-title"><%= esc(t.title) %></h3>
+        <% tasks.forEach(function(t){ var openIt = edit && edit.id === t.id; %>
+          <details class="tk-item tk-item--<%= t.status %>"<%= openIt ? ' open' : '' %> id="task-<%= t.id %>">
+            <summary class="tk-sum">
+              <span class="caret">▶</span>
+              <span class="s-title"><%= esc(t.title) %></span>
               <span class="st-badge st-<%= t.status %>"><%= t.status %></span>
-            </div>
+              <span class="s-upd"><%= t.updated_at ? fmtDate(t.updated_at) : '-' %></span>
+            </summary>
+            <div class="tk-body">
             <div class="tk-meta">
               <% if (t.manager) { %><span><span class="mk">담당</span><%= esc(t.manager) %></span><% } %>
               <% if (t.participants) { %><span><span class="mk">참여</span><%= esc(t.participants) %></span><% } %>
@@ -121,7 +142,8 @@
                 <button type="submit" class="linkbtn linkbtn-danger">삭제</button>
               </form>
             </div>
-          </article>
+            </div><!-- /.tk-body -->
+          </details>
         <% }); %>
       </div>
     </div>
