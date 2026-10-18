@@ -262,6 +262,24 @@ try {
   db.exec("CREATE INDEX IF NOT EXISTS idx_cal_events_date ON cal_events(event_date, start_time)");
 } catch (e) {}
 
+// AI활용전문가과정 '수료생 소속기관' 로고(관리자 등록)
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS ai_orgs (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT NOT NULL,
+    logo       TEXT NOT NULL DEFAULT '',        -- /uploads/… 또는 '' (로고 없으면 이름 텍스트)
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+  );`);
+  // 최초 1회 시드(기본 소속기관) — 이미 데이터가 있으면 건너뜀
+  if (db.prepare("SELECT COUNT(*) AS c FROM ai_orgs").get().c === 0) {
+    const seed = ["목원대학교", "한국생활환경시험연구원", "대전정보문화산업진흥원", "세종일자리경제진흥원", "세종창조경제혁신센터", "충남연구원"];
+    const ins = db.prepare("INSERT INTO ai_orgs (name, logo, sort_order, created_at) VALUES (?, ?, ?, ?)");
+    const now = new Date().toISOString();
+    seed.forEach((nm, i) => ins.run(nm, "", i, now));
+  }
+} catch (e) {}
+
 // 앱 설정 KV(민감 토큰 등 — data/ucc.db 는 커밋 제외이므로 비밀 저장에 적합)
 try {
   db.exec(`CREATE TABLE IF NOT EXISTS app_settings (

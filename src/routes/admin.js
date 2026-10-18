@@ -15,6 +15,7 @@ const oauth = require("../oauth");   // 카카오 인가(나에게 보내기) �
 const kakaoMemo = require("../kakao"); // 카카오톡 '나에게 보내기' 자동발송
 const solapi = require("../solapi"); // 카카오 친구톡(솔라피) — 회원 대상 1000자 발송
 const calevents = require("../calevents"); // 회원 캘린더 사이트 일정
+const aistats = require("../aistats"); // AI과정 수료생 현황·소속기관
 
 // ---- 업로드 설정 ----
 const ALLOWED_EXT = new Set([
@@ -1045,6 +1046,44 @@ module.exports = function adminRoutes({ verifyCsrf }) {
       stmt.run(postId, f.filename, fixName(f.originalname), f.mimetype, f.size, i);
     });
   }
+
+  // ---------- AI활용전문가과정: 수료생 현황·소속기관 ----------
+  router.get("/ai-course", requireAdmin, (req, res) => {
+    res.render("admin-ai-course", {
+      ...res.locals, title: "AI과정 현황 관리",
+      stats: aistats.getStats(), orgs: aistats.listOrgs(),
+      msg: req.query.msg || "", err: req.query.err || "",
+    });
+  });
+  router.post("/ai-course/stats", requireAdmin, verifyCsrf, (req, res) => {
+    const toRows = (labels, pcts) => {
+      labels = [].concat(labels || []); pcts = [].concat(pcts || []);
+      return labels.map((l, i) => ({ label: String(l || "").trim(), pct: Number(pcts[i]) || 0 })).filter((r) => r.label);
+    };
+    aistats.setStats({
+      total: req.body.total,
+      jobs: toRows(req.body.job_label, req.body.job_pct),
+      companies: toRows(req.body.comp_label, req.body.comp_pct),
+    });
+    res.redirect("/admin/ai-course?msg=" + encodeURIComponent("수료생 현황을 저장했습니다."));
+  });
+  router.post("/ai-course/org", requireAdmin, upload.single("logo"), verifyCsrf, (req, res) => {
+    const name = (req.body.name || "").trim();
+    if (!name) { if (req.file) cleanupFiles([req.file]); return res.redirect("/admin/ai-course?err=" + encodeURIComponent("기관명을 입력하세요.")); }
+    aistats.addOrg(name, req.file ? "/uploads/" + req.file.filename : "");
+    res.redirect("/admin/ai-course?msg=" + encodeURIComponent("소속기관을 추가했습니다."));
+  });
+  router.post("/ai-course/org/:id", requireAdmin, upload.single("logo"), verifyCsrf, (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const name = (req.body.name || "").trim();
+    if (req.file) aistats.updateOrg(id, name, "/uploads/" + req.file.filename);
+    else aistats.updateOrg(id, name);
+    res.redirect("/admin/ai-course?msg=" + encodeURIComponent("기관 정보를 수정했습니다."));
+  });
+  router.post("/ai-course/org/:id/delete", requireAdmin, verifyCsrf, (req, res) => {
+    aistats.removeOrg(parseInt(req.params.id, 10));
+    res.redirect("/admin/ai-course?msg=" + encodeURIComponent("소속기관을 삭제했습니다."));
+  });
 
   return router;
 };

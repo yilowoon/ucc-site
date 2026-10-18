@@ -234,7 +234,10 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   // ---------- 배움터: 주요과정소개 · ESG전문가과정 (전용 뷰) ----------
   router.get("/learn/courses", (req, res) => res.render("courses", { ...res.locals, title: "주요과정소개" }));
   router.get("/learn/esg", (req, res) => res.render("esg", { ...res.locals, title: "ESG전문가과정" }));
-  router.get("/learn/ai", (req, res) => res.render("ai", { ...res.locals, title: "AI활용전문가과정" }));
+  router.get("/learn/ai", (req, res) => {
+    const aistats = require("../aistats");
+    res.render("ai", { ...res.locals, title: "AI활용전문가과정", aiStats: aistats.getStats(), aiOrgs: aistats.listOrgs() });
+  });
   router.get("/learn/rdc", (req, res) => res.render("rdc", { ...res.locals, title: "지역개발전문가과정" }));
 
   // ---------- 배움터: 교육신청하기 ----------

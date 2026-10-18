@@ -1,0 +1,111 @@
+<%- include('partials/header') %>
+<style>
+  .aic-row{display:grid;grid-template-columns:1fr 90px 36px;gap:8px;align-items:center;margin-bottom:8px}
+  .aic-row input{padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:.92rem}
+  .aic-row .rm{border:0;background:#fbeaea;color:#c5221f;border-radius:8px;cursor:pointer;font-weight:800;height:34px}
+  .aic-head{display:grid;grid-template-columns:1fr 90px 36px;gap:8px;font-size:.78rem;font-weight:800;color:var(--muted);margin-bottom:6px;padding:0 2px}
+  .aic-add{margin-top:6px;border:1px dashed var(--line);background:var(--paper-warm);color:var(--green-700);border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer}
+  .org-admin{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:10px}
+  .org-admin-card{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--paper)}
+  .org-admin-card .logo-box{height:64px;display:flex;align-items:center;justify-content:center;background:var(--paper-warm);border-radius:8px;margin-bottom:10px;overflow:hidden}
+  .org-admin-card .logo-box img{max-width:100%;max-height:56px;object-fit:contain}
+  .org-admin-card .logo-box .noimg{color:var(--muted);font-size:.82rem}
+  .org-admin-card .oname{font-weight:700;color:var(--green-800);font-size:.95rem;margin-bottom:8px}
+  .org-admin-card .row{display:flex;gap:6px;flex-wrap:wrap}
+  .org-admin-card input[type=text]{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:7px;font-size:.86rem;margin-bottom:6px}
+</style>
+<div class="container admin-wrap">
+  <div class="admin-head">
+    <div>
+      <h1>AI과정 현황 관리</h1>
+      <p class="admin-sub">AI활용전문가과정 페이지의 <b>수료생 현황(차트)</b>과 <b>수료생 소속기관(로고)</b>을 편집합니다. 저장하면 페이지에 즉시 반영됩니다.</p>
+    </div>
+    <div class="admin-head-actions">
+      <a class="btn btn-neutral btn-sm" href="/learn/ai" target="_blank" rel="noopener">페이지 보기</a>
+      <a class="btn btn-neutral btn-sm" href="/admin">← 대시보드</a>
+    </div>
+  </div>
+
+  <% if (msg) { %><p class="form-alert ok"><%= msg %></p><% } %>
+  <% if (err) { %><p class="form-alert err"><%= err %></p><% } %>
+
+  <!-- 수료생 현황(차트) -->
+  <div class="admin-auth-card" style="max-width:860px;margin-top:8px;">
+    <h2 style="margin-top:0;">수료생 현황 (차트)</h2>
+    <form method="post" action="/admin/ai-course/stats">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <div class="field" style="max-width:260px;">
+        <label for="total">누적 수료생 수(명)</label>
+        <input type="number" id="total" name="total" min="0" value="<%= stats.total %>" />
+      </div>
+
+      <div class="write-grid" style="grid-template-columns:1fr 1fr;gap:24px;margin-top:14px;">
+        <div>
+          <h3 style="margin:0 0 8px;color:var(--green-800);font-size:1.02rem;">신청자 직무 현황</h3>
+          <div class="aic-head"><span>항목</span><span>비율(%)</span><span></span></div>
+          <div id="jobRows">
+            <% stats.jobs.forEach(function(r){ %>
+              <div class="aic-row"><input type="text" name="job_label" value="<%= esc(r.label) %>" placeholder="예: 기획·전략" /><input type="number" name="job_pct" value="<%= r.pct %>" min="0" max="100" /><button type="button" class="rm" onclick="this.closest('.aic-row').remove()">×</button></div>
+            <% }); %>
+          </div>
+          <button type="button" class="aic-add" data-add="jobRows" data-label="job_label" data-pct="job_pct">+ 항목 추가</button>
+        </div>
+        <div>
+          <h3 style="margin:0 0 8px;color:var(--green-800);font-size:1.02rem;">지원자 기업 유형</h3>
+          <div class="aic-head"><span>항목</span><span>비율(%)</span><span></span></div>
+          <div id="compRows">
+            <% stats.companies.forEach(function(r){ %>
+              <div class="aic-row"><input type="text" name="comp_label" value="<%= esc(r.label) %>" placeholder="예: 공공기관·지자체" /><input type="number" name="comp_pct" value="<%= r.pct %>" min="0" max="100" /><button type="button" class="rm" onclick="this.closest('.aic-row').remove()">×</button></div>
+            <% }); %>
+          </div>
+          <button type="button" class="aic-add" data-add="compRows" data-label="comp_label" data-pct="comp_pct">+ 항목 추가</button>
+        </div>
+      </div>
+      <p class="field-hint" style="margin-top:10px;">※ 비율 합이 꼭 100%일 필요는 없습니다(막대 길이에 비례해 표시). 항목명이 비어 있으면 저장 시 제외됩니다.</p>
+      <button type="submit" class="btn btn-primary" style="margin-top:12px;">현황 저장</button>
+    </form>
+  </div>
+
+  <!-- 수료생 소속기관(로고) -->
+  <div class="admin-auth-card" style="max-width:860px;margin-top:16px;">
+    <h2 style="margin-top:0;">수료생 소속기관 (<%= orgs.length %>)</h2>
+    <form method="post" action="/admin/ai-course/org" enctype="multipart/form-data" class="admin-form-fields" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <div class="field" style="margin:0;min-width:220px;flex:1;"><label for="name">기관명</label><input type="text" id="name" name="name" placeholder="예: 목원대학교" required /></div>
+      <div class="field" style="margin:0;"><label for="logo">로고 이미지 <span class="field-hint">선택(png·jpg)</span></label><input type="file" id="logo" name="logo" accept="image/*" /></div>
+      <button type="submit" class="btn btn-primary btn-sm">기관 추가</button>
+    </form>
+
+    <div class="org-admin">
+      <% orgs.forEach(function(o){ %>
+        <div class="org-admin-card">
+          <div class="logo-box"><% if (o.logo) { %><img src="<%= o.logo %>" alt="<%= esc(o.name) %>" /><% } else { %><span class="noimg">로고 없음(이름 표시)</span><% } %></div>
+          <form method="post" action="/admin/ai-course/org/<%= o.id %>" enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input type="text" name="name" value="<%= esc(o.name) %>" />
+            <div class="row">
+              <input type="file" name="logo" accept="image/*" style="font-size:.78rem;flex:1;min-width:0;" />
+            </div>
+            <div class="row" style="margin-top:6px;">
+              <button type="submit" class="btn btn-neutral btn-sm">저장</button>
+              <button type="submit" class="btn btn-ghost-dark btn-sm" formaction="/admin/ai-course/org/<%= o.id %>/delete" formnovalidate onclick="return confirm('이 기관을 삭제할까요?');">삭제</button>
+            </div>
+          </form>
+        </div>
+      <% }); %>
+    </div>
+    <p class="field-hint" style="margin-top:12px;">※ 로고를 올리면 이미지가, 없으면 기관명 텍스트가 페이지에 표시됩니다. 가로로 긴 로고 권장(배경 투명 PNG best).</p>
+  </div>
+</div>
+<script>
+  document.querySelectorAll('.aic-add').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var box=document.getElementById(btn.dataset.add);
+      var d=document.createElement('div'); d.className='aic-row';
+      d.innerHTML='<input type="text" name="'+btn.dataset.label+'" placeholder="항목명" /><input type="number" name="'+btn.dataset.pct+'" value="0" min="0" max="100" /><button type="button" class="rm">×</button>';
+      d.querySelector('.rm').addEventListener('click',function(){d.remove();});
+      box.appendChild(d);
+    });
+  });
+</script>
+<%- include('partials/footer') %>
