@@ -94,7 +94,7 @@ module.exports = function execRoutes({ verifyCsrf }) {
     res.render("exec-tasks", {
       ...res.locals, title: "업무관리", STATUSES: meetings.STATUSES,
       tasks: meetings.listTasks(), logs: meetings.listLogs(), edit,
-      openId: parseInt(req.query.open, 10) || 0,
+      openId: parseInt(req.query.open, 10) || 0, parseSteps: meetings.parseSteps,
       msg: req.query.msg || "", err: req.query.err || "",
     });
   });
@@ -114,6 +114,14 @@ module.exports = function execRoutes({ verifyCsrf }) {
     if (!note) return res.redirect(backToTaskErr(id, "추가할 내용을 입력하세요."));
     meetings.appendTaskProgress(id, note, req.execName);
     res.redirect(backToTask(id, "진행 상황을 업데이트했습니다."));
+  });
+  router.post("/tasks/:id/step/toggle", requireExec, verifyCsrf, (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const idx = parseInt(req.body.idx, 10);
+    if (!meetings.getTask(id)) return res.redirect("/exec/tasks?err=" + encodeURIComponent("업무를 찾을 수 없습니다."));
+    if (isNaN(idx)) return res.redirect(backToTaskErr(id, "단계 정보가 올바르지 않습니다."));
+    meetings.toggleStep(id, idx);
+    res.redirect(backToTask(id, "단계 상태를 변경했습니다. 진행률이 다시 계산되었습니다."));
   });
   router.post("/tasks/:id/status", requireExec, verifyCsrf, (req, res) => {
     const id = parseInt(req.params.id, 10);

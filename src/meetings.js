@@ -37,24 +37,71 @@ function listTasks() {
     .sort((a, b) => (order[a.status] ?? 9) - (order[b.status] ?? 9));
 }
 function getTask(id) { return db.prepare("SELECT * FROM tasks WHERE id = ?").get(id); }
-const clampRate = (v) => { const n = parseInt(v, 10); return isNaN(n) ? 0 : Math.max(0, Math.min(100, n)); };
 const normDate = (v) => { const m = String(v || "").match(/\d{4}-\d{2}-\d{2}/); return m ? m[0] : ""; };
+
+/* ----- 진행 단계(steps) ----- */
+function parseSteps(v) {
+  try {
+    const a = JSON.parse(v || "[]");
+    return Array.isArray(a) ? a.filter((x) => x && x.label != null)
+      .map((x) => ({ label: String(x.label || "").slice(0, 200), done: !!x.done })) : [];
+  } catch (_) { return []; }
+}
+function rateFromSteps(steps) {
+  if (!steps || !steps.length) return 0;
+  return Math.round((steps.filter((s0) => s0.done).length / steps.length) * 100);
+}
+function stepsToJson(steps) {
+  return JSON.stringify((steps || []).map((s0) => ({ label: String(s0.label || "").slice(0, 200), done: !!s0.done })));
+}
+/** 폼 배열(step_label[], step_done[])에서 steps 구성. 없으면 null 반환(단계 미지정) */
+function stepsFromBody(b) {
+  if (b.step_label == null) return null;
+  let L = b.step_label, D = b.step_done;
+  if (!Array.isArray(L)) L = [L];
+  if (!Array.isArray(D)) D = D == null ? [] : [D];
+  const steps = [];
+  for (let i = 0; i < L.length; i++) {
+    const label = String(L[i] == null ? "" : L[i]).trim();
+    if (!label) continue;
+    steps.push({ label: label.slice(0, 200), done: String(D[i] == null ? "0" : D[i]) === "1" });
+  }
+  return steps;
+}
+
 function addTask(t) {
   const now = new Date().toISOString();
   const status = STATUSES.includes(t.status) ? t.status : "진행중";
-  const rate = status === "완료" ? 100 : clampRate(t.rate);
+  let steps = stepsFromBody(t);
+  if (steps == null) steps = Array.isArray(t.steps) ? t.steps : [];
+  if (status === "완료") steps = steps.map((s0) => ({ ...s0, done: true }));
+  const rate = status === "완료" ? 100 : rateFromSteps(steps);
   const info = db.prepare(
-    "INSERT INTO tasks (title, status, progress, manager, participants, issues, detail, log_id, rate, due_date, created_by, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"
+    "INSERT INTO tasks (title, status, progress, manager, participants, issues, detail, log_id, rate, due_date, steps, created_by, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
   ).run(String(t.title || "제목 없음").slice(0, 200), status, s(t.progress), s(t.manager, 80), s(t.participants, 200),
-        s(t.issues), s(t.detail), parseInt(t.log_id, 10) || 0, rate, normDate(t.due_date), s(t.created_by, 80), now, now);
+        s(t.issues), s(t.detail), parseInt(t.log_id, 10) || 0, rate, normDate(t.due_date), stepsToJson(steps), s(t.created_by, 80), now, now);
   return info.lastInsertRowid;
 }
 function updateTask(id, t) {
   const now = new Date().toISOString();
   const status = STATUSES.includes(t.status) ? t.status : "진행중";
-  const rate = status === "완료" ? 100 : clampRate(t.rate);
-  db.prepare("UPDATE tasks SET title=?, status=?, progress=?, manager=?, participants=?, issues=?, detail=?, rate=?, due_date=?, updated_at=? WHERE id=?")
-    .run(String(t.title || "제목 없음").slice(0, 200), status, s(t.progress), s(t.manager, 80), s(t.participants, 200), s(t.issues), s(t.detail), rate, normDate(t.due_date), now, id);
+  const cur = getTask(id);
+  let steps = stepsFromBody(t);
+  if (steps == null) steps = cur ? parseSteps(cur.steps) : [];   // 폼에 단계가 없으면 기존 유지
+  if (status === "완료") steps = steps.map((s0) => ({ ...s0, done: true }));
+  const rate = status === "완료" ? 100 : rateFromSteps(steps);
+  db.prepare("UPDATE tasks SET title=?, status=?, progress=?, manager=?, participants=?, issues=?, detail=?, rate=?, due_date=?, steps=?, updated_at=? WHERE id=?")
+    .run(String(t.title || "제목 없음").slice(0, 200), status, s(t.progress), s(t.manager, 80), s(t.participants, 200), s(t.issues), s(t.detail), rate, normDate(t.due_date), stepsToJson(steps), now, id);
+}
+/** 단계 하나의 완료 상태 토글 → 진행률 재계산 */
+function toggleStep(id, idx) {
+  const t = getTask(id);
+  if (!t) return;
+  const steps = parseSteps(t.steps);
+  if (idx < 0 || idx >= steps.length) return;
+  steps[idx].done = !steps[idx].done;
+  const rate = rateFromSteps(steps);
+  db.prepare("UPDATE tasks SET steps=?, rate=?, updated_at=? WHERE id=?").run(stepsToJson(steps), rate, new Date().toISOString(), id);
 }
 function appendTaskProgress(id, note, author) {
   const t = getTask(id);
@@ -69,10 +116,16 @@ function appendTaskProgress(id, note, author) {
 }
 function setTaskStatus(id, status) {
   if (!STATUSES.includes(status)) return;
+  const now = new Date().toISOString();
   if (status === "완료") {
-    db.prepare("UPDATE tasks SET status = ?, rate = 100, updated_at = ? WHERE id = ?").run(status, new Date().toISOString(), id);
+    const t = getTask(id);
+    const steps = t ? parseSteps(t.steps).map((s0) => ({ ...s0, done: true })) : [];
+    db.prepare("UPDATE tasks SET status=?, rate=100, steps=?, updated_at=? WHERE id=?").run(status, stepsToJson(steps), now, id);
   } else {
-    db.prepare("UPDATE tasks SET status = ?, updated_at = ? WHERE id = ?").run(status, new Date().toISOString(), id);
+    // 다시 열기 등: 단계 완료 비율로 진행률 재계산
+    const t = getTask(id);
+    const rate = t ? rateFromSteps(parseSteps(t.steps)) : 0;
+    db.prepare("UPDATE tasks SET status=?, rate=?, updated_at=? WHERE id=?").run(status, rate, now, id);
   }
 }
 function removeTask(id) { db.prepare("DELETE FROM tasks WHERE id = ?").run(id); }
@@ -188,4 +241,4 @@ function stats() {
   return { counts, logCount: db.prepare("SELECT COUNT(*) AS n FROM meeting_logs").get().n, taskTotal: db.prepare("SELECT COUNT(*) AS n FROM tasks").get().n };
 }
 
-module.exports = { STATUSES, addLog, listLogs, getLog, logMessages, removeLog, listTasks, getTask, addTask, updateTask, setTaskStatus, appendTaskProgress, removeTask, extractTasksAI, buildKakaoReport, stats };
+module.exports = { STATUSES, addLog, listLogs, getLog, logMessages, removeLog, listTasks, getTask, addTask, updateTask, setTaskStatus, appendTaskProgress, toggleStep, parseSteps, removeTask, extractTasksAI, buildKakaoReport, stats };

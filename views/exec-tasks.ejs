@@ -36,6 +36,26 @@
   .tk-rate-bar{flex:1;height:8px;background:var(--paper-warm,#eee);border:1px solid var(--line);border-radius:999px;overflow:hidden}
   .tk-rate-bar span{display:block;height:100%;background:linear-gradient(90deg,#1b93c6,#2b8a5a);border-radius:999px}
   .tk-rate-num{font-size:.8rem;font-weight:800;color:var(--green-800);min-width:38px;text-align:right}
+  /* 폼 단계 편집기 */
+  .step-list{display:grid;gap:8px}
+  .step-row{display:flex;align-items:center;gap:7px}
+  .step-row .step-no{flex:none;width:20px;height:20px;border-radius:50%;background:var(--paper-warm,#eee);color:var(--muted);font-size:.72rem;font-weight:800;display:flex;align-items:center;justify-content:center}
+  .step-row input[type=text]{flex:1;min-width:0}
+  .step-done{flex:none;border:1px solid var(--line);background:#fff;color:var(--muted);font-weight:800;font-size:.76rem;border-radius:8px;padding:7px 10px;cursor:pointer;white-space:nowrap}
+  .step-done.on{background:#2b8a5a;border-color:#2b8a5a;color:#fff}
+  .step-del{flex:none;border:none;background:transparent;color:#c5221f;font-size:1.1rem;line-height:1;cursor:pointer;padding:0 4px}
+  .step-foot{display:flex;align-items:center;justify-content:space-between;margin-top:9px;gap:10px;flex-wrap:wrap}
+  .step-rate{font-size:.86rem;color:var(--muted);font-weight:700}
+  .step-rate b{color:var(--green-800);font-size:1rem}
+  /* 카드 단계 목록 */
+  .tk-steps{display:grid;gap:6px;margin-top:4px}
+  .tk-step{display:flex;align-items:center;gap:9px;padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:var(--paper)}
+  .tk-step.done{background:#f1f8f3;border-color:#cfe6d7}
+  .tk-step-ico{flex:none;width:20px;height:20px;border-radius:50%;background:var(--paper-warm,#eee);color:var(--muted);font-size:.72rem;font-weight:800;display:flex;align-items:center;justify-content:center}
+  .tk-step.done .tk-step-ico{background:#2b8a5a;color:#fff}
+  .tk-step-label{flex:1;min-width:0;font-size:.9rem;color:var(--ink)}
+  .tk-step.done .tk-step-label{color:var(--muted);text-decoration:line-through}
+  .tk-step-btn{flex:none;font-weight:800}
   .tk-progress{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
   .tk-progress label{display:block;font-size:.74rem;font-weight:800;color:var(--muted);margin-bottom:5px}
   .tk-progress textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:.9rem;font-family:inherit;resize:vertical;min-height:46px}
@@ -69,13 +89,30 @@
         </div>
         <div class="field"><label>담당(매니징)</label><input type="text" name="manager" value="<%= esc(edit ? edit.manager : '') %>" placeholder="예: 이형구" /></div>
         <div class="field"><label>참여자</label><input type="text" name="participants" value="<%= esc(edit ? edit.participants : '') %>" placeholder="쉼표로 구분" /></div>
-        <div style="display:flex;gap:10px">
-          <div class="field" style="flex:1"><label>진행률 (%)</label><input type="number" name="rate" min="0" max="100" step="5" value="<%= edit ? (edit.rate || 0) : 0 %>" /></div>
-          <div class="field" style="flex:1"><label>완료예정일</label><input type="date" name="due_date" value="<%= edit ? esc(edit.due_date || '') : '' %>" /></div>
+        <!-- 진행 상황(단계): 진행률은 단계 완료 비율로 자동 계산 -->
+        <div class="field">
+          <label>진행 상황 (단계) — 진행률 자동계산</label>
+          <div id="stepList" class="step-list">
+            <% var _steps = edit ? parseSteps(edit.steps) : []; if (!_steps.length) { _steps = [{label:'',done:false},{label:'',done:false},{label:'',done:false}]; } %>
+            <% _steps.forEach(function(sp, i){ %>
+              <div class="step-row">
+                <span class="step-no"><%= i+1 %></span>
+                <input type="text" name="step_label" value="<%= esc(sp.label) %>" placeholder="단계 내용 (예: 공고 확인 / 지원서 작성 / 최종 제출)" oninput="recalcRate()" />
+                <input type="hidden" name="step_done" value="<%= sp.done ? '1' : '0' %>" />
+                <button type="button" class="step-done<%= sp.done ? ' on' : '' %>" onclick="toggleStepBtn(this)"><%= sp.done ? '완료됨' : '완료' %></button>
+                <button type="button" class="step-del" title="단계 삭제" onclick="delStep(this)">×</button>
+              </div>
+            <% }); %>
+          </div>
+          <div class="step-foot">
+            <button type="button" class="btn btn-neutral btn-sm" onclick="addStep()">+ 단계 추가</button>
+            <span class="step-rate">예상 진행률 <b id="rateView">0</b>%</span>
+          </div>
         </div>
-        <div class="field"><label>진행 상황</label><textarea name="progress" placeholder="현재 어디까지 진행되었는지"><%= esc(edit ? edit.progress : '') %></textarea></div>
+        <div class="field"><label>완료예정일</label><input type="date" name="due_date" value="<%= edit ? esc(edit.due_date || '') : '' %>" /></div>
         <div class="field"><label>이슈 / 문제</label><textarea name="issues" placeholder="막힌 지점·결정 필요 사항"><%= esc(edit ? edit.issues : '') %></textarea></div>
         <div class="field"><label>상세 / 맥락</label><textarea name="detail" placeholder="배경·세부 내용"><%= esc(edit ? edit.detail : '') %></textarea></div>
+        <div class="field"><label>진행 기록 (누적 메모·선택)</label><textarea name="progress" placeholder="AI 정리·추가사항이 누적되는 기록"><%= esc(edit ? edit.progress : '') %></textarea></div>
         <div style="display:flex;gap:8px;">
           <button type="submit" class="btn btn-primary"><%= edit ? '수정 저장' : '업무 등록' %></button>
           <% if (edit) { %><a class="btn btn-neutral" href="/exec/tasks">취소</a><% } %>
@@ -109,11 +146,29 @@
               <% if (t.due_date) { %><span><span class="mk">완료예정</span><%= esc(t.due_date) %></span><% } %>
               <% if (t.updated_at) { %><span><span class="mk">갱신</span><%= fmtDate(t.updated_at) %></span><% } %>
             </div>
+            <% var cardSteps = parseSteps(t.steps); %>
             <div class="tk-rate">
               <div class="tk-rate-bar"><span style="width:<%= Math.max(0, Math.min(100, t.rate || 0)) %>%"></span></div>
               <span class="tk-rate-num"><%= t.rate || 0 %>%</span>
             </div>
-            <% if (t.progress) { %><div class="tk-field"><span class="fk">진행 상황</span><%= esc(t.progress) %></div><% } %>
+            <% if (cardSteps.length) { %>
+              <div class="tk-field"><span class="fk">진행 단계 (완료 비율로 진행률 계산)</span>
+                <div class="tk-steps">
+                  <% cardSteps.forEach(function(sp, i){ %>
+                    <div class="tk-step<%= sp.done ? ' done' : '' %>">
+                      <span class="tk-step-ico"><%= sp.done ? '✓' : (i+1) %></span>
+                      <span class="tk-step-label"><%= esc(sp.label) %></span>
+                      <form action="/exec/tasks/<%= t.id %>/step/toggle" method="post" style="margin:0">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                        <input type="hidden" name="idx" value="<%= i %>" />
+                        <button type="submit" class="linkbtn tk-step-btn"><%= sp.done ? '완료취소' : '완료' %></button>
+                      </form>
+                    </div>
+                  <% }); %>
+                </div>
+              </div>
+            <% } %>
+            <% if (t.progress) { %><div class="tk-field"><span class="fk">진행 기록</span><%= esc(t.progress) %></div><% } %>
             <% if (t.issues) { %><div class="tk-field tk-issue"><span class="fk">이슈 / 문제</span><%= esc(t.issues) %></div><% } %>
             <% if (t.detail) { %><div class="tk-field"><span class="fk">상세 / 맥락</span><%= esc(t.detail) %></div><% } %>
             <form class="tk-progress" action="/exec/tasks/<%= t.id %>/progress" method="post">
@@ -149,4 +204,51 @@
     </div>
   </div>
 </div>
+<script>
+  function recalcRate(){
+    var rows = document.querySelectorAll('#stepList .step-row');
+    var total = 0, done = 0;
+    rows.forEach(function(r){
+      var label = (r.querySelector('input[name="step_label"]').value || '').trim();
+      if (!label) return;
+      total++;
+      if (r.querySelector('input[name="step_done"]').value === '1') done++;
+    });
+    var pct = total ? Math.round(done / total * 100) : 0;
+    var v = document.getElementById('rateView');
+    if (v) v.textContent = pct;
+  }
+  function toggleStepBtn(btn){
+    var row = btn.closest('.step-row');
+    var h = row.querySelector('input[name="step_done"]');
+    if (h.value === '1') { h.value = '0'; btn.classList.remove('on'); btn.textContent = '완료'; }
+    else { h.value = '1'; btn.classList.add('on'); btn.textContent = '완료됨'; }
+    recalcRate();
+  }
+  function delStep(btn){
+    var row = btn.closest('.step-row');
+    row.parentNode.removeChild(row);
+    renumberSteps();
+    recalcRate();
+  }
+  function renumberSteps(){
+    var nos = document.querySelectorAll('#stepList .step-row .step-no');
+    nos.forEach(function(n, i){ n.textContent = i + 1; });
+  }
+  function addStep(){
+    var list = document.getElementById('stepList');
+    var row = document.createElement('div');
+    row.className = 'step-row';
+    row.innerHTML =
+      '<span class="step-no"></span>' +
+      '<input type="text" name="step_label" placeholder="단계 내용" oninput="recalcRate()" />' +
+      '<input type="hidden" name="step_done" value="0" />' +
+      '<button type="button" class="step-done" onclick="toggleStepBtn(this)">완료</button>' +
+      '<button type="button" class="step-del" title="단계 삭제" onclick="delStep(this)">×</button>';
+    list.appendChild(row);
+    renumberSteps();
+    recalcRate();
+  }
+  recalcRate();
+</script>
 <%- include('partials/footer') %>
