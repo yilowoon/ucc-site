@@ -3,8 +3,9 @@
   /* 배움터 과정 랜딩 — 전환형 컴포넌트 */
   .btn-ghost-light{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.5)}
   .btn-ghost-light:hover{background:rgba(255,255,255,.18);border-color:#fff;color:#fff;transform:translateY(-2px)}
-  .lp-hero{position:relative;overflow:hidden;color:#fff;text-align:center;background:radial-gradient(130% 120% at 50% 0%, #1f5540 0%, #163a2c 48%, #0e2a20 100%);padding:clamp(60px,9vw,104px) 0 clamp(50px,7vw,84px)}
-  .lp-hero::after{content:"";position:absolute;left:50%;top:-80px;width:420px;height:420px;transform:translateX(-50%);background:radial-gradient(circle, rgba(205,155,76,.22), transparent 68%);pointer-events:none}
+  .lp-hero{position:relative;overflow:hidden;color:#fff;text-align:center;background:linear-gradient(rgba(16,44,33,.82), rgba(11,33,25,.93)), url('/img/ai-class.webp') center 38%/cover no-repeat;padding:clamp(64px,9vw,110px) 0 clamp(54px,7vw,88px)}
+  .lp-hero::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 120% at 50% 42%, transparent 0%, rgba(11,33,25,.55) 100%);pointer-events:none}
+  .lp-hero::after{content:"";position:absolute;left:50%;top:-80px;width:420px;height:420px;transform:translateX(-50%);background:radial-gradient(circle, rgba(205,155,76,.28), transparent 68%);pointer-events:none}
   .lp-hero .container{position:relative;z-index:1}
   .lp-hero-eyebrow{display:inline-block;font-size:.78rem;letter-spacing:.22em;font-weight:800;color:var(--gold-400);margin-bottom:18px}
   .lp-hero-title{font-size:clamp(2rem,5.6vw,3.4rem);font-weight:800;line-height:1.22;letter-spacing:-1px;margin:0 0 18px}
