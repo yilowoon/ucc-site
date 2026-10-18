@@ -79,6 +79,19 @@
             <% if (t.issues) { %><div class="tk-field tk-issue"><span class="fk">이슈 / 문제</span><%= esc(t.issues) %></div><% } %>
             <% if (t.detail) { %><div class="tk-field"><span class="fk">상세 / 맥락</span><%= esc(t.detail) %></div><% } %>
             <div class="tk-actions">
+              <% if (t.status !== '완료') { %>
+                <form action="/exec/tasks/<%= t.id %>/status" method="post" style="display:inline" onsubmit="return confirm('이 업무를 완료 처리할까요?');">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <input type="hidden" name="status" value="완료" />
+                  <button type="submit" class="btn btn-primary btn-sm">✓ 완료</button>
+                </form>
+              <% } else { %>
+                <form action="/exec/tasks/<%= t.id %>/status" method="post" style="display:inline">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <input type="hidden" name="status" value="진행중" />
+                  <button type="submit" class="btn btn-neutral btn-sm">↺ 다시 열기</button>
+                </form>
+              <% } %>
               <a href="/exec/tasks?edit=<%= t.id %>#top" class="btn btn-neutral btn-sm">수정</a>
               <form action="/exec/tasks/<%= t.id %>/delete" method="post" style="display:inline" onsubmit="return confirm('이 업무를 삭제할까요?');">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>" />

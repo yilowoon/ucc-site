@@ -85,6 +85,15 @@ module.exports = function execRoutes({ verifyCsrf }) {
     if (b.id) { meetings.updateTask(parseInt(b.id, 10), b); res.redirect("/exec/tasks?msg=" + encodeURIComponent("업무를 수정했습니다.")); }
     else { meetings.addTask({ ...b, created_by: req.execName }); res.redirect("/exec/tasks?msg=" + encodeURIComponent("업무를 등록했습니다.")); }
   });
+  router.post("/tasks/:id/status", requireExec, verifyCsrf, (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const status = (req.body.status || "").trim();
+    if (!meetings.getTask(id)) return res.redirect("/exec/tasks?err=" + encodeURIComponent("업무를 찾을 수 없습니다."));
+    if (!meetings.STATUSES.includes(status)) return res.redirect("/exec/tasks?err=" + encodeURIComponent("상태값이 올바르지 않습니다."));
+    meetings.setTaskStatus(id, status);
+    const note = status === "완료" ? "업무를 완료 처리했습니다." : ("업무 상태를 ‘" + status + "’(으)로 변경했습니다.");
+    res.redirect("/exec/tasks?msg=" + encodeURIComponent(note));
+  });
   router.post("/tasks/:id/delete", requireExec, verifyCsrf, (req, res) => {
     meetings.removeTask(parseInt(req.params.id, 10));
     res.redirect("/exec/tasks?msg=" + encodeURIComponent("업무를 삭제했습니다."));

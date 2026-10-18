@@ -52,6 +52,10 @@ function updateTask(id, t) {
   db.prepare("UPDATE tasks SET title=?, status=?, progress=?, manager=?, participants=?, issues=?, detail=?, updated_at=? WHERE id=?")
     .run(String(t.title || "제목 없음").slice(0, 200), status, s(t.progress), s(t.manager, 80), s(t.participants, 200), s(t.issues), s(t.detail), now, id);
 }
+function setTaskStatus(id, status) {
+  if (!STATUSES.includes(status)) return;
+  db.prepare("UPDATE tasks SET status = ?, updated_at = ? WHERE id = ?").run(status, new Date().toISOString(), id);
+}
 function removeTask(id) { db.prepare("DELETE FROM tasks WHERE id = ?").run(id); }
 const s = (v, n = 4000) => String(v == null ? "" : v).slice(0, n);
 
@@ -133,4 +137,4 @@ function stats() {
   return { counts, logCount: db.prepare("SELECT COUNT(*) AS n FROM meeting_logs").get().n, taskTotal: db.prepare("SELECT COUNT(*) AS n FROM tasks").get().n };
 }
 
-module.exports = { STATUSES, addLog, listLogs, getLog, logMessages, removeLog, listTasks, getTask, addTask, updateTask, removeTask, extractTasksAI, stats };
+module.exports = { STATUSES, addLog, listLogs, getLog, logMessages, removeLog, listTasks, getTask, addTask, updateTask, setTaskStatus, removeTask, extractTasksAI, stats };
