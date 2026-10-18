@@ -512,7 +512,7 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     return mailer.sendMail(m.email, subject, text, html);
   }
   const MEMBER_LIST_COLS =
-    "id, member_type, name, org_name, position, interest, grade, fee_paid, fee_paid_at, created_at";
+    "id, member_type, name, org_name, position, interest, grade, fee_paid, fee_paid_at, is_exec, created_at";
   // 목록으로 안전하게 돌아갈 back 경로만 허용
   const safeBack = (v) =>
     (typeof v === "string" && /^\/admin\/members(\/\d+|\?|$)/.test(v)) ? v : "/admin/members";

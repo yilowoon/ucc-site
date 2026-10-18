@@ -75,7 +75,10 @@
                 <td><%= esc(m.interest || '-') %></td>
                 <td><%= fmtDate(m.created_at) || '-' %></td>
                 <td><%= m.fee_paid_at ? fmtDate(m.fee_paid_at) : '-' %></td>
-                <td><span class="grade-badge <%= m.grade === '정회원' ? 'grade-full' : 'grade-assoc' %>"><%= esc(m.grade || '준회원') %></span></td>
+                <td>
+                  <span class="grade-badge <%= m.grade === '정회원' ? 'grade-full' : 'grade-assoc' %>"><%= esc(m.grade || '준회원') %></span>
+                  <% if (m.is_exec) { %><span class="grade-badge grade-exec">임원</span><% } %>
+                </td>
               </tr>
             <% }); %>
           </tbody>
