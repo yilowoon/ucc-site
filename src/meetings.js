@@ -142,10 +142,42 @@ ${convo}
   return { summary: data.summary || "", created, linked, total: tasks.length };
 }
 
+/* ---------- 카카오톡 발송용 정리 리포트 ---------- */
+function buildKakaoReport(logId) {
+  const log = getLog(logId);
+  if (!log) throw new Error("회의록을 찾을 수 없습니다.");
+  let base = "https://ucc.or.kr";
+  try { base = require("./globalnews").SITE_BASE_URL(); } catch (_) {}
+  const linkUrl = base + "/exec/meetings/" + logId;
+  const period = log.period_from + (log.period_to && log.period_to !== log.period_from ? " ~ " + log.period_to : "");
+  const tasks = db.prepare("SELECT * FROM tasks WHERE log_id = ? ORDER BY id").all(logId);
+
+  const L = [];
+  L.push("[도시공동체본부] 임원 업무 정리");
+  L.push("📌 " + (log.title || "회의"));
+  if (period) L.push("🗓 " + period);
+  L.push("");
+  if (log.summary && log.summary.trim()) { L.push("📝 요약"); L.push(log.summary.trim()); L.push(""); }
+  if (tasks.length) {
+    L.push("✅ 업무 " + tasks.length + "건");
+    tasks.forEach((t, i) => {
+      L.push((i + 1) + ") " + t.title + " [" + t.status + "]" + (t.manager ? " · 담당 " + t.manager : ""));
+      if (t.progress && t.progress.trim()) {
+        const last = t.progress.trim().split("\n").filter(Boolean).pop();
+        if (last) L.push("   " + last);
+      }
+      if (t.issues && t.issues.trim()) L.push("   ⚠ " + t.issues.trim().split("\n")[0]);
+    });
+    L.push("");
+  }
+  L.push("🔗 자세히 보기: " + linkUrl);
+  return { text: L.join("\n"), linkUrl, taskCount: tasks.length };
+}
+
 function stats() {
   const counts = {}; STATUSES.forEach((st) => (counts[st] = 0));
   db.prepare("SELECT status, COUNT(*) AS n FROM tasks GROUP BY status").all().forEach((r) => { counts[r.status] = r.n; });
   return { counts, logCount: db.prepare("SELECT COUNT(*) AS n FROM meeting_logs").get().n, taskTotal: db.prepare("SELECT COUNT(*) AS n FROM tasks").get().n };
 }
 
-module.exports = { STATUSES, addLog, listLogs, getLog, logMessages, removeLog, listTasks, getTask, addTask, updateTask, setTaskStatus, appendTaskProgress, removeTask, extractTasksAI, stats };
+module.exports = { STATUSES, addLog, listLogs, getLog, logMessages, removeLog, listTasks, getTask, addTask, updateTask, setTaskStatus, appendTaskProgress, removeTask, extractTasksAI, buildKakaoReport, stats };

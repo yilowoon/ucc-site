@@ -7,6 +7,8 @@
   .msg .body{font-size:.92rem;color:var(--ink);line-height:1.55;white-space:pre-wrap;word-break:break-word}
   .msg .t{color:var(--muted);font-size:.72rem;margin-left:8px}
   @media(max-width:560px){.msg{grid-template-columns:1fr}.msg .who{text-align:left}}
+  .btn-kakao{background:#FEE500;color:#3C1E1E;border:1px solid #f0d800}
+  .btn-kakao:hover{background:#f5dc00}
 </style>
 <div class="container admin-wrap">
   <div class="admin-head">
@@ -26,12 +28,19 @@
   <div class="admin-auth-card">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
       <h2 style="margin:0;">AI 업무 정리</h2>
-      <form method="post" action="/exec/meetings/<%= log.id %>/extract" onsubmit="this.querySelector('button').disabled=true;this.querySelector('button').textContent='AI 분석 중… (최대 1분)';">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-        <button type="submit" class="btn btn-primary">🤖 AI로 업무 정리</button>
-      </form>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <form method="post" action="/exec/meetings/<%= log.id %>/extract" onsubmit="this.querySelector('button').disabled=true;this.querySelector('button').textContent='AI 분석 중… (최대 1분)';">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <button type="submit" class="btn btn-primary">🤖 AI로 업무 정리</button>
+        </form>
+        <form method="post" action="/exec/meetings/<%= log.id %>/send-kakao" style="margin:0;" onsubmit="if(!confirm('정리된 내용을 카카오톡으로 발송할까요?')){return false;} var b=this.querySelector('button'); b.disabled=true; b.textContent='카카오톡 발송 중…';">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <button type="submit" class="btn btn-kakao">💬 카카오톡으로 정리해서 발송하기</button>
+        </form>
+      </div>
     </div>
-    <p class="field-hint" style="margin-top:8px">이 대화에서 진행 중/결정된 업무를 AI가 추출해 <b>업무 보드</b>에 등록합니다. 기존 업무와 같으면 자동 연결·갱신됩니다. (AI 설정이 없거나 실패하면 업무 보드에서 직접 등록할 수 있습니다)</p>
+    <p class="field-hint" style="margin-top:8px">이 대화에서 진행 중/결정된 업무를 AI가 추출해 <b>업무 보드</b>에 등록합니다. 기존 업무와 같으면 자동 연결·갱신됩니다. (AI 설정이 없거나 실패하면 업무 보드에서 직접 등록할 수 있습니다)<br>
+      <b>💬 카카오톡으로 정리해서 발송하기</b> — 요약·업무 목록을 정리해 <b>연결된 카카오톡</b>으로 보냅니다. 메시지의 ‘자세히 보기’ 링크(이 회의 ID)를 누르면 이 페이지로 돌아옵니다.</p>
     <% if (log.summary) { %>
       <div style="margin-top:14px;background:var(--paper-warm);border:1px solid var(--line);border-radius:10px;padding:14px 16px;">
         <b style="color:var(--green-800)">AI 요약</b>

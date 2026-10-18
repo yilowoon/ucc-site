@@ -4,6 +4,7 @@ const express = require("express");
 const multer = require("multer");
 const { db } = require("../db");
 const meetings = require("../meetings");
+const kakao = require("../kakao");
 
 const uploadTxt = multer({
   storage: multer.memoryStorage(),
@@ -64,6 +65,19 @@ module.exports = function execRoutes({ verifyCsrf }) {
       res.redirect("/exec/meetings/" + id + "?msg=" + encodeURIComponent(`AI 정리 완료 — 신규 업무 ${r.created}개, 기존 연결 ${r.linked}개. 업무관리에서 확인하세요.`));
     } catch (e) {
       res.redirect("/exec/meetings/" + id + "?err=" + encodeURIComponent("AI 업무 정리 실패: " + e.message + " (업무관리에서 직접 등록할 수 있습니다)"));
+    }
+  });
+  router.post("/meetings/:id/send-kakao", requireExec, verifyCsrf, async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    try {
+      if (!meetings.getLog(id)) throw new Error("회의록을 찾을 수 없습니다.");
+      if (!kakao.isConnected()) throw new Error("카카오톡이 연결되어 있지 않습니다. 관리자 → ‘카카오 자동발송’에서 ‘카카오 연결’을 먼저 진행해 주세요.");
+      const rep = meetings.buildKakaoReport(id);
+      const parts = await kakao.sendToMe(rep.text, rep.linkUrl);
+      res.redirect("/exec/meetings/" + id + "?msg=" + encodeURIComponent(
+        "카카오톡으로 발송했습니다(" + parts + "통). 메시지의 ‘자세히 보기’를 누르면 이 회의 내용으로 이동합니다."));
+    } catch (e) {
+      res.redirect("/exec/meetings/" + id + "?err=" + encodeURIComponent("카카오톡 발송 실패: " + e.message));
     }
   });
   router.post("/meetings/:id/delete", requireExec, verifyCsrf, (req, res) => {
