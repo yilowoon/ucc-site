@@ -44,7 +44,7 @@ function parseSteps(v) {
   try {
     const a = JSON.parse(v || "[]");
     return Array.isArray(a) ? a.filter((x) => x && x.label != null)
-      .map((x) => ({ label: String(x.label || "").slice(0, 200), done: !!x.done })) : [];
+      .map((x) => ({ label: String(x.label || "").slice(0, 200), done: !!x.done, due: normDate(x.due) })) : [];
   } catch (_) { return []; }
 }
 function rateFromSteps(steps) {
@@ -52,19 +52,20 @@ function rateFromSteps(steps) {
   return Math.round((steps.filter((s0) => s0.done).length / steps.length) * 100);
 }
 function stepsToJson(steps) {
-  return JSON.stringify((steps || []).map((s0) => ({ label: String(s0.label || "").slice(0, 200), done: !!s0.done })));
+  return JSON.stringify((steps || []).map((s0) => ({ label: String(s0.label || "").slice(0, 200), done: !!s0.done, due: normDate(s0.due) })));
 }
-/** 폼 배열(step_label[], step_done[])에서 steps 구성. 없으면 null 반환(단계 미지정) */
+/** 폼 배열(step_label, step_done, step_due)에서 steps 구성. 없으면 null 반환(단계 미지정) */
 function stepsFromBody(b) {
   if (b.step_label == null) return null;
-  let L = b.step_label, D = b.step_done;
+  let L = b.step_label, D = b.step_done, U = b.step_due;
   if (!Array.isArray(L)) L = [L];
   if (!Array.isArray(D)) D = D == null ? [] : [D];
+  if (!Array.isArray(U)) U = U == null ? [] : [U];
   const steps = [];
   for (let i = 0; i < L.length; i++) {
     const label = String(L[i] == null ? "" : L[i]).trim();
     if (!label) continue;
-    steps.push({ label: label.slice(0, 200), done: String(D[i] == null ? "0" : D[i]) === "1" });
+    steps.push({ label: label.slice(0, 200), done: String(D[i] == null ? "0" : D[i]) === "1", due: normDate(U[i]) });
   }
   return steps;
 }

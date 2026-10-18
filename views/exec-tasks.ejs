@@ -37,10 +37,12 @@
   .tk-rate-bar span{display:block;height:100%;background:linear-gradient(90deg,#1b93c6,#2b8a5a);border-radius:999px}
   .tk-rate-num{font-size:.8rem;font-weight:800;color:var(--green-800);min-width:38px;text-align:right}
   /* 폼 단계 편집기 */
-  .step-list{display:grid;gap:8px}
-  .step-row{display:flex;align-items:center;gap:7px}
-  .step-row .step-no{flex:none;width:20px;height:20px;border-radius:50%;background:var(--paper-warm,#eee);color:var(--muted);font-size:.72rem;font-weight:800;display:flex;align-items:center;justify-content:center}
-  .step-row input[type=text]{flex:1;min-width:0}
+  .step-list{display:grid;gap:10px}
+  .step-row{display:flex;flex-wrap:wrap;align-items:center;gap:7px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--paper-warm,#faf9f5)}
+  .step-row .step-no{flex:none;width:20px;height:20px;border-radius:50%;background:#fff;border:1px solid var(--line);color:var(--muted);font-size:.72rem;font-weight:800;display:flex;align-items:center;justify-content:center}
+  .step-label-in{flex:1 1 150px;min-width:0}
+  .step-due-wrap{flex:0 0 auto;display:flex;align-items:center;gap:5px;font-size:.74rem;font-weight:700;color:var(--muted);white-space:nowrap}
+  .step-due-in{width:auto;padding:6px 8px}
   .step-done{flex:none;border:1px solid var(--line);background:#fff;color:var(--muted);font-weight:800;font-size:.76rem;border-radius:8px;padding:7px 10px;cursor:pointer;white-space:nowrap}
   .step-done.on{background:#2b8a5a;border-color:#2b8a5a;color:#fff}
   .step-del{flex:none;border:none;background:transparent;color:#c5221f;font-size:1.1rem;line-height:1;cursor:pointer;padding:0 4px}
@@ -54,6 +56,7 @@
   .tk-step-ico{flex:none;width:20px;height:20px;border-radius:50%;background:var(--paper-warm,#eee);color:var(--muted);font-size:.72rem;font-weight:800;display:flex;align-items:center;justify-content:center}
   .tk-step.done .tk-step-ico{background:#2b8a5a;color:#fff}
   .tk-step-label{flex:1;min-width:0;font-size:.9rem;color:var(--ink)}
+  .tk-step-due{flex:none;font-size:.74rem;font-weight:700;color:#8a6d00;background:#fdf6e3;border:1px solid #efe2b8;border-radius:6px;padding:2px 7px;white-space:nowrap}
   .tk-step.done .tk-step-label{color:var(--muted);text-decoration:line-through}
   .tk-step-btn{flex:none;font-weight:800}
   .tk-progress{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
@@ -97,7 +100,8 @@
             <% _steps.forEach(function(sp, i){ %>
               <div class="step-row">
                 <span class="step-no"><%= i+1 %></span>
-                <input type="text" name="step_label" value="<%= esc(sp.label) %>" placeholder="단계 내용 (예: 공고 확인 / 지원서 작성 / 최종 제출)" oninput="recalcRate()" />
+                <input type="text" class="step-label-in" name="step_label" value="<%= esc(sp.label) %>" placeholder="단계 내용 (예: 공고 확인 / 지원서 작성 / 최종 제출)" oninput="recalcRate()" />
+                <label class="step-due-wrap">완료예정 <input type="date" class="step-due-in" name="step_due" value="<%= esc(sp.due || '') %>" /></label>
                 <input type="hidden" name="step_done" value="<%= sp.done ? '1' : '0' %>" />
                 <button type="button" class="step-done<%= sp.done ? ' on' : '' %>" onclick="toggleStepBtn(this)"><%= sp.done ? '완료됨' : '완료' %></button>
                 <button type="button" class="step-del" title="단계 삭제" onclick="delStep(this)">×</button>
@@ -158,6 +162,7 @@
                     <div class="tk-step<%= sp.done ? ' done' : '' %>">
                       <span class="tk-step-ico"><%= sp.done ? '✓' : (i+1) %></span>
                       <span class="tk-step-label"><%= esc(sp.label) %></span>
+                      <% if (sp.due) { %><span class="tk-step-due">~<%= esc(sp.due) %></span><% } %>
                       <form action="/exec/tasks/<%= t.id %>/step/toggle" method="post" style="margin:0">
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                         <input type="hidden" name="idx" value="<%= i %>" />
@@ -241,7 +246,8 @@
     row.className = 'step-row';
     row.innerHTML =
       '<span class="step-no"></span>' +
-      '<input type="text" name="step_label" placeholder="단계 내용" oninput="recalcRate()" />' +
+      '<input type="text" class="step-label-in" name="step_label" placeholder="단계 내용" oninput="recalcRate()" />' +
+      '<label class="step-due-wrap">완료예정 <input type="date" class="step-due-in" name="step_due" /></label>' +
       '<input type="hidden" name="step_done" value="0" />' +
       '<button type="button" class="step-done" onclick="toggleStepBtn(this)">완료</button>' +
       '<button type="button" class="step-del" title="단계 삭제" onclick="delStep(this)">×</button>';
