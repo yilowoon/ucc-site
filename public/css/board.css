@@ -289,6 +289,7 @@
 .reg-table tbody td { font-size: .92rem; color: var(--ink); padding: 13px 16px; border-bottom: 1px solid var(--line); }
 .reg-table tbody tr:last-child td { border-bottom: 0; }
 .reg-table tbody tr:hover { background: #fcfbf7; }
+.reg-table th:first-child, .reg-table td:first-child { white-space: nowrap; width: 1%; }
 .reg-table .reg-name { font-weight: 700; color: var(--green-800); white-space: nowrap; }
 .reg-table .reg-date { color: var(--muted); white-space: nowrap; }
 .reg-table .reg-empty { text-align: center; color: var(--muted); padding: 28px 16px; }
