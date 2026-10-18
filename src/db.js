@@ -279,6 +279,22 @@ try {
     seed.forEach((nm, i) => ins.run(nm, "", i, now));
   }
 } catch (e) {}
+// 기본 소속기관 로고(투명 PNG) 1회 적용 — 로고가 비어 있는 기본 기관에만 설정(관리자 변경은 보존)
+try {
+  if (db.prepare("SELECT value FROM app_settings WHERE key = 'ai_orgs_logos_seeded'").get() === undefined) {
+    const logos = {
+      "목원대학교": "/img/orgs/mokwon.png",
+      "한국생활환경시험연구원": "/img/orgs/kcl.png",
+      "대전정보문화산업진흥원": "/img/orgs/dicia.png",
+      "세종일자리경제진흥원": "/img/orgs/sejong-job.png",
+      "세종창조경제혁신센터": "/img/orgs/sejong-ccei.png",
+      "충남연구원": "/img/orgs/cni.png",
+    };
+    const upd = db.prepare("UPDATE ai_orgs SET logo = ? WHERE name = ? AND logo = ''");
+    for (const [nm, lg] of Object.entries(logos)) upd.run(lg, nm);
+    db.prepare("INSERT OR REPLACE INTO app_settings (key, value) VALUES ('ai_orgs_logos_seeded', '1')").run();
+  }
+} catch (e) {}
 
 // 앱 설정 KV(민감 토큰 등 — data/ucc.db 는 커밋 제외이므로 비밀 저장에 적합)
 try {
