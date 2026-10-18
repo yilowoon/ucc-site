@@ -1,56 +1,149 @@
 <%- include('partials/header') %>
+<style>
+  /* 배움터 과정 랜딩 — 전환형 컴포넌트 */
+  .btn-ghost-light{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.5)}
+  .btn-ghost-light:hover{background:rgba(255,255,255,.18);border-color:#fff;color:#fff;transform:translateY(-2px)}
+  .lp-hero{position:relative;overflow:hidden;color:#fff;text-align:center;background:radial-gradient(130% 120% at 50% 0%, #1f5540 0%, #163a2c 48%, #0e2a20 100%);padding:clamp(60px,9vw,104px) 0 clamp(50px,7vw,84px)}
+  .lp-hero::after{content:"";position:absolute;left:50%;top:-80px;width:420px;height:420px;transform:translateX(-50%);background:radial-gradient(circle, rgba(205,155,76,.22), transparent 68%);pointer-events:none}
+  .lp-hero .container{position:relative;z-index:1}
+  .lp-hero-eyebrow{display:inline-block;font-size:.78rem;letter-spacing:.22em;font-weight:800;color:var(--gold-400);margin-bottom:18px}
+  .lp-hero-title{font-size:clamp(2rem,5.6vw,3.4rem);font-weight:800;line-height:1.22;letter-spacing:-1px;margin:0 0 18px}
+  .lp-hero-title strong{color:#ffd98a}
+  .lp-hero-sub{font-size:clamp(1rem,2.2vw,1.18rem);line-height:1.7;color:rgba(255,255,255,.9);margin:0 auto 30px;max-width:680px}
+  .lp-hero-sub b{color:#ffe6b0;font-weight:700}
+  .lp-hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .lp-hero-tags{list-style:none;display:flex;gap:10px 22px;justify-content:center;flex-wrap:wrap;margin:30px 0 0;padding:0}
+  .lp-hero-tags li{font-size:.92rem;font-weight:600;color:rgba(255,255,255,.82)}
+  .pain-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+  .pain-card{display:flex;gap:14px;align-items:flex-start;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:var(--shadow-sm)}
+  .pain-card .pain-q{flex:0 0 auto;width:32px;height:32px;border-radius:50%;background:var(--ci-green);color:#fff;font-weight:800;display:grid;place-items:center;font-size:.95rem}
+  .pain-card p{margin:0;color:var(--ink-soft);font-size:1rem;line-height:1.55;padding-top:3px}
+  .pain-card p b{color:var(--green-800)}
+  .pain-answer{text-align:center;margin:26px auto 0;font-size:1.08rem;font-weight:700;color:var(--green-800)}
+  .pain-answer b{color:var(--ci-green-d)}
+  .persona-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}
+  .persona-card{text-align:center;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:30px 22px;box-shadow:var(--shadow-sm);transition:transform .24s var(--ease),box-shadow .24s var(--ease)}
+  .persona-card:hover{transform:translateY(-5px);box-shadow:var(--shadow)}
+  .persona-ico{font-size:2.4rem;line-height:1;display:block;margin-bottom:12px}
+  .persona-card h3{font-size:1.16rem;color:var(--green-800);margin:0 0 8px}
+  .persona-card p{font-size:.94rem;color:var(--ink-soft);line-height:1.58;margin:0}
+  .ba-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px}
+  .ba-card{display:grid;grid-template-columns:1fr auto 1fr;align-items:stretch;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow-sm)}
+  .ba-before,.ba-after{border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px}
+  .ba-before{background:var(--paper-warm)}
+  .ba-after{background:linear-gradient(135deg, rgba(91,185,110,.14), rgba(34,169,224,.1));border:1px solid rgba(91,185,110,.3)}
+  .ba-tag{align-self:flex-start;font-size:.68rem;font-weight:800;letter-spacing:.08em;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 9px}
+  .ba-tag--on{color:#fff;background:var(--ci-green-d);border-color:var(--ci-green-d)}
+  .ba-before p,.ba-after p{margin:0;font-size:.96rem;line-height:1.5;color:var(--ink-soft)}
+  .ba-after p b{color:var(--green-800)}
+  .ba-arrow{display:grid;place-items:center;color:var(--ci-green-d);font-size:1.5rem;font-weight:800}
+  @media(max-width:420px){.ba-card{grid-template-columns:1fr}.ba-arrow{transform:rotate(90deg)}}
+  .point-list{display:grid;gap:16px}
+  .point-row{display:flex;gap:22px;align-items:flex-start;background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--ci-blue);border-radius:16px;padding:26px 30px;box-shadow:var(--shadow-sm);transition:transform .22s var(--ease),box-shadow .22s var(--ease)}
+  .point-row:hover{transform:translateX(4px);box-shadow:var(--shadow)}
+  .point-no{flex:0 0 auto;font-size:1.7rem;font-weight:800;color:var(--ci-blue-d);line-height:1;min-width:46px}
+  .point-body h3{font-size:1.22rem;color:var(--green-800);margin:0 0 7px}
+  .point-body p{margin:0;color:var(--ink-soft);font-size:1rem;line-height:1.62}
+  .point-body p b{color:var(--green-800)}
+  .faq-list{display:grid;gap:12px;max-width:820px;margin:0 auto}
+  .faq-item{background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-sm);overflow:hidden}
+  .faq-item summary{cursor:pointer;list-style:none;padding:18px 22px;font-weight:700;color:var(--green-800);font-size:1.02rem;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .faq-item summary::-webkit-details-marker{display:none}
+  .faq-item summary::after{content:"+";color:var(--ci-orange-d);font-size:1.4rem;font-weight:800;transition:transform .2s}
+  .faq-item[open] summary::after{transform:rotate(45deg)}
+  .faq-a{padding:0 22px 20px;color:var(--ink-soft);font-size:.98rem;line-height:1.68}
+  .faq-a b{color:var(--green-800)}
+  .faq-more{text-align:center;margin:22px 0 0;color:var(--muted)}
+  .faq-more a{color:var(--ci-green-d);font-weight:700}
+  .final-cta{text-align:center;color:#fff;padding:clamp(56px,8vw,92px) 0;background:radial-gradient(120% 130% at 50% 0%, #1f5540, #0e2a20 70%);position:relative;overflow:hidden}
+  .final-cta::after{content:"";position:absolute;left:50%;bottom:-120px;width:460px;height:460px;transform:translateX(-50%);background:radial-gradient(circle, rgba(205,155,76,.18), transparent 68%)}
+  .final-cta .container{position:relative;z-index:1}
+  .final-cta h2{font-size:clamp(1.5rem,3.6vw,2.2rem);font-weight:800;margin:0 0 14px;letter-spacing:-.5px}
+  .final-cta p{color:rgba(255,255,255,.88);font-size:1.05rem;line-height:1.7;margin:0 0 28px}
+  .final-cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .lp-sticky{position:fixed;left:0;right:0;bottom:0;z-index:90;display:flex;align-items:center;justify-content:space-between;gap:14px;background:rgba(14,42,32,.97);color:#fff;padding:12px 18px;box-shadow:0 -6px 24px rgba(0,0,0,.25);transform:translateY(110%);transition:transform .3s var(--ease)}
+  .lp-sticky.is-show{transform:translateY(0)}
+  .lp-sticky-text{font-weight:800;font-size:1rem}
+  .lp-sticky .btn{padding:11px 22px;white-space:nowrap}
+  @media(max-width:420px){.lp-sticky-text{font-size:.9rem}.lp-sticky{padding:10px 14px}}
+</style>
 
-<section class="page-banner">
+<!-- 히어로 -->
+<section class="lp-hero">
   <div class="container">
-    <span class="page-banner-en">AI UTILIZATION EXPERT COURSE</span>
-    <h1 class="page-banner-title">AI활용전문가과정</h1>
-    <p class="page-banner-desc">생성형 AI와 AI 에이전트를 업무·일상에 활용하는 실무 역량을 기릅니다. 시민·직장인·소상공인·공공기관까지, 눈높이에 맞춘 단계별 AI 교육으로 <strong>누구나 AI 전문가</strong>가 됩니다.</p>
+    <span class="lp-hero-eyebrow">AI UTILIZATION EXPERT COURSE</span>
+    <h1 class="lp-hero-title">누구나 쓰는 AI,<br><strong>나의 무기</strong>로 만드세요</h1>
+    <p class="lp-hero-sub">생성형 AI와 AI 에이전트를 업무·일상에 활용하는 실무 역량을 기릅니다.<br>시민·직장인·소상공인·공공기관까지, 코딩 없이 <b>프롬프트만으로</b> 시작하는 단계별 AI 교육.</p>
+    <div class="lp-hero-cta">
+      <a class="btn btn-primary btn-lg" href="/learn/apply">교육 신청하기 →</a>
+      <a class="btn btn-ghost-light btn-lg" href="#curriculum">커리큘럼 보기</a>
+    </div>
+    <ul class="lp-hero-tags">
+      <li>✓ 실습 100% 프로젝트</li>
+      <li>✓ 코딩 몰라도 OK</li>
+      <li>✓ 현장 전문가 멘토링</li>
+      <li>✓ 수료 후 커뮤니티</li>
+    </ul>
   </div>
 </section>
 
 <!-- 과정 한눈에 -->
-<section class="section" id="facts" style="padding-top:34px">
+<section class="section" id="facts" style="padding-top:38px">
   <div class="container">
     <div class="course-facts">
-      <div class="cf-item"><span class="cf-label">교육 대상</span><span class="cf-value">시민 · 직장인 · 소상공인 · 공공/기관 담당자</span></div>
+      <div class="cf-item"><span class="cf-label">교육 대상</span><span class="cf-value">시민 · 직장인 · 소상공인 · 공공/기관</span></div>
       <div class="cf-item"><span class="cf-label">교육 방식</span><span class="cf-value">실시간 온라인 + 실습 프로젝트</span></div>
-      <div class="cf-item"><span class="cf-label">과정 구성</span><span class="cf-value">입문 → 활용 → 실무 → 전문가 단계별</span></div>
+      <div class="cf-item"><span class="cf-label">과정 구성</span><span class="cf-value">입문 → 활용 → 실무 → 전문가</span></div>
       <div class="cf-item"><span class="cf-label">수료 혜택</span><span class="cf-value">수료증 · AI 활용 커뮤니티 · 멘토링</span></div>
     </div>
   </div>
 </section>
 
-<!-- 왜 지금 AI인가 -->
-<section class="section section--alt" id="why">
+<!-- 공감 · 이런 고민 -->
+<section class="section section--alt" id="pain">
   <div class="container">
     <div class="section-head">
-      <div><h2 class="section-title c-green">왜 지금 AI인가</h2><span class="section-en">WHY AI NOW</span></div>
+      <div><h2 class="section-title c-green">혹시, 이런 고민 있으셨나요?</h2><span class="section-en">YOUR PAIN POINTS</span></div>
     </div>
-    <p class="section-lede">생성형 AI는 업무·학습·창작의 방식을 바꾸고 있습니다. <strong>AI 활용 역량이 곧 경쟁력</strong>인 시대, 도시공동체본부는 시민·현장 중심의 실용 AI 교육을 제공합니다.</p>
-    <div class="sgrid sgrid--green">
-      <article class="scard"><h4>생성형 AI 대전환</h4><p>ChatGPT·Claude·Gemini 등 생성형 AI가 <strong>일하는 방식 자체</strong>를 바꾸고 있습니다.</p></article>
-      <article class="scard"><h4>업무 생산성 혁신</h4><p>문서·데이터·보고서 작업을 AI로 자동화해 <strong>생산성을 크게</strong> 높일 수 있습니다.</p></article>
-      <article class="scard"><h4>공공·지역 확산</h4><p>행정·교육·복지·소상공인 현장까지 <strong>AI 활용 수요</strong>가 빠르게 늘고 있습니다.</p></article>
-      <article class="scard"><h4>누구나 쓰는 AI</h4><p>코딩 없이 <strong>프롬프트만으로</strong> 전문 업무를 수행하는 시대가 열렸습니다.</p></article>
+    <p class="section-lede">AI가 중요하다는 건 알지만, <strong>막상 내 일에 어떻게 써야 할지</strong> 막막하셨다면 — 이 과정이 그 답을 드립니다.</p>
+    <div class="pain-grid">
+      <article class="pain-card"><span class="pain-q">Q</span><p>“보고서·문서 작업에 <b>시간이 너무 많이</b> 들어요.”</p></article>
+      <article class="pain-card"><span class="pain-q">Q</span><p>“AI가 좋다는데 <b>어디부터 써야 할지</b> 모르겠어요.”</p></article>
+      <article class="pain-card"><span class="pain-q">Q</span><p>“우리 가게·우리 동네에 <b>AI를 어떻게 활용</b>하죠?”</p></article>
+      <article class="pain-card"><span class="pain-q">Q</span><p>“<b>코딩을 몰라도</b> AI를 제대로 쓸 수 있을까요?”</p></article>
+    </div>
+    <p class="pain-answer">걱정 마세요. <b>프롬프트 기초부터 실무 프로젝트까지</b>, 직접 해보며 익히면 누구나 할 수 있습니다.</p>
+  </div>
+</section>
+
+<!-- 이런 분께 추천 -->
+<section class="section" id="who">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-blue">이런 분께 추천합니다</h2><span class="section-en">FOR WHOM</span></div>
+    </div>
+    <div class="persona-grid">
+      <article class="persona-card"><span class="persona-ico">💼</span><h3>직장인</h3><p>반복되는 문서·데이터·보고 업무를 AI로 자동화하고 싶은 분</p></article>
+      <article class="persona-card"><span class="persona-ico">🏪</span><h3>소상공인·자영업</h3><p>마케팅·콘텐츠·고객 응대에 AI를 바로 활용하고 싶은 분</p></article>
+      <article class="persona-card"><span class="persona-ico">🏛️</span><h3>공공·기관 담당자</h3><p>행정·민원·교육·복지 현장에 AI를 접목하고 싶은 분</p></article>
+      <article class="persona-card"><span class="persona-ico">🌱</span><h3>시민·입문자</h3><p>AI가 처음이라도 일상과 학습에 똑똑하게 쓰고 싶은 분</p></article>
     </div>
   </div>
 </section>
 
 <!-- 교육 체계 · 단계 -->
-<section class="section" id="ladder">
+<section class="section section--alt" id="ladder">
   <div class="container">
     <div class="section-head">
-      <div><h2 class="section-title c-blue">교육 체계 · 단계별 과정</h2><span class="section-en">LEARNING PATH</span></div>
+      <div><h2 class="section-title c-green">교육 체계 · 단계별 과정</h2><span class="section-en">LEARNING PATH</span></div>
     </div>
     <p class="section-lede">AI <strong>입문 → 활용 → 실무 → 전문가</strong>로 이어지는 단계별 학습 사다리로, 처음 접하는 분부터 현업 담당자까지 눈높이에 맞춰 설계합니다.</p>
-
     <ol class="esg-flow" aria-label="AI 학습 단계">
       <li><span class="ef-no">STEP 1</span><h3>입문</h3><p>AI 이해 · 프롬프트 기초</p></li>
       <li><span class="ef-no">STEP 2</span><h3>활용</h3><p>문서·이미지·데이터 생성</p></li>
       <li><span class="ef-no">STEP 3</span><h3>실무</h3><p>업무 자동화 · AI 에이전트</p></li>
       <li><span class="ef-no">STEP 4</span><h3>전문가</h3><p>프로젝트 · 강사·컨설턴트</p></li>
     </ol>
-
     <div class="esg-mods" style="margin-top:30px">
       <article class="esg-mod esg-mod--green"><div class="esg-mod-head"><span class="esg-mod-no">대상 A</span><h3 class="esg-mod-title">시민 · AI 입문</h3></div><ul class="esg-mod-list"><li>생성형 AI 개념과 안전한 사용법</li><li>일상·학습에 AI 활용하기</li></ul></article>
       <article class="esg-mod esg-mod--blue"><div class="esg-mod-head"><span class="esg-mod-no">대상 B</span><h3 class="esg-mod-title">직장인 · 업무 실무</h3></div><ul class="esg-mod-list"><li>문서·보고서·데이터 업무 자동화</li><li>직무별 AI 활용 워크플로</li></ul></article>
@@ -61,10 +154,10 @@
 </section>
 
 <!-- 핵심 커리큘럼 -->
-<section class="section section--alt" id="curriculum">
+<section class="section" id="curriculum">
   <div class="container">
     <div class="section-head">
-      <div><h2 class="section-title c-green">핵심 커리큘럼</h2><span class="section-en">CURRICULUM</span></div>
+      <div><h2 class="section-title c-blue">핵심 커리큘럼</h2><span class="section-en">CURRICULUM</span></div>
     </div>
     <p class="section-lede">이론을 넘어 <strong>직접 해보며 익히는</strong> 실습 중심 커리큘럼. 프롬프트 기초부터 AI 에이전트 자동화까지 현장에서 바로 쓰는 역량을 기릅니다.</p>
     <%
@@ -79,7 +172,7 @@
     %>
     <div class="esg-mods">
       <% curriculum.forEach(function(m){ %>
-        <article class="esg-mod esg-mod--green<%= m.featured ? ' esg-mod--feature' : '' %>">
+        <article class="esg-mod esg-mod--blue<%= m.featured ? ' esg-mod--feature' : '' %>">
           <div class="esg-mod-head"><span class="esg-mod-no"><%= m.no %></span><h3 class="esg-mod-title"><%= m.title %></h3><% if (m.featured) { %><span class="esg-mod-badge">대표</span><% } %></div>
           <ul class="esg-mod-list"><% m.items.forEach(function(it){ %><li><%= it %></li><% }); %></ul>
         </article>
@@ -89,7 +182,7 @@
 </section>
 
 <!-- 실무 프로젝트 -->
-<section class="section" id="projects">
+<section class="section section--alt" id="projects">
   <div class="container">
     <div class="section-head">
       <div><h2 class="section-title c-orange">실무 프로젝트</h2><span class="section-en">PROJECTS</span></div>
@@ -113,43 +206,120 @@
   </div>
 </section>
 
-<!-- 과정 특장점 -->
+<!-- 수료 후, 이렇게 달라집니다 (BEFORE → AFTER) -->
+<section class="section" id="change">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-green">수료 후, 이렇게 달라집니다</h2><span class="section-en">BEFORE → AFTER</span></div>
+    </div>
+    <div class="ba-grid">
+      <article class="ba-card">
+        <div class="ba-before"><span class="ba-tag">BEFORE</span><p>문서·보고서를 매번 처음부터 손으로 작성</p></div>
+        <span class="ba-arrow" aria-hidden="true">→</span>
+        <div class="ba-after"><span class="ba-tag ba-tag--on">AFTER</span><p>AI로 초안·요약·정리를 자동화해 <b>시간을 절약</b></p></div>
+      </article>
+      <article class="ba-card">
+        <div class="ba-before"><span class="ba-tag">BEFORE</span><p>데이터를 어떻게 분석할지 막막함</p></div>
+        <span class="ba-arrow" aria-hidden="true">→</span>
+        <div class="ba-after"><span class="ba-tag ba-tag--on">AFTER</span><p>AI로 데이터를 분석하고 <b>인사이트를 도출</b></p></div>
+      </article>
+      <article class="ba-card">
+        <div class="ba-before"><span class="ba-tag">BEFORE</span><p>반복 업무에 시간과 에너지를 소모</p></div>
+        <span class="ba-arrow" aria-hidden="true">→</span>
+        <div class="ba-after"><span class="ba-tag ba-tag--on">AFTER</span><p>AI 에이전트로 <b>반복 업무를 자동화</b></p></div>
+      </article>
+      <article class="ba-card">
+        <div class="ba-before"><span class="ba-tag">BEFORE</span><p>AI는 남의 이야기 같던 막연함</p></div>
+        <span class="ba-arrow" aria-hidden="true">→</span>
+        <div class="ba-after"><span class="ba-tag ba-tag--on">AFTER</span><p>내 일과 지역에 <b>AI를 자신 있게 활용</b></p></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- 과정 특장점 (POINT) -->
 <section class="section section--alt" id="strength">
   <div class="container">
     <div class="section-head">
       <div><h2 class="section-title c-blue">도시공동체본부 AI 교육의 강점</h2><span class="section-en">WHY US</span></div>
     </div>
-    <div class="esg-diff">
-      <article class="esg-diff-card"><h3>실습 100%</h3><p>이론보다 <strong>직접 해보며</strong> 익히는 프로젝트 중심 교육으로, 수료 즉시 현업에 적용합니다.</p></article>
-      <article class="esg-diff-card"><h3>눈높이 맞춤</h3><p>비전공·입문자도 따라올 수 있는 <strong>단계별 설계</strong>로, 처음이어도 완주할 수 있습니다.</p></article>
-      <article class="esg-diff-card"><h3>전문가 멘토링</h3><p>현업 전문가의 <strong>밀착 피드백</strong>으로 막히는 지점을 바로 해결합니다.</p></article>
-      <article class="esg-diff-card"><h3>수료 후 커뮤니티</h3><p>AI 활용 네트워크에서 <strong>지속적으로 성장</strong>하고 함께 배웁니다.</p></article>
+    <div class="point-list">
+      <article class="point-row">
+        <span class="point-no">01</span>
+        <div class="point-body"><h3>이론이 아닌, 실습 100%</h3><p>강의만 듣고 끝나지 않습니다. <b>프로젝트로 직접 만들며</b> 익혀 수료 즉시 현업에 적용합니다.</p></div>
+      </article>
+      <article class="point-row">
+        <span class="point-no">02</span>
+        <div class="point-body"><h3>비전공자·입문자도 완주</h3><p>코딩 지식이 없어도 괜찮습니다. <b>단계별 눈높이 설계</b>로 처음이어도 끝까지 따라올 수 있습니다.</p></div>
+      </article>
+      <article class="point-row">
+        <span class="point-no">03</span>
+        <div class="point-body"><h3>현장 전문가의 밀착 멘토링</h3><p>막히는 지점은 <b>현업 전문가의 피드백</b>으로 바로 해결합니다. 혼자가 아니라 함께 배웁니다.</p></div>
+      </article>
+      <article class="point-row">
+        <span class="point-no">04</span>
+        <div class="point-body"><h3>수료 후에도 이어지는 커뮤니티</h3><p>비영리 공익 교육기관으로서, 수료 후에도 <b>AI 활용 네트워크</b>에서 지속적으로 성장합니다.</p></div>
+      </article>
     </div>
   </div>
 </section>
 
-<!-- 신청 안내 -->
+<!-- 신청 절차 -->
 <section class="section" id="apply">
   <div class="container">
     <div class="section-head">
-      <div><h2 class="section-title c-green">신청 안내</h2><span class="section-en">HOW TO APPLY</span></div>
+      <div><h2 class="section-title c-green">신청 절차</h2><span class="section-en">HOW TO APPLY</span></div>
     </div>
-    <p class="section-lede">아래 절차에 따라 간편하게 신청하실 수 있습니다. 과정·일정·수강료 등 자세한 내용은 교육 문의로 안내해 드립니다.</p>
+    <p class="section-lede">아래 절차에 따라 간편하게 신청하실 수 있습니다. 과정·일정 등 자세한 내용은 교육 문의로 안내해 드립니다.</p>
     <ol class="esg-flow esg-flow--apply" aria-label="신청 절차">
       <li><span class="ef-no">STEP 1</span><h3>교육 신청</h3><p>신청 폼 작성</p></li>
       <li><span class="ef-no">STEP 2</span><h3>상담 안내</h3><p>과정·일정 안내</p></li>
       <li><span class="ef-no">STEP 3</span><h3>등록</h3><p>수강 확정</p></li>
       <li><span class="ef-no">STEP 4</span><h3>교육 시작</h3><p>실습·프로젝트</p></li>
     </ol>
+  </div>
+</section>
 
-    <div class="solar-closing">
-      <p><strong>AI는 더 이상 전문가만의 도구가 아닙니다.</strong> 시민·직장인·소상공인·공공기관 누구나 AI를 업무와 일상에 활용할 수 있도록, 도시공동체본부가 함께합니다.</p>
-      <div class="region-cta" style="justify-content:center">
-        <a class="btn btn-primary" href="/learn/apply">교육 신청하기</a>
-        <a class="btn btn-ghost" href="/#contact">교육·컨설팅 문의</a>
-      </div>
+<!-- FAQ -->
+<section class="section section--alt" id="faq">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-orange">자주 묻는 질문</h2><span class="section-en">FAQ</span></div>
+    </div>
+    <div class="faq-list">
+      <details class="faq-item"><summary>누구나 신청할 수 있나요?</summary><div class="faq-a">네. AI가 처음인 시민·입문자부터 직장인·소상공인·공공기관 담당자까지 누구나 참여하실 수 있습니다. 수준에 맞는 단계별 과정으로 안내해 드립니다.</div></details>
+      <details class="faq-item"><summary>코딩을 전혀 몰라도 괜찮나요?</summary><div class="faq-a">네. 이 과정은 코딩이 아니라 <b>프롬프트와 AI 도구 활용</b>이 중심입니다. 비전공자·입문자도 따라올 수 있도록 설계되어 있습니다.</div></details>
+      <details class="faq-item"><summary>어떤 결과물을 얻게 되나요?</summary><div class="faq-a">내 업무나 우리 지역 문제에 바로 적용할 수 있는 <b>AI 활용 프로젝트 결과물</b>(업무 자동화 도우미, 분석·자동 보고, 현장 해결안)을 직접 완성합니다.</div></details>
+      <details class="faq-item"><summary>교육은 어떻게 진행되나요?</summary><div class="faq-a">실시간 온라인 강의와 실습 프로젝트로 진행되며, 현장 전문가의 멘토링과 수료 후 커뮤니티 활동이 함께 제공됩니다. 세부 일정은 신청 후 안내드립니다.</div></details>
+      <details class="faq-item"><summary>수료 후 어떤 혜택이 있나요?</summary><div class="faq-a">수료증과 함께 AI 활용 커뮤니티 참여 자격이 주어지며, 심화 과정·강사·컨설턴트 양성 트랙으로 이어질 수 있습니다.</div></details>
+    </div>
+    <p class="faq-more">더 궁금한 점이 있으신가요? <a href="/#contact">교육 문의하기 →</a></p>
+  </div>
+</section>
+
+<!-- 마감 CTA -->
+<section class="final-cta">
+  <div class="container">
+    <h2>AI는 더 이상 전문가만의 도구가 아닙니다</h2>
+    <p>시민·직장인·소상공인·공공기관 누구나 AI를 업무와 일상에 활용할 수 있도록,<br>도시공동체본부가 함께합니다. 지금 시작하세요.</p>
+    <div class="final-cta-btns">
+      <a class="btn btn-primary btn-lg" href="/learn/apply">교육 신청하기 →</a>
+      <a class="btn btn-ghost-light btn-lg" href="/#contact">교육·컨설팅 문의</a>
     </div>
   </div>
 </section>
+
+<!-- 모바일 고정 신청 바 -->
+<div class="lp-sticky" id="lpSticky" aria-hidden="true">
+  <span class="lp-sticky-text">AI활용전문가과정</span>
+  <a class="btn btn-primary" href="/learn/apply">교육 신청하기</a>
+</div>
+<script>
+(function(){
+  var bar=document.getElementById('lpSticky'); if(!bar) return;
+  function onScroll(){ if(window.scrollY>600) bar.classList.add('is-show'); else bar.classList.remove('is-show'); }
+  window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+})();
+</script>
 
 <%- include('partials/footer') %>
