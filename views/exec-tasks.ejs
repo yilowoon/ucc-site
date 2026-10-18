@@ -18,6 +18,11 @@
   .tk-sum .caret{flex:none;color:var(--muted);transition:transform .15s;font-size:.8rem}
   .tk-item[open] .tk-sum .caret{transform:rotate(90deg)}
   .tk-sum .s-title{flex:1;min-width:0;font-weight:800;color:var(--green-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tk-sum .s-seg{flex:0 0 auto;display:flex;gap:2px;width:120px;height:9px}
+  .tk-sum .s-seg .seg{flex:1;background:var(--paper-warm,#eee);border:1px solid var(--line);border-radius:3px}
+  .tk-sum .s-seg .seg.on{background:#2b8a5a;border-color:#2b8a5a}
+  .tk-sum .s-rate{flex:none;font-size:.76rem;font-weight:800;color:var(--green-800);min-width:34px;text-align:right}
+  @media(max-width:620px){.tk-sum .s-seg{display:none}.tk-sum .s-rate{min-width:30px}}
   .tk-sum .s-upd{flex:none;color:var(--muted);font-size:.8rem;white-space:nowrap}
   .tk-sum:hover{background:#fcfbf7}
   .tk-item[open] .tk-sum{border-bottom:1px solid var(--line)}
@@ -107,11 +112,17 @@
     </div>
     <% } %>
     <div class="tk-cards">
-        <% tasks.forEach(function(t){ var openIt = (edit && edit.id === t.id) || (typeof openId !== 'undefined' && openId === t.id); %>
+        <% tasks.forEach(function(t){ var openIt = (edit && edit.id === t.id) || (typeof openId !== 'undefined' && openId === t.id); var cardSteps = parseSteps(t.steps); %>
           <details class="tk-item tk-item--<%= t.status %>"<%= openIt ? ' open' : '' %> id="task-<%= t.id %>">
             <summary class="tk-sum">
               <span class="caret">▶</span>
               <span class="s-title"><%= esc(t.title) %></span>
+              <% if (cardSteps.length) { %>
+                <span class="s-seg" title="단계 <%= cardSteps.filter(function(s0){return s0.done;}).length %>/<%= cardSteps.length %> 완료">
+                  <% cardSteps.forEach(function(sp, i){ %><span class="seg<%= sp.done ? ' on' : '' %>" title="<%= i+1 %>. <%= esc(sp.label) %><%= sp.done ? ' (완료)' : '' %>"></span><% }); %>
+                </span>
+                <span class="s-rate"><%= t.rate || 0 %>%</span>
+              <% } %>
               <span class="st-badge st-<%= t.status %>"><%= t.status %></span>
               <span class="s-upd"><%= t.updated_at ? fmtDate(t.updated_at) : '-' %></span>
             </summary>
@@ -122,7 +133,6 @@
               <% if (t.due_date) { %><span><span class="mk">완료예정</span><%= esc(t.due_date) %></span><% } %>
               <% if (t.updated_at) { %><span><span class="mk">갱신</span><%= fmtDate(t.updated_at) %></span><% } %>
             </div>
-            <% var cardSteps = parseSteps(t.steps); %>
             <div class="tk-rate">
               <% if (cardSteps.length) { %>
                 <div class="tk-seg" title="단계 <%= cardSteps.filter(function(s0){return s0.done;}).length %>/<%= cardSteps.length %> 완료">
