@@ -44,7 +44,8 @@ function parseSteps(v) {
   try {
     const a = JSON.parse(v || "[]");
     return Array.isArray(a) ? a.filter((x) => x && x.label != null)
-      .map((x) => ({ label: String(x.label || "").slice(0, 200), done: !!x.done, due: normDate(x.due) })) : [];
+      .map((x) => ({ label: String(x.label || "").slice(0, 200), done: !!x.done, due: normDate(x.due),
+                     owner: String(x.owner || "").slice(0, 80), lead: String(x.lead || "").slice(0, 80) })) : [];
   } catch (_) { return []; }
 }
 function rateFromSteps(steps) {
@@ -52,20 +53,24 @@ function rateFromSteps(steps) {
   return Math.round((steps.filter((s0) => s0.done).length / steps.length) * 100);
 }
 function stepsToJson(steps) {
-  return JSON.stringify((steps || []).map((s0) => ({ label: String(s0.label || "").slice(0, 200), done: !!s0.done, due: normDate(s0.due) })));
+  return JSON.stringify((steps || []).map((s0) => ({ label: String(s0.label || "").slice(0, 200), done: !!s0.done, due: normDate(s0.due),
+                                                     owner: String(s0.owner || "").slice(0, 80), lead: String(s0.lead || "").slice(0, 80) })));
 }
-/** 폼 배열(step_label, step_done, step_due)에서 steps 구성. 없으면 null 반환(단계 미지정) */
+/** 폼 배열(step_label, step_done, step_due, step_owner, step_lead)에서 steps 구성. 없으면 null 반환(단계 미지정) */
 function stepsFromBody(b) {
   if (b.step_label == null) return null;
-  let L = b.step_label, D = b.step_done, U = b.step_due;
+  let L = b.step_label, D = b.step_done, U = b.step_due, O = b.step_owner, G = b.step_lead;
   if (!Array.isArray(L)) L = [L];
   if (!Array.isArray(D)) D = D == null ? [] : [D];
   if (!Array.isArray(U)) U = U == null ? [] : [U];
+  if (!Array.isArray(O)) O = O == null ? [] : [O];
+  if (!Array.isArray(G)) G = G == null ? [] : [G];
   const steps = [];
   for (let i = 0; i < L.length; i++) {
     const label = String(L[i] == null ? "" : L[i]).trim();
     if (!label) continue;
-    steps.push({ label: label.slice(0, 200), done: String(D[i] == null ? "0" : D[i]) === "1", due: normDate(U[i]) });
+    steps.push({ label: label.slice(0, 200), done: String(D[i] == null ? "0" : D[i]) === "1", due: normDate(U[i]),
+                 owner: String(O[i] == null ? "" : O[i]).trim().slice(0, 80), lead: String(G[i] == null ? "" : G[i]).trim().slice(0, 80) });
   }
   return steps;
 }

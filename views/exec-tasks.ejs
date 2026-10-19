@@ -51,6 +51,8 @@
   .step-main{display:flex;align-items:center;gap:8px}
   .step-row .step-no{flex:none;width:22px;height:22px;border-radius:50%;background:#fff;border:1px solid var(--line);color:var(--muted);font-size:.74rem;font-weight:800;display:flex;align-items:center;justify-content:center}
   .step-label-in{flex:1 1 auto;width:100%;min-width:0}
+  .step-sub{display:flex;gap:7px;padding-left:30px}
+  .step-person{flex:1 1 50%;min-width:0;width:auto !important}
   .step-ctrls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-left:30px}
   .step-due-wrap{flex:0 0 auto;display:flex;align-items:center;gap:5px;font-size:.74rem;font-weight:700;color:var(--muted);white-space:nowrap}
   .step-due-in{width:auto;padding:6px 8px}
@@ -66,7 +68,10 @@
   .tk-step.done{background:#f1f8f3;border-color:#cfe6d7}
   .tk-step-ico{flex:none;width:20px;height:20px;border-radius:50%;background:var(--paper-warm,#eee);color:var(--muted);font-size:.72rem;font-weight:800;display:flex;align-items:center;justify-content:center}
   .tk-step.done .tk-step-ico{background:#2b8a5a;color:#fff}
-  .tk-step-label{flex:1;min-width:0;font-size:.9rem;color:var(--ink)}
+  .tk-step-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .tk-step-label{min-width:0;font-size:.9rem;color:var(--ink)}
+  .tk-step-persons{font-size:.74rem;color:var(--muted)}
+  .tk-step-persons b{color:var(--green-800);font-weight:700}
   .tk-step-due{flex:none;font-size:.74rem;font-weight:700;color:#8a6d00;background:#fdf6e3;border:1px solid #efe2b8;border-radius:6px;padding:2px 7px;white-space:nowrap}
   .tk-step.done .tk-step-label{color:var(--muted);text-decoration:line-through}
   .tk-step-btn{flex:none;font-weight:800}
@@ -149,7 +154,12 @@
                   <% cardSteps.forEach(function(sp, i){ %>
                     <div class="tk-step<%= sp.done ? ' done' : '' %>">
                       <span class="tk-step-ico"><%= sp.done ? '✓' : (i+1) %></span>
-                      <span class="tk-step-label"><%= esc(sp.label) %></span>
+                      <div class="tk-step-main">
+                        <span class="tk-step-label"><%= esc(sp.label) %></span>
+                        <% if (sp.owner || sp.lead) { %>
+                          <span class="tk-step-persons"><% if (sp.owner) { %>담당 <b><%= esc(sp.owner) %></b><% } %><% if (sp.owner && sp.lead) { %> · <% } %><% if (sp.lead) { %>책임 <b><%= esc(sp.lead) %></b><% } %></span>
+                        <% } %>
+                      </div>
                       <% if (sp.due) { %><span class="tk-step-due">~<%= esc(sp.due) %></span><% } %>
                       <form action="/exec/tasks/<%= t.id %>/step/toggle" method="post" style="margin:0">
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
@@ -248,6 +258,10 @@
         '<span class="step-no"></span>' +
         '<input type="text" class="step-label-in" name="step_label" value="" placeholder="단계 내용 (예: 공고 확인 / 지원서 작성 / 최종 제출)" oninput="recalcRate()" />' +
       '</div>' +
+      '<div class="step-sub">' +
+        '<input type="text" class="step-person" name="step_owner" value="" placeholder="담당자" />' +
+        '<input type="text" class="step-person" name="step_lead" value="" placeholder="책임자" />' +
+      '</div>' +
       '<div class="step-ctrls">' +
         '<label class="step-due-wrap">완료예정 <input type="date" class="step-due-in" name="step_due" value="" /></label>' +
         '<input type="hidden" name="step_done" value="' + (done ? '1':'0') + '" />' +
@@ -265,6 +279,8 @@
       var row = tmp.firstChild;
       row.querySelector('input[name="step_label"]').value = sp.label || '';
       row.querySelector('input[name="step_due"]').value = sp.due || '';
+      row.querySelector('input[name="step_owner"]').value = sp.owner || '';
+      row.querySelector('input[name="step_lead"]').value = sp.lead || '';
       list.appendChild(row);
     });
     renumberSteps(); recalcRate();
