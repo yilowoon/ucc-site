@@ -16,6 +16,7 @@ const kakaoMemo = require("../kakao"); // 카카오톡 '나에게 보내기' 자
 const solapi = require("../solapi"); // 카카오 친구톡(솔라피) — 회원 대상 1000자 발송
 const calevents = require("../calevents"); // 회원 캘린더 사이트 일정
 const aistats = require("../aistats"); // AI과정 수료생 현황·소속기관
+const kb = require("../kb");            // 챗봇 지식베이스(RAG)
 
 // ---- 업로드 설정 ----
 const ALLOWED_EXT = new Set([
@@ -320,6 +321,21 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     const hash = bcrypt.hashSync(newpw, 10);
     db.prepare("UPDATE admins SET password_hash = ? WHERE id = ?").run(hash, admin.id);
     res.render("admin-password", { ...res.locals, title: "비밀번호 변경", error: null, done: true });
+  });
+
+  // ---------- 챗봇 지식베이스(RAG) 관리 ----------
+  router.get("/kb", requireAdmin, (req, res) => {
+    const st = kb.stats();
+    const samples = kb.getChunks().slice(0, 40).map((c) => ({ title: c.title, source: c.source, url: c.url, len: c.text.length }));
+    res.render("admin-kb", {
+      ...res.locals, title: "챗봇 지식베이스(RAG)",
+      stats: st, samples, geminiOn: !!process.env.GEMINI_API_KEY,
+      msg: req.query.msg || "", err: req.query.err || "",
+    });
+  });
+  router.post("/kb/rebuild", requireAdmin, verifyCsrf, (req, res) => {
+    try { kb.rebuild(); res.redirect("/admin/kb?msg=" + encodeURIComponent("지식베이스를 다시 색인했습니다.")); }
+    catch (e) { res.redirect("/admin/kb?err=" + encodeURIComponent("재색인 실패: " + e.message)); }
   });
 
   // ---------- 카카오톡 자동발송(지구촌소식브리프 '나에게 보내기') ----------

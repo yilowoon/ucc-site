@@ -10,8 +10,11 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { PAGES } = require("./pages");
 const cfg = require("./config");
+const { db, UPLOAD_DIR } = require("./db");
+const fileparse = require("./fileparse");
 
 const VIEWS = path.join(__dirname, "..", "views");
+const REBUILD_TTL_MS = 10 * 60 * 1000; // DB·파일 콘텐츠 변동 반영(10분)
 
 /* 안정 앵커: 기관 개요·연락처(형식이 바뀌어도 정확히 유지) */
 const CORE =
@@ -97,44 +100,110 @@ function boardsText() {
   return "[알림마당]\n" + list;
 }
 
+/* 게시물(알림마당 글) — DB 콘텐츠를 RAG 데이터로 */
+function postChunks() {
+  const out = [];
+  try {
+    const rows = db.prepare("SELECT id, board, title, content, created_at FROM posts ORDER BY created_at DESC").all();
+    for (const p of rows) {
+      const text = stripHtml(p.content || "");
+      if (!text) continue;
+      const bname = (cfg.BOARDS[p.board] && cfg.BOARDS[p.board].name) || p.board || "게시판";
+      out.push({ title: `${bname} · ${p.title}`, text: clip(text, 1500), source: "게시물",
+        url: `/board/${p.board}/${p.id}`, date: String(p.created_at || "").slice(0, 10) });
+    }
+  } catch (_) {}
+  return out;
+}
+
+/* 뉴스레터(데일리뉴스·지구촌소식브리프) — 제목+요약 */
+function newsletterChunks() {
+  const out = [];
+  try {
+    const rows = db.prepare("SELECT id, title, summary, content, published_at FROM newsletter ORDER BY published_at DESC LIMIT 180").all();
+    for (const n of rows) {
+      const text = stripHtml((n.summary || "") + " " + (n.content || ""));
+      if (!text) continue;
+      out.push({ title: `뉴스 · ${n.title}`, text: clip(text, 800), source: "뉴스레터",
+        url: `/newsletter/${n.id}`, date: String(n.published_at || "").slice(0, 10) });
+    }
+  } catch (_) {}
+  return out;
+}
+
+/* 업로드 자료(문서) — docx/pptx/txt 등 파싱 */
+function fileChunks() {
+  const out = [];
+  let files = [];
+  try { files = fs.readdirSync(UPLOAD_DIR); } catch (_) { return out; }
+  for (const f of files) {
+    if (!fileparse.PARSEABLE.test(f)) continue;
+    let text = "";
+    try { text = fileparse.extractText(path.join(UPLOAD_DIR, f)); } catch (_) {}
+    if (!text) continue;
+    text = text.replace(/\s+/g, " ").trim();
+    const base = f.replace(/\.[^.]+$/, "");
+    // 해시형 파일명이면 본문 앞부분을 제목으로
+    const title = /^[0-9a-f]{10,}$/i.test(base) ? clip(text, 46).replace(/ …$/, "") : base;
+    out.push({ title: `자료 · ${title}`, text: clip(text, 2200), source: "업로드자료",
+      url: `/uploads/${encodeURIComponent(f)}` });
+  }
+  return out;
+}
+
 /* -------------------------------------------------- KB 조립 + 청크 */
-let _kb = null, _chunks = null;
+let _kb = null, _chunks = null, _builtAt = 0;
+
+function toChunk(title, text, source, url, date) {
+  return { title, text, source: source || "안내", url: url || "", date: date || "",
+    titleKey: String(title).normalize("NFC").toLowerCase(),
+    key: (title + " " + text).normalize("NFC").toLowerCase() };
+}
 
 function build() {
-  const parts = [CORE];
+  const chunks = [];
+  // 1) 안정 앵커(기관 개요)
+  chunks.push(toChunk("기관 개요", CORE.replace(/^\[기관 개요\]\n/, ""), "안내"));
 
-  // PAGES(본부소개·회원·교육 등) 전부 자동 포함
+  // 2) PAGES(본부소개·회원·교육 등)
   for (const key of Object.keys(PAGES)) {
     const p = PAGES[key];
     const text = stripHtml(p.html || "");
-    if (text) parts.push(`[${p.title}]\n${clip(text, 1200)}`);
+    if (text) chunks.push(toChunk(p.title, clip(text, 1200), "안내", p.path || ""));
   }
-
-  parts.push(boardsText());
-
+  // 3) 알림마당 개요 + 사람들 + 프로젝트 뷰
+  chunks.push(toChunk("알림마당", boardsText().replace(/^\[알림마당\]\n/, ""), "안내"));
   const pe = peopleText();
-  if (pe) parts.push(pe);
-
+  if (pe) chunks.push(toChunk("사람들", pe.replace(/^\[사람들\]\n/, ""), "안내", "/members/board"));
   for (const [label, file] of EXTRA_VIEWS) {
     const t = stripHtml(stripEjs(readView(file)));
-    if (t) parts.push(`[${label}]\n${clip(t, 900)}`);
+    if (t) chunks.push(toChunk(label, clip(t, 900), "안내"));
   }
+  // 4) DB 콘텐츠(게시물·뉴스레터) + 업로드 자료
+  for (const c of postChunks()) chunks.push(toChunk(c.title, c.text, c.source, c.url, c.date));
+  for (const c of newsletterChunks()) chunks.push(toChunk(c.title, c.text, c.source, c.url, c.date));
+  for (const c of fileChunks()) chunks.push(toChunk(c.title, c.text, c.source, c.url));
 
-  _kb = parts.join("\n\n");
-
-  // 로컬 검색용 청크(섹션 단위)
-  _chunks = parts.map((blk) => {
-    const nl = blk.indexOf("\n");
-    const title = nl > 0 ? blk.slice(0, nl).replace(/^\[|\]$/g, "").trim() : "";
-    const text = nl > 0 ? blk.slice(nl + 1).trim() : blk.trim();
-    return { title, text, titleKey: title.normalize("NFC").toLowerCase(), key: (title + " " + text).normalize("NFC").toLowerCase() };
-  }).filter((c) => c.text);
-
+  _chunks = chunks.filter((c) => c.text);
+  _kb = _chunks.map((c) => `[${c.title}]\n${c.text}`).join("\n\n");
+  _builtAt = Date.now();
   return _kb;
 }
 
-function getKB() { if (_kb == null) build(); return _kb; }
-function getChunks() { if (_chunks == null) build(); return _chunks; }
-function rebuild() { _kb = null; _chunks = null; return getKB(); }
+function ensureFresh() {
+  if (_chunks == null || Date.now() - _builtAt > REBUILD_TTL_MS) build();
+}
+function getKB() { ensureFresh(); return _kb; }
+function getChunks() { ensureFresh(); return _chunks; }
+function rebuild() { _kb = null; _chunks = null; _builtAt = 0; return getKB(); }
 
-module.exports = { getKB, getChunks, rebuild };
+/* 지식베이스 현황(관리자용) */
+function stats() {
+  ensureFresh();
+  const bySource = {};
+  let chars = 0;
+  for (const c of _chunks) { bySource[c.source] = (bySource[c.source] || 0) + 1; chars += c.text.length; }
+  return { total: _chunks.length, bySource, chars, builtAt: new Date(_builtAt).toISOString() };
+}
+
+module.exports = { getKB, getChunks, rebuild, stats };

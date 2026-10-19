@@ -1,0 +1,68 @@
+<%- include('partials/header') %>
+<style>
+  .kb-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:8px 0 20px}
+  .kb-card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow-sm)}
+  .kb-card .k{font-size:.8rem;color:var(--muted);font-weight:700}
+  .kb-card .v{font-size:1.7rem;font-weight:800;color:var(--green-800);line-height:1.1;margin-top:4px}
+  .kb-src{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 18px}
+  .kb-src .chip{font-size:.82rem;font-weight:700;border:1px solid var(--line);border-radius:999px;padding:5px 12px;background:var(--paper)}
+  .kb-src .chip b{color:var(--green-800)}
+  .kb-table{width:100%;border-collapse:collapse;font-size:.9rem}
+  .kb-table th{background:var(--paper-warm,#f6f4ee);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:.82rem;color:var(--green-800)}
+  .kb-table td{padding:9px 12px;border-bottom:1px solid var(--line)}
+  .kb-table .muted{color:var(--muted)}
+  .kb-src-tag{font-size:.72rem;font-weight:800;border-radius:6px;padding:2px 7px;background:#eef1f3;color:#51606b;white-space:nowrap}
+</style>
+<div class="container admin-wrap">
+  <div class="admin-head">
+    <div>
+      <h1>챗봇 지식베이스 (RAG)</h1>
+      <p class="admin-sub">홈페이지의 공식 정보(소개 페이지·게시물·뉴스·업로드 자료)를 색인해 챗봇 답변의 근거로 사용합니다. 질문이 오면 관련 조각을 검색해 Gemini로 심층 답변합니다.</p>
+    </div>
+    <div class="admin-head-actions">
+      <a class="btn btn-neutral btn-sm" href="/admin">대시보드</a>
+      <form method="post" action="/admin/kb/rebuild" style="margin:0" onsubmit="var b=this.querySelector('button');b.disabled=true;b.textContent='재색인 중…';">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit" class="btn btn-primary btn-sm">🔄 다시 색인</button>
+      </form>
+    </div>
+  </div>
+
+  <% if (msg) { %><p class="form-alert ok"><%= msg %></p><% } %>
+  <% if (err) { %><p class="form-alert err"><%= err %></p><% } %>
+
+  <div class="kb-cards">
+    <div class="kb-card"><span class="k">색인 조각(청크)</span><span class="v"><%= stats.total %></span></div>
+    <div class="kb-card"><span class="k">총 글자수</span><span class="v"><%= stats.chars.toLocaleString() %></span></div>
+    <div class="kb-card"><span class="k">Gemini 연동</span><span class="v" style="<%= geminiOn ? 'color:#2b8a5a' : 'color:#c5221f' %>"><%= geminiOn ? 'ON' : 'OFF' %></span></div>
+    <div class="kb-card"><span class="k">마지막 색인</span><span class="v" style="font-size:1rem"><%= (typeof fmtDateTime !== 'undefined') ? fmtDateTime(stats.builtAt) : stats.builtAt.slice(0,16).replace('T',' ') %></span></div>
+  </div>
+
+  <div class="kb-src">
+    <% Object.keys(stats.bySource).forEach(function(s){ %>
+      <span class="chip"><%= s %> <b><%= stats.bySource[s] %></b></span>
+    <% }); %>
+  </div>
+
+  <% if (!geminiOn) { %>
+    <p class="form-alert err" style="margin-bottom:16px">서버에 <b>GEMINI_API_KEY</b>가 설정되지 않아 현재는 로컬 검색(발췌) 방식으로만 답합니다. 심층 답변을 위해 서버 <code>.env</code>에 키를 설정하세요.</p>
+  <% } %>
+
+  <div class="admin-auth-card" style="max-width:none;padding:0;overflow:hidden">
+    <table class="kb-table">
+      <thead><tr><th>제목</th><th style="width:110px">출처</th><th style="width:70px">글자</th><th style="width:60px">링크</th></tr></thead>
+      <tbody>
+        <% samples.forEach(function(c){ %>
+          <tr>
+            <td><%= esc(c.title) %></td>
+            <td><span class="kb-src-tag"><%= c.source %></span></td>
+            <td class="muted"><%= c.len %></td>
+            <td><% if (c.url) { %><a href="<%= c.url %>" target="_blank" rel="noopener">보기</a><% } else { %><span class="muted">-</span><% } %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <p class="field-hint" style="margin-top:10px">상위 40개만 표시합니다. 게시물·자료를 추가하거나 수정한 뒤에는 <b>다시 색인</b>을 누르면 즉시 반영됩니다(자동으로도 10분마다 갱신).</p>
+</div>
+<%- include('partials/footer') %>
