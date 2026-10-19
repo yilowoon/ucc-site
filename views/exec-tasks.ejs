@@ -6,6 +6,18 @@
   .tk-form label{display:block;font-size:.82rem;font-weight:700;color:var(--ink-soft);margin-bottom:5px}
   .tk-form input,.tk-form select,.tk-form textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:.92rem;font-family:inherit}
   .tk-form textarea{resize:vertical;min-height:60px}
+  /* 우선순위 필터 */
+  .pri-filter{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+  .pri-filter .pf-label{font-size:.8rem;font-weight:800;color:var(--muted);margin-right:3px}
+  .pri-btn{border:1px solid var(--line);background:#fff;color:var(--ink-soft);font-weight:700;font-size:.82rem;border-radius:999px;padding:6px 13px;cursor:pointer}
+  .pri-btn.on{background:var(--green-800);border-color:var(--green-800);color:#fff}
+  .pri-btn .cnt{opacity:.7;font-weight:800;margin-left:4px}
+  /* 우선순위 칩 */
+  .pri-chip{flex:none;font-size:.7rem;font-weight:800;border-radius:6px;padding:2px 7px;white-space:nowrap}
+  .pri-시급{background:#c5221f;color:#fff}
+  .pri-높음{background:#e8830c;color:#fff}
+  .pri-보통{background:#e8ebee;color:#51606b}
+  .pri-낮음{background:#eef1f3;color:#9aa4ad}
   .tk-listhead{display:flex;align-items:center;gap:12px;padding:4px 16px 8px;font-size:.76rem;font-weight:800;color:var(--muted)}
   .tk-listhead .lh-title{flex:1;padding-left:22px}
   .tk-listhead .lh-st{flex:none;width:52px;text-align:center}
@@ -111,15 +123,27 @@
       <div class="admin-auth-card"><p class="field-hint" style="margin:0">등록된 업무가 없습니다. 위 ‘+ 새 업무 등록’으로 추가하거나, 회의록에서 ‘AI로 업무 정리’를 해보세요.</p></div>
     <% } %>
     <% if (tasks.length) { %>
+    <%
+      var priCount = {}; PRIORITIES.forEach(function(p){ priCount[p]=0; });
+      tasks.forEach(function(t){ var p = PRIORITIES.indexOf(t.priority) >= 0 ? t.priority : '보통'; priCount[p]++; });
+    %>
+    <div class="pri-filter">
+      <span class="pf-label">우선순위</span>
+      <button type="button" class="pri-btn on" data-pf="" onclick="filterPri(this,'')">전체 <span class="cnt"><%= tasks.length %></span></button>
+      <% PRIORITIES.forEach(function(p){ %>
+        <button type="button" class="pri-btn" data-pf="<%= p %>" onclick="filterPri(this,'<%= p %>')"><%= p %> <span class="cnt"><%= priCount[p] %></span></button>
+      <% }); %>
+    </div>
     <div class="tk-listhead">
       <span class="lh-title">업무명</span><span class="lh-st">상태</span><span class="lh-upd">마지막 업데이트</span>
     </div>
     <% } %>
     <div class="tk-cards">
-        <% tasks.forEach(function(t){ var openIt = (edit && edit.id === t.id) || (typeof openId !== 'undefined' && openId === t.id); var cardSteps = parseSteps(t.steps); %>
-          <details class="tk-item tk-item--<%= t.status %>"<%= openIt ? ' open' : '' %> id="task-<%= t.id %>">
+        <% tasks.forEach(function(t){ var openIt = (edit && edit.id === t.id) || (typeof openId !== 'undefined' && openId === t.id); var cardSteps = parseSteps(t.steps); var pri = PRIORITIES.indexOf(t.priority) >= 0 ? t.priority : '보통'; %>
+          <details class="tk-item tk-item--<%= t.status %>"<%= openIt ? ' open' : '' %> id="task-<%= t.id %>" data-pri="<%= pri %>">
             <summary class="tk-sum">
               <span class="caret">▶</span>
+              <span class="pri-chip pri-<%= pri %>"><%= pri %></span>
               <span class="s-title"><%= esc(t.title) %></span>
               <% if (cardSteps.length) { %>
                 <span class="s-seg" title="단계 <%= cardSteps.filter(function(s0){return s0.done;}).length %>/<%= cardSteps.length %> 완료">
@@ -215,10 +239,17 @@
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <input type="hidden" name="id" id="tfId" value="" />
       <div class="field"><label>업무명</label><input type="text" name="title" id="tfTitle" required placeholder="예: 충남연구원 AI 스터디그룹 운영" /></div>
-      <div class="field"><label>상태</label>
-        <select name="status" id="tfStatus">
-          <% STATUSES.forEach(function(st){ %><option value="<%= st %>"><%= st %></option><% }); %>
-        </select>
+      <div style="display:flex;gap:10px">
+        <div class="field" style="flex:1"><label>상태</label>
+          <select name="status" id="tfStatus">
+            <% STATUSES.forEach(function(st){ %><option value="<%= st %>"><%= st %></option><% }); %>
+          </select>
+        </div>
+        <div class="field" style="flex:1"><label>우선순위</label>
+          <select name="priority" id="tfPriority">
+            <% PRIORITIES.forEach(function(p){ %><option value="<%= p %>" <%= p==='보통' ? 'selected' : '' %>><%= p %></option><% }); %>
+          </select>
+        </div>
       </div>
       <div class="field"><label>담당(매니징)</label><input type="text" name="manager" id="tfManager" placeholder="예: 이형구" /></div>
       <div class="field"><label>참여자</label><input type="text" name="participants" id="tfParticipants" placeholder="쉼표로 구분" /></div>
@@ -241,7 +272,7 @@
     </div>
   </form>
 </dialog>
-<script id="tasksData" type="application/json"><%- JSON.stringify(tasks.map(function(t){ return {id:t.id,title:t.title,status:t.status,manager:t.manager,participants:t.participants,due_date:t.due_date||'',issues:t.issues,detail:t.detail,progress:t.progress,steps:parseSteps(t.steps)}; })).replace(/</g,'\\u003c') %></script>
+<script id="tasksData" type="application/json"><%- JSON.stringify(tasks.map(function(t){ return {id:t.id,title:t.title,status:t.status,priority:t.priority||'보통',manager:t.manager,participants:t.participants,due_date:t.due_date||'',issues:t.issues,detail:t.detail,progress:t.progress,steps:parseSteps(t.steps)}; })).replace(/</g,'\\u003c') %></script>
 
 <script>
   var TASK_MAP = {};
@@ -288,6 +319,7 @@
     document.getElementById('tfId').value = '';
     document.getElementById('tfTitle').value = '';
     document.getElementById('tfStatus').value = '진행중';
+    document.getElementById('tfPriority').value = '보통';
     document.getElementById('tfManager').value = '';
     document.getElementById('tfParticipants').value = '';
     document.getElementById('tfDue').value = '';
@@ -304,6 +336,7 @@
     document.getElementById('tfId').value = t.id;
     document.getElementById('tfTitle').value = t.title || '';
     document.getElementById('tfStatus').value = t.status || '진행중';
+    document.getElementById('tfPriority').value = t.priority || '보통';
     document.getElementById('tfManager').value = t.manager || '';
     document.getElementById('tfParticipants').value = t.participants || '';
     document.getElementById('tfDue').value = t.due_date || '';
@@ -315,6 +348,13 @@
   }
   function closeDlg(){ dlg.close(); }
   dlg.addEventListener('click', function(e){ if (e.target === dlg) dlg.close(); }); // 배경 클릭 닫기
+
+  function filterPri(btn, pri){
+    document.querySelectorAll('.pri-filter .pri-btn').forEach(function(b){ b.classList.toggle('on', b === btn); });
+    document.querySelectorAll('.tk-cards .tk-item').forEach(function(it){
+      it.style.display = (!pri || it.getAttribute('data-pri') === pri) ? '' : 'none';
+    });
+  }
 
   function recalcRate(){
     var rows = document.querySelectorAll('#stepList .step-row');

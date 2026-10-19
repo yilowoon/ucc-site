@@ -92,7 +92,7 @@ module.exports = function execRoutes({ verifyCsrf }) {
   router.get("/tasks", requireExec, (req, res) => {
     const edit = req.query.edit ? meetings.getTask(parseInt(req.query.edit, 10)) : null;
     res.render("exec-tasks", {
-      ...res.locals, title: "업무관리", STATUSES: meetings.STATUSES,
+      ...res.locals, title: "업무관리", STATUSES: meetings.STATUSES, PRIORITIES: meetings.PRIORITIES,
       tasks: meetings.listTasks(), logs: meetings.listLogs(), edit,
       openId: parseInt(req.query.open, 10) || 0, parseSteps: meetings.parseSteps,
       msg: req.query.msg || "", err: req.query.err || "",

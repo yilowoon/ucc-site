@@ -261,6 +261,7 @@ try {
 try { db.exec("ALTER TABLE tasks ADD COLUMN rate INTEGER NOT NULL DEFAULT 0"); } catch (e) {}   // 진행률(0~100) — 단계 완료 비율로 자동 계산
 try { db.exec("ALTER TABLE tasks ADD COLUMN due_date TEXT NOT NULL DEFAULT ''"); } catch (e) {} // 완료예정일(YYYY-MM-DD)
 try { db.exec("ALTER TABLE tasks ADD COLUMN steps TEXT NOT NULL DEFAULT ''"); } catch (e) {}     // 진행 단계 JSON [{label,done}]
+try { db.exec("ALTER TABLE tasks ADD COLUMN priority TEXT NOT NULL DEFAULT '보통'"); } catch (e) {} // 우선순위: 시급|높음|보통|낮음
 
 try { db.exec("ALTER TABLE members ADD COLUMN provider TEXT NOT NULL DEFAULT ''"); } catch (e) {}    // '' | kakao | naver | google
 try { db.exec("ALTER TABLE members ADD COLUMN provider_id TEXT NOT NULL DEFAULT ''"); } catch (e) {} // 제공사 고유 사용자 ID

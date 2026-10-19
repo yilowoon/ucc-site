@@ -4,6 +4,7 @@ const { db } = require("./db");
 const kakao = require("./kakaoparse");
 
 const STATUSES = ["대기", "진행중", "보류", "이슈", "완료"];
+const PRIORITIES = ["시급", "높음", "보통", "낮음"];
 
 /* ---------- 회의록(대화 로그) ---------- */
 function addLog({ title, text, filename, uploadedBy }) {
@@ -82,10 +83,11 @@ function addTask(t) {
   if (steps == null) steps = Array.isArray(t.steps) ? t.steps : [];
   if (status === "완료") steps = steps.map((s0) => ({ ...s0, done: true }));
   const rate = status === "완료" ? 100 : rateFromSteps(steps);
+  const priority = PRIORITIES.includes(t.priority) ? t.priority : "보통";
   const info = db.prepare(
-    "INSERT INTO tasks (title, status, progress, manager, participants, issues, detail, log_id, rate, due_date, steps, created_by, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+    "INSERT INTO tasks (title, status, progress, manager, participants, issues, detail, log_id, rate, due_date, steps, priority, created_by, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
   ).run(String(t.title || "제목 없음").slice(0, 200), status, s(t.progress), s(t.manager, 80), s(t.participants, 200),
-        s(t.issues), s(t.detail), parseInt(t.log_id, 10) || 0, rate, normDate(t.due_date), stepsToJson(steps), s(t.created_by, 80), now, now);
+        s(t.issues), s(t.detail), parseInt(t.log_id, 10) || 0, rate, normDate(t.due_date), stepsToJson(steps), priority, s(t.created_by, 80), now, now);
   return info.lastInsertRowid;
 }
 function updateTask(id, t) {
@@ -96,8 +98,9 @@ function updateTask(id, t) {
   if (steps == null) steps = cur ? parseSteps(cur.steps) : [];   // 폼에 단계가 없으면 기존 유지
   if (status === "완료") steps = steps.map((s0) => ({ ...s0, done: true }));
   const rate = status === "완료" ? 100 : rateFromSteps(steps);
-  db.prepare("UPDATE tasks SET title=?, status=?, progress=?, manager=?, participants=?, issues=?, detail=?, rate=?, due_date=?, steps=?, updated_at=? WHERE id=?")
-    .run(String(t.title || "제목 없음").slice(0, 200), status, s(t.progress), s(t.manager, 80), s(t.participants, 200), s(t.issues), s(t.detail), rate, normDate(t.due_date), stepsToJson(steps), now, id);
+  const priority = PRIORITIES.includes(t.priority) ? t.priority : (cur && cur.priority ? cur.priority : "보통");
+  db.prepare("UPDATE tasks SET title=?, status=?, progress=?, manager=?, participants=?, issues=?, detail=?, rate=?, due_date=?, steps=?, priority=?, updated_at=? WHERE id=?")
+    .run(String(t.title || "제목 없음").slice(0, 200), status, s(t.progress), s(t.manager, 80), s(t.participants, 200), s(t.issues), s(t.detail), rate, normDate(t.due_date), stepsToJson(steps), priority, now, id);
 }
 /** 단계 하나의 완료 상태 토글 → 진행률 재계산 */
 function toggleStep(id, idx) {
@@ -247,4 +250,4 @@ function stats() {
   return { counts, logCount: db.prepare("SELECT COUNT(*) AS n FROM meeting_logs").get().n, taskTotal: db.prepare("SELECT COUNT(*) AS n FROM tasks").get().n };
 }
 
-module.exports = { STATUSES, addLog, listLogs, getLog, logMessages, removeLog, listTasks, getTask, addTask, updateTask, setTaskStatus, appendTaskProgress, toggleStep, parseSteps, removeTask, extractTasksAI, buildKakaoReport, stats };
+module.exports = { STATUSES, PRIORITIES, addLog, listLogs, getLog, logMessages, removeLog, listTasks, getTask, addTask, updateTask, setTaskStatus, appendTaskProgress, toggleStep, parseSteps, removeTask, extractTasksAI, buildKakaoReport, stats };
