@@ -1,5 +1,7 @@
 <%- include('partials/header') %>
 <style>
+  /* 이 페이지의 카드는 로그인용 좁은 카드(420px)가 아니라 전체 폭 패널로 */
+  .admin-wrap .admin-auth-card{max-width:none;padding:22px 24px}
   .chat{max-height:620px;overflow-y:auto;background:var(--paper-warm);border:1px solid var(--line);border-radius:12px;padding:16px}
   .chat-day{text-align:center;color:var(--muted);font-size:.78rem;margin:14px 0 8px;font-weight:700}
   .msg{display:grid;grid-template-columns:96px 1fr;gap:12px;padding:6px 0;align-items:start}
