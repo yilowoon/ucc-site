@@ -9,6 +9,24 @@
   @media(max-width:560px){.msg{grid-template-columns:1fr}.msg .who{text-align:left}}
   .btn-kakao{background:#FEE500;color:#3C1E1E;border:1px solid #f0d800}
   .btn-kakao:hover{background:#f5dc00}
+  /* 파이프라인 단계 */
+  .pipe{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:4px 0 6px}
+  @media(max-width:760px){.pipe{grid-template-columns:1fr}}
+  .pstep{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--paper)}
+  .pstep .pno{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--green-800);color:#fff;font-size:.78rem;font-weight:800;margin-right:7px}
+  .pstep h3{display:flex;align-items:center;margin:0 0 8px;font-size:1rem;color:var(--green-800)}
+  .pstep .pbig{font-size:1.5rem;font-weight:800;color:var(--green-800)}
+  .pstep.done{background:#f1f8f3;border-color:#cfe6d7}
+  .pstep.wait{opacity:.92}
+  .wiki{display:grid;gap:10px}
+  .wiki-item{border:1px solid var(--line);border-left:4px solid var(--gold-500,#cd9b4c);border-radius:10px;padding:12px 14px;background:var(--paper-warm)}
+  .wiki-item b{color:var(--green-800)}
+  .prop{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:10px;display:flex;gap:10px;align-items:flex-start}
+  .prop .pk{flex:none;font-size:.72rem;font-weight:800;border-radius:6px;padding:2px 8px;color:#fff}
+  .pk-new{background:#1b93c6}.pk-update{background:#e8830c}
+  .prop .pbody{flex:1;min-width:0}
+  .prop .pt{font-weight:800;color:var(--green-800)}
+  .prop .pm{font-size:.84rem;color:var(--ink-soft);margin-top:3px;white-space:pre-wrap}
 </style>
 <div class="container admin-wrap">
   <div class="admin-head">
@@ -26,28 +44,94 @@
   <% if (err) { %><p class="form-alert err"><%= err %></p><% } %>
 
   <div class="admin-auth-card">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-      <h2 style="margin:0;">AI 업무 정리</h2>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <form method="post" action="/exec/meetings/<%= log.id %>/extract" onsubmit="this.querySelector('button').disabled=true;this.querySelector('button').textContent='AI 분석 중… (최대 1분)';">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <button type="submit" class="btn btn-primary">🤖 AI로 업무 정리</button>
-        </form>
-        <form method="post" action="/exec/meetings/<%= log.id %>/send-kakao" style="margin:0;" onsubmit="if(!confirm('정리된 내용을 카카오톡으로 발송할까요?')){return false;} var b=this.querySelector('button'); b.disabled=true; b.textContent='카카오톡 발송 중…';">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <button type="submit" class="btn btn-kakao">💬 카카오톡으로 정리해서 발송하기</button>
-        </form>
+    <h2 style="margin-top:0;">대화 분석 파이프라인</h2>
+    <div class="pipe">
+      <!-- ① 업로드 -->
+      <div class="pstep done">
+        <h3><span class="pno">1</span> 파일 업로드</h3>
+        <div class="pbig"><%= log.msg_count %><span style="font-size:.9rem;font-weight:600;color:var(--muted)"> 메시지</span></div>
+        <p class="field-hint" style="margin:4px 0 0"><%= log.period_from %><%= log.period_to && log.period_to !== log.period_from ? ' ~ ' + log.period_to : '' %></p>
+      </div>
+      <!-- ② 파싱·청킹(분석 대상 추림) -->
+      <div class="pstep <%= newCount > 0 ? '' : 'done' %>">
+        <h3><span class="pno">2</span> 파싱·청킹(분석 대상)</h3>
+        <div class="pbig"><%= newCount %><span style="font-size:.9rem;font-weight:600;color:var(--muted)"> 건 (신규)</span></div>
+        <p class="field-hint" style="margin:4px 0 0">
+          <% if (watermark) { %>이전 분석 시점(<%= watermark %>) 이후 대화만 분석합니다.<% } else { %>아직 분석 이력이 없어 전체가 대상입니다.<% } %>
+        </p>
+      </div>
+      <!-- ③ 업무 분류(제안) -->
+      <div class="pstep <%= proposals.length ? 'done' : 'wait' %>">
+        <h3><span class="pno">3</span> 업무 분류(제안)</h3>
+        <div class="pbig"><%= proposals.length %><span style="font-size:.9rem;font-weight:600;color:var(--muted)"> 제안</span></div>
+        <p class="field-hint" style="margin:4px 0 0">업무 보드에서 ‘일괄 반영’으로 주요업무에 적용합니다.</p>
       </div>
     </div>
-    <p class="field-hint" style="margin-top:8px">이 대화에서 진행 중/결정된 업무를 AI가 추출해 <b>업무 보드</b>에 등록합니다. 기존 업무와 같으면 자동 연결·갱신됩니다. (AI 설정이 없거나 실패하면 업무 보드에서 직접 등록할 수 있습니다)<br>
-      <b>💬 카카오톡으로 정리해서 발송하기</b> — 요약·업무 목록을 정리해 <b>연결된 카카오톡</b>으로 보냅니다. 메시지의 ‘자세히 보기’ 링크(이 회의 ID)를 누르면 이 페이지로 돌아옵니다.</p>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+      <form method="post" action="/exec/meetings/<%= log.id %>/extract" onsubmit="var b=this.querySelector('button');b.disabled=true;b.textContent='분석 중… (최대 1분)';">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit" class="btn btn-primary"<%= newCount > 0 ? '' : ' disabled title=\"새로 분석할 대화가 없습니다\"' %>>🤖 대화 분석하기 (청킹·업무 분류)</button>
+      </form>
+      <% if (pendingCount > 0) { %>
+        <a class="btn btn-neutral" href="/exec/tasks">업무 보드에서 일괄 반영 (<%= pendingCount %>) →</a>
+      <% } %>
+      <form method="post" action="/exec/meetings/<%= log.id %>/send-kakao" style="margin:0;" onsubmit="if(!confirm('정리된 내용을 카카오톡으로 발송할까요?')){return false;} var b=this.querySelector('button'); b.disabled=true; b.textContent='카카오톡 발송 중…';">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button type="submit" class="btn btn-kakao">💬 카카오톡으로 발송</button>
+      </form>
+    </div>
+    <p class="field-hint" style="margin-top:10px">
+      카카오톡 ‘대화 내보내기’는 <b>이전 대화까지 누적</b>되어 저장됩니다. 그래서 분석할 때마다 <b>이미 분석한 시점 이후의 신규 대화만</b> 추려 중복 분석을 피합니다.
+      분석 결과는 바로 반영되지 않고 <b>제안</b>으로 쌓이며, 기존 주요업무와 <b>이중 검증(매칭)</b> 후 업무 보드에서 <b>일괄 반영</b>됩니다.
+      (AI 설정이 없으면 업무 보드에서 직접 등록할 수 있습니다)
+    </p>
+
     <% if (log.summary) { %>
       <div style="margin-top:14px;background:var(--paper-warm);border:1px solid var(--line);border-radius:10px;padding:14px 16px;">
-        <b style="color:var(--green-800)">AI 요약</b>
+        <b style="color:var(--green-800)">최근 분석 요약</b>
         <p style="margin:6px 0 0;line-height:1.7;color:var(--ink-soft);white-space:pre-wrap"><%= esc(log.summary) %></p>
       </div>
     <% } %>
   </div>
+
+  <!-- 청킹(wiki) 결과 -->
+  <% if (wiki && wiki.length) { %>
+  <div class="admin-auth-card" style="margin-top:16px;">
+    <h2 style="margin-top:0;">대화 청킹 (주제별 정리 · wiki)</h2>
+    <div class="wiki">
+      <% wiki.forEach(function(w){ %>
+        <div class="wiki-item">
+          <b><%= esc(w.title || '주제') %></b>
+          <% if (w.match_task_id) { %><span class="field-hint"> · 관련 업무 #<%= w.match_task_id %></span><% } %>
+          <div style="margin-top:4px;color:var(--ink-soft);line-height:1.6"><%= esc(w.summary || '') %></div>
+          <% if (w.participants) { %><div class="field-hint" style="margin-top:3px">관련자: <%= esc(w.participants) %></div><% } %>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- 업무 분류 제안 -->
+  <% if (proposals && proposals.length) { %>
+  <div class="admin-auth-card" style="margin-top:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+      <h2 style="margin:0;">업무 분류 제안 (<%= proposals.length %>) — 반영 대기</h2>
+      <a class="btn btn-primary btn-sm" href="/exec/tasks">업무 보드에서 일괄 반영 →</a>
+    </div>
+    <% proposals.forEach(function(p){ var mt = p.task_id ? taskById(p.task_id) : null; %>
+      <div class="prop">
+        <span class="pk <%= p.kind === 'new' ? 'pk-new' : 'pk-update' %>"><%= p.kind === 'new' ? '신규' : '업데이트' %></span>
+        <div class="pbody">
+          <div class="pt"><%= esc(p.title) %><% if (mt) { %> <span class="field-hint">→ 기존 #<%= mt.id %> <%= esc(mt.title) %></span><% } %></div>
+          <% if (p.status) { %><div class="pm">상태 → <b><%= p.status %></b></div><% } %>
+          <% if (p.progress_note) { %><div class="pm">진행: <%= esc(p.progress_note) %></div><% } %>
+          <% if (p.due_date) { %><div class="pm">완료예정 → <%= esc(p.due_date) %></div><% } %>
+        </div>
+      </div>
+    <% }); %>
+  </div>
+  <% } %>
 
   <div class="admin-auth-card" style="margin-top:16px;">
     <h2 style="margin-top:0;">대화 내용</h2>

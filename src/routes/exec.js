@@ -54,6 +54,7 @@ module.exports = function execRoutes({ verifyCsrf }) {
     res.render("exec-dashboard", {
       ...res.locals, title: "임원 업무관리", today,
       stats: meetings.stats(), logs: meetings.listLogs().slice(0, 8), tasks: meetings.listTasks().slice(0, 12),
+      pendingIds: meetings.pendingTaskIdSet(), pendingCount: meetings.pendingCount(),
     });
   });
 
@@ -77,15 +78,29 @@ module.exports = function execRoutes({ verifyCsrf }) {
     const id = parseInt(req.params.id, 10);
     const log = meetings.getLog(id);
     if (!log) return res.redirect("/exec/meetings?err=" + encodeURIComponent("회의록을 찾을 수 없습니다."));
-    res.render("exec-meeting", { ...res.locals, title: log.title, log, messages: meetings.logMessages(id), msg: req.query.msg || "", err: req.query.err || "" });
+    res.render("exec-meeting", {
+      ...res.locals, title: log.title, log,
+      messages: meetings.logMessages(id),
+      newCount: meetings.newMessages(id).length,     // 이번 분석 대상(이전 분석 제외)
+      watermark: meetings.getWatermark(),
+      wiki: meetings.parseWiki(log.wiki),             // 청킹(wiki)
+      proposals: meetings.pendingProposalsForLog(id), // 생성된 제안
+      taskById: (tid) => meetings.getTask(tid),
+      pendingCount: meetings.pendingCount(),
+      msg: req.query.msg || "", err: req.query.err || "",
+    });
   });
   router.post("/meetings/:id/extract", requireExec, verifyCsrf, async (req, res) => {
     const id = parseInt(req.params.id, 10);
     try {
-      const r = await meetings.extractTasksAI(id, req.execName);
-      res.redirect("/exec/meetings/" + id + "?msg=" + encodeURIComponent(`AI 정리 완료 — 신규 업무 ${r.created}개, 기존 연결 ${r.linked}개. 업무관리에서 확인하세요.`));
+      const r = await meetings.analyzeMeeting(id, req.execName);
+      if (r.skipped) {
+        return res.redirect("/exec/meetings/" + id + "?msg=" + encodeURIComponent(r.message));
+      }
+      res.redirect("/exec/meetings/" + id + "?msg=" + encodeURIComponent(
+        `분석 완료 — 신규 대화 ${r.newCount}건에서 업무 제안 ${r.proposals}개(기존 매칭 ${r.matched}개)를 만들었습니다. 아래에서 확인 후 ‘업무 보드’에서 일괄 반영하세요.`));
     } catch (e) {
-      res.redirect("/exec/meetings/" + id + "?err=" + encodeURIComponent("AI 업무 정리 실패: " + e.message + " (업무관리에서 직접 등록할 수 있습니다)"));
+      res.redirect("/exec/meetings/" + id + "?err=" + encodeURIComponent("대화 분석 실패: " + e.message + " (업무 보드에서 직접 등록할 수 있습니다)"));
     }
   });
   router.post("/meetings/:id/send-kakao", requireExec, verifyCsrf, async (req, res) => {
@@ -109,10 +124,13 @@ module.exports = function execRoutes({ verifyCsrf }) {
   // 업무 보드
   router.get("/tasks", requireExec, (req, res) => {
     const edit = req.query.edit ? meetings.getTask(parseInt(req.query.edit, 10)) : null;
+    const pendingTaskIds = meetings.pendingTaskIdSet();
     res.render("exec-tasks", {
       ...res.locals, title: "업무관리", STATUSES: meetings.STATUSES, PRIORITIES: meetings.PRIORITIES,
       tasks: meetings.listTasks(), logs: meetings.listLogs(), edit,
       openId: parseInt(req.query.open, 10) || 0, parseSteps: meetings.parseSteps,
+      pendingIds: pendingTaskIds, pendingCount: meetings.pendingCount(),
+      newTaskProposals: meetings.pendingProposals().filter((p) => !p.task_id).length,
       msg: req.query.msg || "", err: req.query.err || "",
     });
   });
@@ -132,6 +150,21 @@ module.exports = function execRoutes({ verifyCsrf }) {
     if (!note) return res.redirect(backToTaskErr(id, "추가할 내용을 입력하세요."));
     meetings.appendTaskProgress(id, note, req.execName);
     res.redirect(backToTask(id, "진행 상황을 업데이트했습니다."));
+  });
+  // 대화 분석 제안 → 주요업무에 일괄 반영
+  router.post("/tasks/apply-updates", requireExec, verifyCsrf, (req, res) => {
+    try {
+      const r = meetings.applyAllProposals(req.execName);
+      if (!r.total) return res.redirect("/exec/tasks?msg=" + encodeURIComponent("반영할 업데이트가 없습니다."));
+      res.redirect("/exec/tasks?msg=" + encodeURIComponent(
+        `대화 분석 내역을 일괄 반영했습니다 — 기존 업무 ${r.updated}건 수정, 신규 ${r.added}건 추가.`));
+    } catch (e) {
+      res.redirect("/exec/tasks?err=" + encodeURIComponent("일괄 반영 실패: " + e.message));
+    }
+  });
+  router.post("/tasks/discard-updates", requireExec, verifyCsrf, (req, res) => {
+    meetings.clearPendingProposals();
+    res.redirect("/exec/tasks?msg=" + encodeURIComponent("대기 중인 업데이트 제안을 모두 비웠습니다."));
   });
   router.post("/tasks/:id/step/toggle", requireExec, verifyCsrf, (req, res) => {
     const id = parseInt(req.params.id, 10);

@@ -1,7 +1,8 @@
 /* meetings.js — 임원 업무관리: 회의록(카카오톡 대화)·업무(task) 데이터 + AI 정리 */
 "use strict";
-const { db } = require("./db");
+const { db, getSetting, setSetting } = require("./db");
 const kakao = require("./kakaoparse");
+const K_WATERMARK = "exec_analyzed_until"; // 마지막으로 분석 완료한 대화 시각(ISO, 이 시각 이하 대화는 재분석 제외)
 
 const STATUSES = ["대기", "진행중", "보류", "이슈", "완료"];
 const PRIORITIES = ["시급", "높음", "보통", "낮음"];
@@ -140,76 +141,144 @@ function setTaskStatus(id, status) {
 function removeTask(id) { db.prepare("DELETE FROM tasks WHERE id = ?").run(id); }
 const s = (v, n = 4000) => String(v == null ? "" : v).slice(0, n);
 
-/* ---------- AI 업무 정리(Gemini, 선택) ---------- */
-async function extractTasksAI(logId, createdBy) {
+/* ---------- 분석 워터마크(한번 분석한 이전 대화 재분석 제외) ---------- */
+function getWatermark() { return getSetting(K_WATERMARK, ""); }
+function setWatermark(iso) { if (iso) setSetting(K_WATERMARK, iso); }
+function resetWatermark() { setSetting(K_WATERMARK, ""); }
+/** 워터마크(마지막 분석 시각) 이후의 '신규' 대화만 반환 */
+function newMessages(logId) {
+  const wm = getWatermark();
+  const all = logMessages(logId);
+  if (!wm) return all;
+  return all.filter((m) => String(m.msg_at || "") > wm);
+}
+/** 제목 유사도 2차 검증(기존 업무 자동 매칭) */
+function fuzzyMatchTask(title, tasks) {
+  const norm = (x) => String(x || "").replace(/[\s\[\]()·,.\-_/]/g, "").toLowerCase();
+  const nt = norm(title);
+  if (!nt) return null;
+  for (const t of tasks) {
+    const no = norm(t.title);
+    if (!no) continue;
+    if (no === nt) return t;
+    if (nt.length >= 4 && (no.includes(nt) || nt.includes(no))) return t;
+  }
+  return null;
+}
+
+/* ---------- ② 대화 청킹(wiki) + ③ 업무 분류 → 제안(proposal) 생성 (Gemini) ---------- */
+async function analyzeMeeting(logId, byName) {
   const log = getLog(logId);
   if (!log) throw new Error("회의록을 찾을 수 없습니다.");
-  const msgs = logMessages(logId);
-  if (!msgs.length) throw new Error("대화 내용이 없습니다.");
+  const fresh = newMessages(logId);
+  if (!fresh.length) {
+    return { skipped: true, newCount: 0, proposals: 0,
+      message: "새로 분석할 대화가 없습니다. (이전에 분석한 시점 이후의 새 대화가 없습니다)" };
+  }
   let llm;
   try { llm = require("./globalnews").llm; } catch (e) { throw new Error("AI 모듈 로드 실패"); }
   if (typeof llm !== "function") throw new Error("AI(Gemini)가 설정되지 않았습니다.");
 
-  // 대화 텍스트(최근 위주, 토큰 예산)
-  let convo = msgs.map((m) => `[${m.msg_at}] ${m.sender}: ${m.content}`).join("\n");
-  if (convo.length > 14000) convo = convo.slice(convo.length - 14000);
+  let convo = fresh.map((m) => `[${m.msg_at}] ${m.sender}: ${m.content}`).join("\n");
+  if (convo.length > 16000) convo = convo.slice(convo.length - 16000);
 
-  // 기존 열린 업무(맥락 연결·중복 방지)
-  const open = listTasks().filter((t) => t.status !== "완료").map((t) => `#${t.id} ${t.title} [${t.status}] 담당:${t.manager || "-"}`).join("\n") || "(없음)";
+  const openTasks = listTasks().filter((t) => t.status !== "완료");
+  const open = openTasks.map((t) => `#${t.id} ${t.title} [${t.status}] 담당:${t.manager || "-"} 완료예정:${t.due_date || "-"}`).join("\n") || "(없음)";
 
   const prompt =
-`너는 사단법인 '도시공동체본부' 임원 회의(카카오톡 대화)를 분석해 업무를 정리하는 비서다.
-아래 대화를 읽고 '진행 중이거나 결정된 업무'를 추출해 JSON으로만 답하라.
-이미 등록된 기존 업무 목록을 참고해, 같은 업무면 새로 만들지 말고 연결(link_to_id)하라.
+`너는 사단법인 '도시공동체본부' 임원 단톡방 대화를 분석하는 비서다.
+아래는 '아직 분석하지 않은 신규 대화'다. 이 신규 대화만 근거로 (1) 주제별 요약(wiki)과 (2) 업무 변경 제안을 JSON으로만 출력하라.
+기존 업무 목록과 대조해, 같은 업무면 match_task_id로 연결하고 없으면 신규(0)로 제안하라.
+완료/연기/일정 변경이 감지되면 status와 due_date에 반영하라.
 
 [기존 업무]
 ${open}
 
-[대화]
+[신규 대화]
 ${convo}
 
 출력(JSON only):
 {
- "summary": "회의 핵심 요약 3~5문장",
- "tasks": [
+ "summary": "신규 대화 핵심 요약 2~4문장",
+ "topics": [ { "title": "주제", "summary": "핵심 1~2문장", "participants": "관련자", "match_task_id": 0 } ],
+ "updates": [
    {
+     "match_task_id": 0,
      "title": "업무명(간결)",
-     "status": "대기|진행중|보류|이슈|완료 중 하나",
-     "progress": "현재 어디까지 진행되었는지",
-     "manager": "매니징(담당)하는 사람 이름 (없으면 빈 문자열)",
-     "participants": "참여자 이름들(쉼표)",
-     "issues": "이슈/문제점 (없으면 빈 문자열)",
-     "detail": "맥락·세부내용",
-     "link_to_id": 0
+     "status": "대기|진행중|보류|이슈|완료 중 하나 또는 빈 문자열(변경 없음)",
+     "progress": "이번 대화에서 추가되거나 진전된 내용 1~2문장",
+     "due_date": "YYYY-MM-DD (일정이 정해지거나 바뀐 경우, 아니면 빈 문자열)",
+     "detail": "맥락"
    }
  ]
 }
-규칙: 대화에 근거 없는 내용 지어내지 말 것. 단순 인사/잡담은 제외. tasks는 최대 8개.`;
+규칙: 신규 대화에 근거 없는 내용 금지. 단순 인사/잡담 제외. topics·updates 각 최대 8개. 완료면 status='완료', 연기면 status='보류'로 하고 progress에 사유를 적어라.`;
 
   const out = await llm(prompt, { ms: 90000, maxTokens: 4096, temperature: 0.3 });
   const data = (out && typeof out === "object") ? out : {};
   if (data.summary) setLogSummary(logId, data.summary);
-  const tasks = Array.isArray(data.tasks) ? data.tasks : [];
-  let created = 0, linked = 0;
-  for (const t of tasks) {
-    if (!t || !t.title) continue;
-    const linkId = parseInt(t.link_to_id, 10) || 0;
-    if (linkId && getTask(linkId)) {
-      // 기존 업무 업데이트(진행상황·이슈 갱신)
-      const cur = getTask(linkId);
-      updateTask(linkId, {
-        title: cur.title, status: t.status || cur.status,
-        progress: t.progress || cur.progress, manager: t.manager || cur.manager,
-        participants: t.participants || cur.participants, issues: t.issues || cur.issues,
-        detail: (cur.detail ? cur.detail + "\n\n" : "") + "[" + (log.title) + "] " + (t.detail || ""),
-      });
-      linked++;
-    } else {
-      addTask({ ...t, log_id: logId, created_by: createdBy });
-      created++;
-    }
+  if (Array.isArray(data.topics)) {
+    db.prepare("UPDATE meeting_logs SET wiki=? WHERE id=?").run(JSON.stringify(data.topics).slice(0, 8000), logId);
   }
-  return { summary: data.summary || "", created, linked, total: tasks.length };
+
+  const updates = Array.isArray(data.updates) ? data.updates : [];
+  let created = 0, matched = 0;
+  const now = new Date().toISOString();
+  const ins = db.prepare("INSERT INTO task_proposals (log_id, task_id, kind, title, status, progress_note, due_date, detail, created_at) VALUES (?,?,?,?,?,?,?,?,?)");
+  for (const u of updates) {
+    if (!u || !u.title) continue;
+    let tid = parseInt(u.match_task_id, 10) || 0;
+    if (tid && !getTask(tid)) tid = 0;
+    if (!tid) { const m = fuzzyMatchTask(u.title, openTasks); if (m) tid = m.id; } // 이중 검증
+    if (tid) matched++;
+    let st = String(u.status || "").trim();
+    if (st === "연기") st = "보류";
+    if (!STATUSES.includes(st)) st = "";
+    ins.run(logId, tid, tid ? "update" : "new", String(u.title).slice(0, 200), st, s(u.progress), normDate(u.due_date), s(u.detail), now);
+    created++;
+  }
+
+  // 워터마크 = 이번에 분석한 신규 대화의 최대 시각(다음 업로드 때 이 시각 이하는 재분석 제외)
+  const maxAt = fresh.reduce((mx, m) => (String(m.msg_at) > mx ? String(m.msg_at) : mx), getWatermark());
+  setWatermark(maxAt);
+  db.prepare("UPDATE meeting_logs SET analyzed_from=?, analyzed_at=? WHERE id=?").run(fresh[0].msg_at || "", now, logId);
+
+  return { skipped: false, newCount: fresh.length, proposals: created, matched,
+    from: fresh[0].msg_at, to: fresh[fresh.length - 1].msg_at, summary: data.summary || "" };
+}
+
+/* ---------- 제안(proposal): 이중검증 결과 → 'update' 마킹 → 일괄 반영 ---------- */
+function parseWiki(v) { try { const a = JSON.parse(v || "[]"); return Array.isArray(a) ? a : []; } catch (_) { return []; } }
+function pendingProposals() { return db.prepare("SELECT * FROM task_proposals WHERE applied=0 ORDER BY id").all(); }
+function pendingProposalsForLog(logId) { return db.prepare("SELECT * FROM task_proposals WHERE applied=0 AND log_id=? ORDER BY id").all(logId); }
+function pendingCount() { return db.prepare("SELECT COUNT(*) AS n FROM task_proposals WHERE applied=0").get().n; }
+function pendingTaskIdSet() { return new Set(db.prepare("SELECT DISTINCT task_id FROM task_proposals WHERE applied=0 AND task_id>0").all().map((r) => r.task_id)); }
+function clearPendingProposals() { db.prepare("DELETE FROM task_proposals WHERE applied=0").run(); }
+
+/** 대기 중 제안을 '주요업무'에 일괄 반영(기존 업무는 진행기록 누적·상태/일정 수정, 신규는 등록) */
+function applyAllProposals(byName) {
+  const list = pendingProposals();
+  let updated = 0, added = 0;
+  const now = new Date().toISOString();
+  for (const p of list) {
+    if (p.kind === "update" && p.task_id && getTask(p.task_id)) {
+      if (p.progress_note) appendTaskProgress(p.task_id, p.progress_note, "대화분석");
+      const cur = getTask(p.task_id); // 진행기록 반영 후 재조회
+      updateTask(p.task_id, {
+        title: cur.title, status: p.status || cur.status, progress: cur.progress,
+        manager: cur.manager, participants: cur.participants, issues: cur.issues,
+        detail: cur.detail, priority: cur.priority, due_date: p.due_date || cur.due_date,
+        // step_label 미전달 → 기존 단계 유지
+      });
+      updated++;
+    } else {
+      addTask({ title: p.title, status: p.status || "진행중", progress: p.progress_note || "",
+        detail: p.detail || "", log_id: p.log_id, created_by: byName || "대화분석" });
+      added++;
+    }
+    db.prepare("UPDATE task_proposals SET applied=1, applied_at=? WHERE id=?").run(now, p.id);
+  }
+  return { updated, added, total: list.length };
 }
 
 /* ---------- 카카오톡 발송용 정리 리포트 ---------- */
@@ -250,4 +319,7 @@ function stats() {
   return { counts, logCount: db.prepare("SELECT COUNT(*) AS n FROM meeting_logs").get().n, taskTotal: db.prepare("SELECT COUNT(*) AS n FROM tasks").get().n };
 }
 
-module.exports = { STATUSES, PRIORITIES, addLog, listLogs, getLog, logMessages, removeLog, listTasks, getTask, addTask, updateTask, setTaskStatus, appendTaskProgress, toggleStep, parseSteps, removeTask, extractTasksAI, buildKakaoReport, stats };
+module.exports = { STATUSES, PRIORITIES, addLog, listLogs, getLog, logMessages, removeLog, listTasks, getTask, addTask, updateTask, setTaskStatus, appendTaskProgress, toggleStep, parseSteps, removeTask,
+  analyzeMeeting, newMessages, getWatermark, resetWatermark, parseWiki,
+  pendingProposals, pendingProposalsForLog, pendingCount, pendingTaskIdSet, clearPendingProposals, applyAllProposals,
+  buildKakaoReport, stats };

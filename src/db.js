@@ -262,6 +262,26 @@ try { db.exec("ALTER TABLE tasks ADD COLUMN rate INTEGER NOT NULL DEFAULT 0"); }
 try { db.exec("ALTER TABLE tasks ADD COLUMN due_date TEXT NOT NULL DEFAULT ''"); } catch (e) {} // 완료예정일(YYYY-MM-DD)
 try { db.exec("ALTER TABLE tasks ADD COLUMN steps TEXT NOT NULL DEFAULT ''"); } catch (e) {}     // 진행 단계 JSON [{label,done}]
 try { db.exec("ALTER TABLE tasks ADD COLUMN priority TEXT NOT NULL DEFAULT '보통'"); } catch (e) {} // 우선순위: 시급|높음|보통|낮음
+try { db.exec("ALTER TABLE meeting_logs ADD COLUMN wiki TEXT NOT NULL DEFAULT ''"); } catch (e) {}   // 대화 청킹(wiki) JSON
+try { db.exec("ALTER TABLE meeting_logs ADD COLUMN analyzed_from TEXT NOT NULL DEFAULT ''"); } catch (e) {} // 이번 분석 시작 시각
+try { db.exec("ALTER TABLE meeting_logs ADD COLUMN analyzed_at TEXT NOT NULL DEFAULT ''"); } catch (e) {}   // 분석 완료 시각
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS task_proposals (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    log_id        INTEGER NOT NULL DEFAULT 0,
+    task_id       INTEGER NOT NULL DEFAULT 0,       -- 매칭된 기존 업무(0=신규)
+    kind          TEXT NOT NULL DEFAULT 'update',   -- 'new' | 'update'
+    title         TEXT NOT NULL DEFAULT '',
+    status        TEXT NOT NULL DEFAULT '',         -- 제안 상태('' = 변경 없음)
+    progress_note TEXT NOT NULL DEFAULT '',         -- 진행 기록에 추가할 내용
+    due_date      TEXT NOT NULL DEFAULT '',         -- 제안 완료예정일('' = 변경 없음)
+    detail        TEXT NOT NULL DEFAULT '',
+    applied       INTEGER NOT NULL DEFAULT 0,       -- 0=대기, 1=반영됨
+    created_at    TEXT NOT NULL,
+    applied_at    TEXT NOT NULL DEFAULT ''
+  );`);
+  db.exec("CREATE INDEX IF NOT EXISTS idx_proposals_pending ON task_proposals(applied, task_id)");
+} catch (e) {}
 
 try { db.exec("ALTER TABLE members ADD COLUMN provider TEXT NOT NULL DEFAULT ''"); } catch (e) {}    // '' | kakao | naver | google
 try { db.exec("ALTER TABLE members ADD COLUMN provider_id TEXT NOT NULL DEFAULT ''"); } catch (e) {} // 제공사 고유 사용자 ID

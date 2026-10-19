@@ -27,6 +27,7 @@
   .mini-rate-bar span{display:block;height:100%;background:linear-gradient(90deg,#1b93c6,#2b8a5a);border-radius:999px}
   .mini-rate-num{font-size:.78rem;font-weight:800;color:var(--green-800);min-width:34px;text-align:right}
   .ex-empty{padding:22px 16px;text-align:center;color:var(--muted)}
+  .upd-chip{font-size:.66rem;font-weight:900;letter-spacing:.04em;color:#fff;background:#e8830c;border-radius:6px;padding:2px 7px;text-transform:uppercase}
 </style>
 <div class="container admin-wrap">
   <div class="admin-head">
@@ -58,12 +59,12 @@
         <thead>
           <tr>
             <th class="c-no">번호</th><th>타이틀</th><th class="nowrap">업무담당자</th>
-            <th class="nowrap">작성일</th><th class="nowrap">현재 상태</th><th>진행률</th><th class="nowrap">완료예정일</th>
+            <th class="nowrap">작성일</th><th class="nowrap">현재 상태</th><th>진행률</th><th class="nowrap">완료예정일</th><th class="nowrap">업데이트</th>
           </tr>
         </thead>
         <tbody>
           <% if (!tasks.length) { %>
-            <tr><td colspan="7" class="ex-empty">등록된 업무가 없습니다. 회의록을 올리고 ‘AI로 업무 정리’를 해보세요.</td></tr>
+            <tr><td colspan="8" class="ex-empty">등록된 업무가 없습니다. 회의록을 올리고 ‘AI로 업무 정리’를 해보세요.</td></tr>
           <% } %>
           <% tasks.forEach(function(t, i){ var r = Math.max(0, Math.min(100, t.rate || 0)); %>
             <tr>
@@ -79,6 +80,7 @@
                 </span>
               </td>
               <td class="nowrap <%= t.due_date ? '' : 'muted' %>"><%= t.due_date ? esc(t.due_date) : '-' %></td>
+              <td class="nowrap"><% if (typeof pendingIds !== 'undefined' && pendingIds.has(t.id)) { %><span class="upd-chip">update</span><% } else { %><span class="muted">-</span><% } %></td>
             </tr>
           <% }); %>
         </tbody>
