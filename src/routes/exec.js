@@ -15,11 +15,29 @@ const uploadTxt = multer({
 module.exports = function execRoutes({ verifyCsrf }) {
   const router = express.Router();
 
+  // /exec 및 모든 하위 페이지 공통 OG(링크 미리보기) 메타
+  router.use((req, res, next) => {
+    res.locals.ogImage = "/img/og-exec.png?v=1";
+    res.locals.ogTitle = "업무관리 현황 | 사단법인 도시공동체본부";
+    res.locals.ogDescription = "임원 업무의 진행·이슈·담당을 단계별 진행률과 우선순위로 체계적으로 관리합니다. (임원 전용)";
+    next();
+  });
+
   function requireExec(req, res, next) {
     if (req.session && req.session.admin) { req.execName = req.session.admin.username; return next(); }
     if (req.session && req.session.member) {
       const m = db.prepare("SELECT is_exec, name FROM members WHERE id = ?").get(req.session.member.id);
       if (m && m.is_exec) { req.execName = m.name; return next(); }
+    }
+    // 비인가(크롤러·비로그인·일반회원): GET은 OG를 포함한 공개 게이트(200)를 렌더 → 링크 미리보기 노출
+    if (req.method === "GET") {
+      return res.status(200).render("exec-gate", {
+        ...res.locals, title: "업무관리",
+        signedIn: !!(req.session && req.session.member),
+        ogUrl: (res.locals.baseUrl || "") + req.originalUrl,
+      });
+    }
+    if (req.session && req.session.member) {
       return res.status(403).render("message", {
         ...res.locals, title: "임원 전용", heading: "임원 전용 페이지입니다",
         body: "임원으로 승인된 회원만 이용할 수 있습니다. 승인 문의는 사무처(1670-9678)로 연락해 주세요.", backUrl: "/",

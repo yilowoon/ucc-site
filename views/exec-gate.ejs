@@ -1,0 +1,31 @@
+<%- include('partials/header') %>
+
+<section class="page-banner page-banner--sm">
+  <div class="container">
+    <span class="page-banner-en">EXECUTIVE · TASK MANAGEMENT</span>
+    <h1 class="page-banner-title">업무관리</h1>
+  </div>
+</section>
+
+<div class="container page-wrap" style="max-width:640px;">
+  <div style="background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:34px 30px;text-align:center;box-shadow:var(--shadow-sm);">
+    <div style="font-size:2.4rem;line-height:1;margin-bottom:14px;">🗂️</div>
+    <h2 style="margin:0 0 10px;color:var(--green-800);font-size:1.3rem;">임원 전용 페이지입니다</h2>
+    <p style="color:var(--ink-soft);line-height:1.7;margin:0 0 22px;">
+      임원 업무의 진행·이슈·담당을 단계별 진행률과 우선순위로 관리하는 <b>임원 전용 업무관리</b> 공간입니다.<br />
+      <% if (signedIn) { %>
+        임원으로 승인된 회원만 이용할 수 있습니다. 승인 문의는 사무처(1670-9678)로 연락해 주세요.
+      <% } else { %>
+        임원으로 승인된 회원 로그인 후 이용하실 수 있습니다.
+      <% } %>
+    </p>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+      <% if (!signedIn) { %>
+        <a class="btn btn-primary" href="/login?next=<%= encodeURIComponent('/exec') %>">회원 로그인</a>
+      <% } %>
+      <a class="btn btn-ghost" href="/">홈으로</a>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>
