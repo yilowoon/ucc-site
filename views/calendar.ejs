@@ -32,7 +32,7 @@
           <div class="cal-cell<%= wk %><%= isToday ? ' cal-cell--today' : '' %>">
             <span class="cal-day"><%= cell.day %></span>
             <% cell.events.forEach(function(ev){ %>
-              <span class="cal-event cal-event--<%= (ev.category==='ESG'?'esg':(ev.category==='RDC'?'rdc':'etc')) %>" title="<%= esc(ev.title) %><%= ev.memo ? ' — ' + esc(ev.memo) : '' %>">
+              <span class="cal-event cal-event--<%= (ev.category==='ESG'?'esg':(ev.category==='RDC'?'rdc':(ev.category==='AI'?'ai':'etc'))) %>" title="<%= esc(ev.title) %><%= ev.memo ? ' — ' + esc(ev.memo) : '' %>">
                 <%= esc(ev.title) %>
               </span>
             <% }); %>
@@ -43,8 +43,9 @@
   </div>
 
   <div class="cal-legend">
-    <span><i class="lg lg--esg"></i>ESG</span>
-    <span><i class="lg lg--rdc"></i>지역발전혁신가</span>
+    <span><i class="lg lg--esg"></i>ESG전문가과정</span>
+    <span><i class="lg lg--rdc"></i>지역혁신개발전문가과정</span>
+    <span><i class="lg lg--ai"></i>AI활용전문가과정</span>
     <span><i class="lg lg--etc"></i>기타</span>
     <a class="cal-apply" href="/learn/apply">교육 신청하기 →</a>
   </div>

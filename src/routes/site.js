@@ -244,7 +244,7 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const aistats = require("../aistats");
     res.render("ai", { ...res.locals, title: "AI활용전문가과정", aiStats: aistats.getStats(), aiOrgs: aistats.listOrgs() });
   });
-  router.get("/learn/rdc", (req, res) => res.render("rdc", { ...res.locals, title: "지역개발전문가과정" }));
+  router.get("/learn/rdc", (req, res) => res.render("rdc", { ...res.locals, title: "지역혁신개발전문가과정" }));
 
   // ---------- 배움터: 교육신청하기 ----------
   router.get("/learn/apply", (req, res) => {

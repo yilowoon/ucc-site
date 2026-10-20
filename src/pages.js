@@ -194,9 +194,9 @@ const PAGES = {
 
   // ===== 배움터 ===== (courses = 주요과정소개는 전용 뷰 views/courses.ejs 사용)
   rdc: {
-    group: "learn", title: "지역개발전문가과정", en: "RDC PROFESSIONAL",
+    group: "learn", title: "지역혁신개발전문가과정", en: "RDC PROFESSIONAL",
     html: `
-      <p class="lead">지역회복을 <strong>진단부터 자립까지</strong> 설계·실행하는 현장 전문가, <strong>지역발전혁신가(RDC)</strong>를 양성합니다.</p>
+      <p class="lead">지역회복을 <strong>진단부터 자립까지</strong> 설계·실행하는 현장 전문가, <strong>지역혁신개발전문가(RDC)</strong>를 양성합니다.</p>
 
       <h3 class="page-h">과정 개요</h3>
       <p>리빙랩(Living Lab) 기반의 단계별 학습 체계로, 지역 자원을 조사하고 문제를 정의하여 표준 프로그램을 설계·실증하고, 지역이 스스로 설 수 있도록 자립·이양까지 이끄는 실무 역량을 기릅니다.</p>
@@ -233,8 +233,9 @@ const PAGES = {
     html: `
       <p class="lead">아래 과정이 개설·운영되고 있습니다. 관심 있는 과정은 신청 페이지에서 접수해 주세요.</p>
       <ul class="page-list">
-        <li><strong>ESG 전문가 과정</strong> — 지속가능경영·도시 지속가능성 (연 2~3회)</li>
-        <li><strong>지역발전혁신가(RDC) 양성 과정</strong> — 리빙랩 기반 현장 실습 (연 2회)</li>
+        <li><strong>AI활용전문가과정</strong> — 생성형 AI·AI 에이전트 실무 활용 (상시)</li>
+        <li><strong>ESG전문가과정</strong> — 지속가능경영·도시 지속가능성 (연 2~3회)</li>
+        <li><strong>지역혁신개발전문가과정</strong> — 리빙랩 기반 현장 실습 (연 2회)</li>
         <li><strong>시민 도시대학</strong> — 시민 대상 공개 강좌 (상시)</li>
         <li><strong>공동체리더 과정</strong> — 주민·활동가 역량강화 (분기별)</li>
       </ul>

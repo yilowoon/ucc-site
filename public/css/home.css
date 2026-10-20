@@ -411,11 +411,13 @@
 .cal-event { font-size: .74rem; font-weight: 600; padding: 3px 6px; border-radius: 5px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cal-event--esg { background: var(--green-600); }
 .cal-event--rdc { background: #2b6cb0; }
+.cal-event--ai { background: #c2410c; }
 .cal-event--etc { background: var(--gold-600); }
 .cal-legend { display: flex; align-items: center; gap: 18px; margin-top: 18px; flex-wrap: wrap; font-size: .9rem; color: var(--ink-soft); }
 .cal-legend .lg { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
 .lg--esg { background: var(--green-600); }
 .lg--rdc { background: #2b6cb0; }
+.lg--ai { background: #c2410c; }
 .lg--etc { background: var(--gold-600); }
 .cal-apply { margin-left: auto; font-weight: 700; color: var(--green-600); }
 

@@ -24,7 +24,7 @@
         <div class="field">
           <label for="course">신청 과정</label>
           <select id="course" name="course">
-            <% var courses = ['AI활용전문가과정','ESG 전문가 과정','지역발전혁신가(RDC) 양성 과정','시민 도시대학','공동체리더 과정','기타'];
+            <% var courses = ['AI활용전문가과정','ESG전문가과정','지역혁신개발전문가과정','시민 도시대학','공동체리더 과정','기타'];
                courses.forEach(function(c){ %>
               <option value="<%= c %>" <%= (form.course===c)?'selected':'' %>><%= c %></option>
             <% }); %>
