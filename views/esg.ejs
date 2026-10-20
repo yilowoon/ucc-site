@@ -1,15 +1,28 @@
 <%- include('partials/header') %>
+<%- include('partials/lp-styles') %>
+<% var ESG_COURSE = 'ESG 전문가 과정'; %>
 
-<section class="page-banner">
+<!-- 히어로 -->
+<section class="lp-hero">
   <div class="container">
-    <span class="page-banner-en">ESG EDUCATION &amp; CERTIFICATION</span>
-    <h1 class="page-banner-title">ESG전문가과정</h1>
-    <p class="page-banner-desc">학교(초·중·고·대학) 소양교육부터 기업 실무, 전문가 자격과정과 컨설팅까지 — 눈높이에 맞춘 ESG 교육을 제공합니다.</p>
+    <span class="lp-hero-eyebrow">ESG EDUCATION &amp; CERTIFICATION</span>
+    <h1 class="lp-hero-title">지속가능의 시대,<br><strong>ESG 전문가</strong>로 앞서가세요</h1>
+    <p class="lp-hero-sub">학교 소양교육부터 기업 실무, <b>산업부 공인 민간자격</b>과 컨설팅까지 — 눈높이에 맞춘 ESG 교육으로 탄소중립·공시·공급망 시대의 핵심 역량을 갖춥니다.</p>
+    <div class="lp-hero-cta">
+      <a class="btn btn-primary btn-lg" href="/learn/apply?course=<%= encodeURIComponent(ESG_COURSE) %>">교육 신청하기 →</a>
+      <a class="btn btn-ghost-light btn-lg" href="#corporate">교육과정 보기</a>
+    </div>
+    <ul class="lp-hero-tags">
+      <li>✓ 산업부 공인 민간자격</li>
+      <li>✓ 진단→실행 컨설팅 연계</li>
+      <li>✓ 학교·기업·공공 맞춤</li>
+      <li>✓ 현장 전문가 강의</li>
+    </ul>
   </div>
 </section>
 
 <!-- 과정 한눈에 -->
-<section class="section section--alt" id="facts" style="padding-top:34px">
+<section class="section" id="facts" style="padding-top:38px">
   <div class="container">
     <div class="course-facts">
       <div class="cf-item"><span class="cf-label">교육 대상</span><span class="cf-value">학교 · 기업 · 공공기관 · 지역공동체</span></div>
@@ -20,13 +33,30 @@
   </div>
 </section>
 
+<!-- 공감 · 이런 고민 -->
+<section class="section section--alt" id="pain">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-green">혹시, 이런 고민 있으셨나요?</h2><span class="section-en">YOUR PAIN POINTS</span></div>
+    </div>
+    <p class="section-lede">ESG가 중요하다는 건 알지만, <strong>무엇을 어디서부터 해야 할지</strong> 막막하셨다면 — 이 과정이 그 답을 드립니다.</p>
+    <div class="pain-grid">
+      <article class="pain-card"><span class="pain-q">Q</span><p>“ESG 공시·평가 요구가 오는데 <b>어떻게 대응</b>하죠?”</p></article>
+      <article class="pain-card"><span class="pain-q">Q</span><p>“<b>공급망 ESG 실사</b> 요청이 왔는데 준비가 안 됐어요.”</p></article>
+      <article class="pain-card"><span class="pain-q">Q</span><p>“ESG를 <b>경영과 성과로 연결</b>하는 방법을 모르겠어요.”</p></article>
+      <article class="pain-card"><span class="pain-q">Q</span><p>“ESG 분야에서 <b>전문 자격·커리어</b>를 쌓고 싶어요.”</p></article>
+    </div>
+    <p class="pain-answer">걱정 마세요. <b>개념 이해부터 진단·전략·자격·컨설팅까지</b> 단계별로 짚어드립니다.</p>
+  </div>
+</section>
+
 <!-- 왜 지금 ESG인가 -->
 <section class="section" id="why">
   <div class="container">
     <div class="section-head">
-      <div><h2 class="section-title c-green">왜 지금 ESG인가</h2><span class="section-en">WHY ESG NOW</span></div>
+      <div><h2 class="section-title c-blue">왜 지금 ESG인가</h2><span class="section-en">WHY ESG NOW</span></div>
     </div>
-    <p class="section-lede">탄소중립과 공시 의무화, 공급망 실사, 글로벌 투자 기준의 변화로 <strong>ESG는 선택이 아닌 필수</strong>가 되었습니다. 도시공동체본부는 ESG 경영 확산과 전문가 양성을 위한 교육·컨설팅을 지원합니다.</p>
+    <p class="section-lede">탄소중립과 공시 의무화, 공급망 실사, 글로벌 투자 기준의 변화로 <strong>ESG는 선택이 아닌 필수</strong>가 되었습니다.</p>
     <div class="sgrid sgrid--green">
       <article class="scard"><h4>탄소중립 2050</h4><p>지속가능성을 기업 경영에 도입하도록 요구되는 시대, 전 국민 의식 개선과 여건 조성이 과제입니다.</p></article>
       <article class="scard"><h4>공시 의무화</h4><p>2030년까지 코스피 상장사의 <strong>지속가능경영보고서 공시</strong>가 단계적으로 의무화됩니다.</p></article>
@@ -36,21 +66,34 @@
   </div>
 </section>
 
+<!-- 이런 분께 추천 -->
+<section class="section section--alt" id="who">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-green">이런 분께 추천합니다</h2><span class="section-en">FOR WHOM</span></div>
+    </div>
+    <div class="persona-grid">
+      <article class="persona-card"><span class="persona-ico">🏢</span><h3>기업 ESG 담당자</h3><p>진단·전략·공시·공급망 대응 실무 역량을 갖추고 싶은 분</p></article>
+      <article class="persona-card"><span class="persona-ico">🏛️</span><h3>공공·기관 담당자</h3><p>지속가능경영보고서·사회적 가치 성과를 관리해야 하는 분</p></article>
+      <article class="persona-card"><span class="persona-ico">🎓</span><h3>학교·교육 현장</h3><p>초·중·고·대학의 ESG 소양·진로 교육이 필요한 분</p></article>
+      <article class="persona-card"><span class="persona-ico">📈</span><h3>전문가·컨설턴트 준비</h3><p>ESG 자격을 취득해 전문가·컨설턴트로 성장하려는 분</p></article>
+    </div>
+  </div>
+</section>
+
 <!-- 교육 체계 · 대상별 -->
-<section class="section section--alt" id="ladder">
+<section class="section" id="ladder">
   <div class="container">
     <div class="section-head">
       <div><h2 class="section-title c-blue">교육 체계 · 대상별 과정</h2><span class="section-en">LEARNING PATH</span></div>
     </div>
     <p class="section-lede">ESG <strong>인식(소양) → 기본 → 실무 → 전문가(자격)</strong> 로 이어지는 단계별 학습 사다리로, 학교부터 기업·전문가까지 눈높이에 맞춰 설계합니다.</p>
-
     <ol class="esg-flow" aria-label="ESG 학습 단계">
       <li><span class="ef-no">STEP 1</span><h3>소양</h3><p>학교·시민 · ESG 인식과 가치</p></li>
       <li><span class="ef-no">STEP 2</span><h3>기본</h3><p>입문·임직원 · ESG 개념과 경영</p></li>
       <li><span class="ef-no">STEP 3</span><h3>실무</h3><p>담당자 · 진단·데이터·보고서</p></li>
       <li><span class="ef-no">STEP 4</span><h3>전문가</h3><p>자격 · 지도사·진단평가사·검증원</p></li>
     </ol>
-
     <div class="esg-mods" style="margin-top:30px">
       <article class="esg-mod esg-mod--green"><div class="esg-mod-head"><span class="esg-mod-no">대상 A</span><h3 class="esg-mod-title">학교 ESG 소양교육</h3></div><ul class="esg-mod-list"><li>초·중·고·대학 눈높이별 소양·진로 교육</li><li>기후·환경, 사회적 책임, 지속가능 시민의식</li></ul></article>
       <article class="esg-mod esg-mod--blue"><div class="esg-mod-head"><span class="esg-mod-no">대상 B</span><h3 class="esg-mod-title">기업·기관 임직원 교육</h3></div><ul class="esg-mod-list"><li>ESG 개념부터 실무·보고서까지 맞춤 과정</li><li>담당자 역량 강화, ESG 경영 내재화</li></ul></article>
@@ -60,27 +103,25 @@
   </div>
 </section>
 
-<!-- 학교 ESG 소양교육 -->
-<section class="section" id="school">
+<!-- 핵심 역량 배너 -->
+<section class="lp-band">
   <div class="container">
-    <div class="section-head">
-      <div><h2 class="section-title c-green">학교 ESG 소양교육</h2><span class="section-en">FOR SCHOOLS</span></div>
-    </div>
-    <p class="section-lede">초등학교부터 대학까지 <strong>발달 단계에 맞춘 ESG 소양교육</strong>으로, 지속가능한 미래를 만드는 시민의식과 진로 역량을 키웁니다.</p>
-    <div class="esg-mods">
-      <article class="esg-mod esg-mod--green"><div class="esg-mod-head"><span class="esg-mod-no">초등</span><h3 class="esg-mod-title">ESG가 뭐예요?</h3></div><ul class="esg-mod-list"><li>환경·나눔·약속을 놀이와 체험으로</li><li>기후·분리배출·에너지 절약 습관</li><li>배려와 나눔, 우리 동네 탐험</li></ul></article>
-      <article class="esg-mod esg-mod--green"><div class="esg-mod-head"><span class="esg-mod-no">중등</span><h3 class="esg-mod-title">지속가능한 지구시민</h3></div><ul class="esg-mod-list"><li>기후위기·사회문제 탐구</li><li>자원순환·사회적 책임의 이해</li><li>모둠 실천 프로젝트</li></ul></article>
-      <article class="esg-mod esg-mod--green"><div class="esg-mod-head"><span class="esg-mod-no">고등</span><h3 class="esg-mod-title">ESG와 나의 진로</h3></div><ul class="esg-mod-list"><li>지속가능경영·ESG 개념 이해</li><li>기업·사회 ESG 사례 탐구</li><li>진로·창업 연계 탐구활동</li></ul></article>
-      <article class="esg-mod esg-mod--green"><div class="esg-mod-head"><span class="esg-mod-no">대학</span><h3 class="esg-mod-title">ESG 리터러시 &amp; 커리어</h3></div><ul class="esg-mod-list"><li>ESG 경영·직무의 이해</li><li>산업별 ESG 트렌드와 사례</li><li>자격·인턴십·취업 연계</li></ul></article>
-    </div>
+    <p class="lp-band-lead">진단에서 실행, 그리고 자격까지!</p>
+    <h2 class="lp-band-title">ESG 경영·평가의 <b>A to Z</b></h2>
+    <p class="lp-band-sub">개념 이해를 넘어 <b>진단 → 전략 → 공시 → 검증</b>까지, 조직이 스스로 ESG를 관리·개선하는 실행 역량을 완성합니다.</p>
+    <ul class="lp-band-stack">
+      <li>🌱 ESG 진단 · 전략 수립</li>
+      <li>📊 데이터 · 공시(보고서) 실무</li>
+      <li>🏅 산업부 공인 민간자격</li>
+    </ul>
   </div>
 </section>
 
 <!-- 기업·기관 ESG 교육과정 -->
-<section class="section section--alt" id="corporate">
+<section class="section" id="corporate">
   <div class="container">
     <div class="section-head">
-      <div><h2 class="section-title c-blue">기업·기관 ESG 교육과정</h2><span class="section-en">FOR ENTERPRISES</span></div>
+      <div><h2 class="section-title c-blue">기업·기관 ESG 교육과정</h2><span class="section-en">CURRICULUM</span></div>
     </div>
     <p class="section-lede">교육 대상과 ESG 수준·목적을 사전에 파악하여 <strong>기초부터 실무·전문가까지</strong> 맞춤 설계합니다. 이론을 넘어 사례·실습·워크숍으로 현장 실행 역량을 기릅니다.</p>
     <%
@@ -107,20 +148,18 @@
 </section>
 
 <!-- ESG 전문가 자격과정 -->
-<section class="section" id="cert">
+<section class="section section--alt" id="cert">
   <div class="container">
     <div class="section-head">
       <div><h2 class="section-title c-orange">ESG 전문가 양성 자격과정</h2><span class="section-en">CERTIFICATION</span></div>
     </div>
     <p class="section-lede"><strong>산업통상자원부 공인 민간자격</strong> 3단계 과정으로, 국내 최고의 ESG 전문가에게 <strong>ESG 경영·평가의 A to Z</strong>를 배웁니다.</p>
-
     <ul class="esg-creds" aria-label="자격·협력">
       <li>산업통상자원부 공인 민간자격</li>
       <li>(사)한국사회공헌연구원 협력</li>
       <li>英 Accountability AA1000AS 협약</li>
       <li>혁신바우처 컨설팅 참여 자격</li>
     </ul>
-
     <%
       const cert = [
         { lv: "LEVEL 1", title: "ESG 지도사", cls: "green", items: ["ESG에 대한 이해", "K-ESG 가이드라인", "중소기업 대응 전략", "ESG 지도사 자격시험"] },
@@ -136,7 +175,6 @@
         </article>
       <% }); %>
     </div>
-
     <div class="esg-tracks">
       <article class="esg-diff-card"><h3>Track 1 · 기업 내부 전문가</h3><p>기업 내부의 <strong>ESG 담당자 양성</strong> 및 ESG 경영 내재화 트랙</p></article>
       <article class="esg-diff-card"><h3>Track 2 · 평가·검증 전문가</h3><p><strong>ESG 진단평가 및 경영보고서 검증</strong> 전문가 트랙</p></article>
@@ -145,7 +183,7 @@
 </section>
 
 <!-- ESG 컨설팅 -->
-<section class="section section--alt" id="consulting">
+<section class="section" id="consulting">
   <div class="container">
     <div class="section-head">
       <div><h2 class="section-title c-green">ESG 컨설팅</h2><span class="section-en">CONSULTING</span></div>
@@ -173,27 +211,109 @@
   </div>
 </section>
 
-<!-- 강점 · 기대효과 -->
-<section class="section" id="strength">
+<!-- 수료 후, 이렇게 달라집니다 -->
+<section class="section section--alt" id="change">
   <div class="container">
     <div class="section-head">
-      <div><h2 class="section-title c-orange">도시공동체본부 ESG의 강점</h2><span class="section-en">WHY US</span></div>
+      <div><h2 class="section-title c-green">수료 후, 이렇게 달라집니다</h2><span class="section-en">BEFORE → AFTER</span></div>
     </div>
-    <div class="esg-diff">
-      <article class="esg-diff-card"><h3>맞춤형 ESG</h3><p>기업·공공기관·사회적경제조직·지역공동체, 그리고 학교까지 규모·업종·수준을 진단해 교육과 컨설팅을 <strong>선택·조합</strong>합니다.</p></article>
-      <article class="esg-diff-card"><h3>진단에서 실행까지</h3><p>단순 평가에 머무르지 않고 <strong>진단 → 개선 → 실행 → 성과관리</strong>까지 하나로 연결합니다.</p></article>
-      <article class="esg-diff-card"><h3>기업과 지역을 연결</h3><p>기업 중심 ESG를 넘어 공공·지역공동체·사회적경제까지 연결해 <strong>지속가능한 지역생태계</strong>를 조성합니다.</p></article>
-      <article class="esg-diff-card"><h3>교육과 컨설팅의 연계</h3><p>교육 → 진단 → 컨설팅 → 실행지원을 연계해 조직이 <strong>스스로 ESG를 관리·개선</strong>하도록 돕습니다.</p></article>
-    </div>
-
-    <div class="solar-closing">
-      <p><strong>기대효과</strong> — 탄소중립 실현을 위한 의식 개선과 여건 조성, ESG 경영 도입·성과관리 역량 배양, 외부 평가 대응력 강화, 투자 생태계 개선까지. 학교·기업·기관의 ESG 여정을 도시공동체본부가 함께합니다.</p>
-      <div class="region-cta" style="justify-content:center">
-        <a class="btn btn-primary" href="/learn/apply">교육 신청하기</a>
-        <a class="btn btn-ghost" href="/#contact">교육·컨설팅 문의</a>
-      </div>
+    <div class="ba-grid">
+      <article class="ba-card">
+        <div class="ba-before"><span class="ba-tag">BEFORE</span><p>ESG 공시·평가 요구에 막막하게 대응</p></div>
+        <span class="ba-arrow" aria-hidden="true">→</span>
+        <div class="ba-after"><span class="ba-tag ba-tag--on">AFTER</span><p>공시기준을 이해하고 <b>보고서를 직접 작성</b></p></div>
+      </article>
+      <article class="ba-card">
+        <div class="ba-before"><span class="ba-tag">BEFORE</span><p>공급망 ESG 실사 요청에 준비 부족</p></div>
+        <span class="ba-arrow" aria-hidden="true">→</span>
+        <div class="ba-after"><span class="ba-tag ba-tag--on">AFTER</span><p>평가·증빙 대응 체계로 <b>자신 있게 대응</b></p></div>
+      </article>
+      <article class="ba-card">
+        <div class="ba-before"><span class="ba-tag">BEFORE</span><p>ESG가 구호에 그치고 성과로 연결 안 됨</p></div>
+        <span class="ba-arrow" aria-hidden="true">→</span>
+        <div class="ba-after"><span class="ba-tag ba-tag--on">AFTER</span><p>전략·KPI로 <b>경영·성과에 내재화</b></p></div>
+      </article>
+      <article class="ba-card">
+        <div class="ba-before"><span class="ba-tag">BEFORE</span><p>ESG 커리어의 방향이 불분명</p></div>
+        <span class="ba-arrow" aria-hidden="true">→</span>
+        <div class="ba-after"><span class="ba-tag ba-tag--on">AFTER</span><p>공인 자격으로 <b>전문가·컨설턴트로 성장</b></p></div>
+      </article>
     </div>
   </div>
 </section>
+
+<!-- 강점 (POINT) -->
+<section class="section" id="strength">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-blue">도시공동체본부 ESG의 강점</h2><span class="section-en">WHY US</span></div>
+    </div>
+    <div class="point-list">
+      <article class="point-row"><span class="point-no">01</span><div class="point-body"><h3>맞춤형 ESG</h3><p>기업·공공기관·사회적경제조직·지역공동체, 학교까지 규모·업종·수준을 진단해 교육과 컨설팅을 <b>선택·조합</b>합니다.</p></div></article>
+      <article class="point-row"><span class="point-no">02</span><div class="point-body"><h3>진단에서 실행까지</h3><p>단순 평가에 머무르지 않고 <b>진단 → 개선 → 실행 → 성과관리</b>까지 하나로 연결합니다.</p></div></article>
+      <article class="point-row"><span class="point-no">03</span><div class="point-body"><h3>기업과 지역을 연결</h3><p>기업 중심 ESG를 넘어 공공·지역공동체·사회적경제까지 연결해 <b>지속가능한 지역생태계</b>를 조성합니다.</p></div></article>
+      <article class="point-row"><span class="point-no">04</span><div class="point-body"><h3>교육과 컨설팅의 연계</h3><p>교육 → 진단 → 컨설팅 → 실행지원을 연계해 조직이 <b>스스로 ESG를 관리·개선</b>하도록 돕습니다.</p></div></article>
+    </div>
+  </div>
+</section>
+
+<!-- 신청 절차 -->
+<section class="section section--alt" id="apply">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-green">신청 절차</h2><span class="section-en">HOW TO APPLY</span></div>
+    </div>
+    <p class="section-lede">아래 절차에 따라 간편하게 신청하실 수 있습니다. 세부 일정은 <a href="/learn/calendar">연간교육일정</a>에서 확인하세요.</p>
+    <ol class="esg-flow esg-flow--apply" aria-label="신청 절차">
+      <li><span class="ef-no">STEP 1</span><h3>교육 신청</h3><p>신청 폼 작성</p></li>
+      <li><span class="ef-no">STEP 2</span><h3>상담 안내</h3><p>과정·일정 안내</p></li>
+      <li><span class="ef-no">STEP 3</span><h3>등록</h3><p>수강 확정</p></li>
+      <li><span class="ef-no">STEP 4</span><h3>교육 시작</h3><p>이론·사례·실습</p></li>
+    </ol>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section" id="faq">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-orange">자주 묻는 질문</h2><span class="section-en">FAQ</span></div>
+    </div>
+    <div class="faq-list">
+      <details class="faq-item"><summary>ESG가 처음인데 들어도 될까요?</summary><div class="faq-a">네. ESG 개념부터 시작하는 기본과정이 있으며, 학교·시민 소양교육부터 전문가 자격까지 수준에 맞춰 안내해 드립니다.</div></details>
+      <details class="faq-item"><summary>자격증은 어떤 자격인가요?</summary><div class="faq-a"><b>산업통상자원부 공인 민간자격</b> 3단계(ESG 지도사 · 진단평가사 · 보고서검증원)로 구성됩니다. 혁신바우처 컨설팅 참여 자격으로도 연결됩니다.</div></details>
+      <details class="faq-item"><summary>기업 맞춤 교육도 가능한가요?</summary><div class="faq-a">네. 조직의 규모·업종·ESG 수준을 진단해 기본·실무·공급망·탄소중립·보고서 등 필요한 과정을 <b>선택·조합</b>해 설계합니다.</div></details>
+      <details class="faq-item"><summary>교육과 컨설팅을 함께 받을 수 있나요?</summary><div class="faq-a">네. 교육 → 진단 → 컨설팅 → 실행지원으로 연계해, 조직이 스스로 ESG를 관리·개선하도록 돕습니다.</div></details>
+    </div>
+    <p class="faq-more">더 궁금한 점이 있으신가요? <a href="/#contact">교육·컨설팅 문의하기 →</a></p>
+  </div>
+</section>
+
+<!-- 마감 CTA -->
+<section class="final-cta">
+  <div class="container">
+    <h2>ESG는 이제 모든 조직의 필수 역량입니다</h2>
+    <p>탄소중립·공시·공급망의 시대, 학교·기업·기관의 ESG 여정을<br>도시공동체본부가 진단부터 실행까지 함께합니다. 지금 시작하세요.</p>
+    <div class="final-cta-btns">
+      <a class="btn btn-primary btn-lg" href="/learn/apply?course=<%= encodeURIComponent(ESG_COURSE) %>">교육 신청하기 →</a>
+      <a class="btn btn-ghost-light btn-lg" href="/#contact">교육·컨설팅 문의</a>
+    </div>
+  </div>
+</section>
+
+<!-- 모바일 고정 신청 바 -->
+<div class="lp-sticky" id="lpSticky" aria-hidden="true">
+  <div class="lp-sticky-inner">
+    <span class="lp-sticky-text">지속가능의 시대, ESG 전문가가 되고 싶으신가요?<br>그럼 <b>ESG 전문가 과정</b>을 지금 바로 신청하세요.</span>
+    <a class="btn btn-primary" href="/learn/apply?course=<%= encodeURIComponent(ESG_COURSE) %>">교육 신청하기</a>
+  </div>
+</div>
+<script>
+(function(){
+  var bar=document.getElementById('lpSticky'); if(!bar) return;
+  function onScroll(){ if(window.scrollY>600) bar.classList.add('is-show'); else bar.classList.remove('is-show'); }
+  window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+})();
+</script>
 
 <%- include('partials/footer') %>

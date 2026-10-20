@@ -1,15 +1,28 @@
 <%- include('partials/header') %>
+<%- include('partials/lp-styles') %>
+<% var RDC_COURSE = '지역발전혁신가(RDC) 양성 과정'; %>
 
-<section class="page-banner">
+<!-- 히어로 -->
+<section class="lp-hero">
   <div class="container">
-    <span class="page-banner-en">RDC PROFESSIONAL</span>
-    <h1 class="page-banner-title">지역개발전문가과정</h1>
-    <p class="page-banner-desc">지역회복을 <strong>진단부터 자립까지</strong> 설계·실행하는 현장 전문가, <strong>지역발전혁신가(RDC)</strong>를 양성합니다. 리빙랩 기반의 단계별 학습으로 지역이 스스로 서게 합니다.</p>
+    <span class="lp-hero-eyebrow">RDC · REGIONAL DEVELOPMENT CATALYST</span>
+    <h1 class="lp-hero-title">지역을 되살리는 힘,<br><strong>지역발전혁신가(RDC)</strong></h1>
+    <p class="lp-hero-sub">지역회복을 <b>진단부터 자립까지</b> 설계·실행하는 현장 전문가를 양성합니다. 리빙랩 기반의 단계별 학습으로, 지역이 <b>스스로 서게</b> 만드는 역량을 기릅니다.</p>
+    <div class="lp-hero-cta">
+      <a class="btn btn-primary btn-lg" href="/learn/apply?course=<%= encodeURIComponent(RDC_COURSE) %>">교육 신청하기 →</a>
+      <a class="btn btn-ghost-light btn-lg" href="#curriculum">커리큘럼 보기</a>
+    </div>
+    <ul class="lp-hero-tags">
+      <li>✓ 리빙랩 현장 실습</li>
+      <li>✓ 진단→자립 전 과정</li>
+      <li>✓ 지역회복 표준체계</li>
+      <li>✓ RDC 전문가 네트워크</li>
+    </ul>
   </div>
 </section>
 
 <!-- 과정 한눈에 -->
-<section class="section" id="facts" style="padding-top:34px">
+<section class="section" id="facts" style="padding-top:38px">
   <div class="container">
     <div class="course-facts">
       <div class="cf-item"><span class="cf-label">교육 대상</span><span class="cf-value">주민 리더 · 공공 담당자 · 사회적경제 종사자</span></div>
@@ -20,11 +33,28 @@
   </div>
 </section>
 
-<!-- 왜 지역개발전문가인가 -->
-<section class="section section--alt" id="why">
+<!-- 공감 · 이런 고민 -->
+<section class="section section--alt" id="pain">
   <div class="container">
     <div class="section-head">
-      <div><h2 class="section-title c-green">왜 지역개발전문가인가</h2><span class="section-en">WHY RDC NOW</span></div>
+      <div><h2 class="section-title c-green">혹시, 이런 고민 있으셨나요?</h2><span class="section-en">YOUR PAIN POINTS</span></div>
+    </div>
+    <p class="section-lede">지역을 살리고 싶지만, <strong>무엇을 어떻게 시작해야 할지</strong> 막막하셨다면 — 이 과정이 현장의 길을 열어드립니다.</p>
+    <div class="pain-grid">
+      <article class="pain-card"><span class="pain-q">Q</span><p>“사업은 하는데 <b>끝나면 지역에 남는 게</b> 없어요.”</p></article>
+      <article class="pain-card"><span class="pain-q">Q</span><p>“주민 참여를 <b>어떻게 끌어내고 운영</b>하죠?”</p></article>
+      <article class="pain-card"><span class="pain-q">Q</span><p>“지역 문제를 <b>진단하고 설계</b>하는 법을 모르겠어요.”</p></article>
+      <article class="pain-card"><span class="pain-q">Q</span><p>“지역재생·공동체 분야에서 <b>전문가로 활동</b>하고 싶어요.”</p></article>
+    </div>
+    <p class="pain-answer">걱정 마세요. <b>진단 → 설계 → 실증 → 자립</b>까지, 리빙랩으로 직접 해보며 익힙니다.</p>
+  </div>
+</section>
+
+<!-- 왜 지역개발전문가인가 -->
+<section class="section" id="why">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-blue">왜 지역개발전문가인가</h2><span class="section-en">WHY RDC NOW</span></div>
     </div>
     <p class="section-lede">인구감소와 지방소멸의 시대, 지역을 되살리는 힘은 <strong>주민 스스로</strong>에게 있습니다. 도시공동체본부는 지역이 스스로 서도록 설계·실행하는 현장 전문가를 양성합니다.</p>
     <div class="sgrid sgrid--green">
@@ -36,6 +66,21 @@
   </div>
 </section>
 
+<!-- 이런 분께 추천 -->
+<section class="section section--alt" id="who">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-green">이런 분께 추천합니다</h2><span class="section-en">FOR WHOM</span></div>
+    </div>
+    <div class="persona-grid">
+      <article class="persona-card"><span class="persona-ico">🧑‍🌾</span><h3>주민 리더·활동가</h3><p>마을공동체·주민자치를 이끌고 문제를 함께 풀고 싶은 분</p></article>
+      <article class="persona-card"><span class="persona-ico">🏛️</span><h3>공공·정책 담당자</h3><p>지역진단·정책설계와 리빙랩 사업을 기획·운영하는 분</p></article>
+      <article class="persona-card"><span class="persona-ico">🤝</span><h3>사회적경제 종사자</h3><p>지역순환경제·공동체 사업 모델을 설계하고 싶은 분</p></article>
+      <article class="persona-card"><span class="persona-ico">🌍</span><h3>지역재생 전문가 준비</h3><p>지역발전혁신가(RDC)로 현장 전문가의 길을 걷고 싶은 분</p></article>
+    </div>
+  </div>
+</section>
+
 <!-- 교육 체계 · 단계 -->
 <section class="section" id="ladder">
   <div class="container">
@@ -43,14 +88,12 @@
       <div><h2 class="section-title c-blue">교육 체계 · 단계별 과정</h2><span class="section-en">LEARNING PATH</span></div>
     </div>
     <p class="section-lede">지역자원을 <strong>진단 → 설계 → 실증 → 자립·이양</strong>으로 이어가는 리빙랩 학습 사다리로, 주민부터 정책 담당자까지 눈높이에 맞춰 설계합니다.</p>
-
     <ol class="esg-flow" aria-label="RDC 학습 단계">
       <li><span class="ef-no">STEP 1</span><h3>진단</h3><p>지역자원·문제 조사와 정의</p></li>
       <li><span class="ef-no">STEP 2</span><h3>설계</h3><p>표준 프로그램·실행계획 설계</p></li>
       <li><span class="ef-no">STEP 3</span><h3>실증</h3><p>리빙랩 파일럿 운영·검증</p></li>
       <li><span class="ef-no">STEP 4</span><h3>자립</h3><p>운영모델·거버넌스 이양</p></li>
     </ol>
-
     <div class="esg-mods" style="margin-top:30px">
       <article class="esg-mod esg-mod--green"><div class="esg-mod-head"><span class="esg-mod-no">대상 A</span><h3 class="esg-mod-title">주민 리더 · 활동가</h3></div><ul class="esg-mod-list"><li>마을공동체·주민자치 리더십</li><li>주민참여형 문제해결 역량</li></ul></article>
       <article class="esg-mod esg-mod--blue"><div class="esg-mod-head"><span class="esg-mod-no">대상 B</span><h3 class="esg-mod-title">공공·정책 담당자</h3></div><ul class="esg-mod-list"><li>지역진단·정책설계 실무</li><li>리빙랩 사업 기획·운영</li></ul></article>
@@ -60,8 +103,22 @@
   </div>
 </section>
 
+<!-- 핵심 역량 배너 -->
+<section class="lp-band">
+  <div class="container">
+    <p class="lp-band-lead">조사·계획을 넘어, 지역이 스스로 서게!</p>
+    <h2 class="lp-band-title">리빙랩으로 완성하는 <b>지역회복 설계</b></h2>
+    <p class="lp-band-sub">지역자원을 <b>진단하고 설계해 현장에서 실증</b>하고, 운영모델과 거버넌스를 지역에 이양해 지속가능한 자립까지 이끕니다.</p>
+    <ul class="lp-band-stack">
+      <li>🔎 지역진단 · 자원조사</li>
+      <li>🧪 리빙랩 실증 · 퍼실리테이션</li>
+      <li>🏡 자립 · 거버넌스 이양</li>
+    </ul>
+  </div>
+</section>
+
 <!-- 핵심 커리큘럼 -->
-<section class="section section--alt" id="curriculum">
+<section class="section" id="curriculum">
   <div class="container">
     <div class="section-head">
       <div><h2 class="section-title c-green">핵심 커리큘럼</h2><span class="section-en">CURRICULUM</span></div>
@@ -88,11 +145,11 @@
   </div>
 </section>
 
-<!-- 수료 후 활용 -->
-<section class="section" id="outcomes">
+<!-- 수료 후 활용(진로) -->
+<section class="section section--alt" id="outcomes">
   <div class="container">
     <div class="section-head">
-      <div><h2 class="section-title c-orange">수료 후 활용</h2><span class="section-en">OUTCOMES</span></div>
+      <div><h2 class="section-title c-orange">수료 후 활용 · 진로</h2><span class="section-en">OUTCOMES</span></div>
     </div>
     <p class="section-lede">수료 후에는 지역 현장에서 <strong>바로 활동</strong>할 수 있는 전문가로 성장합니다. 지역재생·공동체 사업의 기획자이자 실행자가 됩니다.</p>
     <%
@@ -113,26 +170,57 @@
   </div>
 </section>
 
-<!-- 과정 특장점 -->
+<!-- 수료 후, 이렇게 달라집니다 -->
+<section class="section" id="change">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-green">수료 후, 이렇게 달라집니다</h2><span class="section-en">BEFORE → AFTER</span></div>
+    </div>
+    <div class="ba-grid">
+      <article class="ba-card">
+        <div class="ba-before"><span class="ba-tag">BEFORE</span><p>사업이 끝나면 지역에 남는 것이 없음</p></div>
+        <span class="ba-arrow" aria-hidden="true">→</span>
+        <div class="ba-after"><span class="ba-tag ba-tag--on">AFTER</span><p>운영모델·거버넌스를 <b>지역에 이양해 자립</b></p></div>
+      </article>
+      <article class="ba-card">
+        <div class="ba-before"><span class="ba-tag">BEFORE</span><p>주민 참여를 끌어내기 어려움</p></div>
+        <span class="ba-arrow" aria-hidden="true">→</span>
+        <div class="ba-after"><span class="ba-tag ba-tag--on">AFTER</span><p>퍼실리테이션으로 <b>주민주도 문제해결</b></p></div>
+      </article>
+      <article class="ba-card">
+        <div class="ba-before"><span class="ba-tag">BEFORE</span><p>책상 위 계획에 머무는 사업</p></div>
+        <span class="ba-arrow" aria-hidden="true">→</span>
+        <div class="ba-after"><span class="ba-tag ba-tag--on">AFTER</span><p>리빙랩으로 <b>현장에서 실험·검증</b></p></div>
+      </article>
+      <article class="ba-card">
+        <div class="ba-before"><span class="ba-tag">BEFORE</span><p>지역재생 커리어의 방향이 막연함</p></div>
+        <span class="ba-arrow" aria-hidden="true">→</span>
+        <div class="ba-after"><span class="ba-tag ba-tag--on">AFTER</span><p>RDC로 <b>현장 전문가·코디네이터</b>로 활동</p></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- 강점 (POINT) -->
 <section class="section section--alt" id="strength">
   <div class="container">
     <div class="section-head">
       <div><h2 class="section-title c-blue">도시공동체본부 RDC의 강점</h2><span class="section-en">WHY US</span></div>
     </div>
-    <div class="esg-diff">
-      <article class="esg-diff-card"><h3>진단에서 자립까지</h3><p>조사·진단에 머물지 않고 <strong>설계 → 실증 → 자립</strong>까지 하나로 연결합니다.</p></article>
-      <article class="esg-diff-card"><h3>리빙랩 현장 중심</h3><p>이론이 아니라 <strong>현장에서 실험하고 검증</strong>하는 실전형 교육입니다.</p></article>
-      <article class="esg-diff-card"><h3>지역회복 표준체계</h3><p>도시공동체본부의 <strong>지역회복 표준 프로그램</strong>을 적용·실습합니다.</p></article>
-      <article class="esg-diff-card"><h3>전문가 네트워크</h3><p>수료 후 <strong>RDC 전문가 네트워크</strong>로 지속 성장·연계합니다.</p></article>
+    <div class="point-list">
+      <article class="point-row"><span class="point-no">01</span><div class="point-body"><h3>진단에서 자립까지</h3><p>조사·진단에 머물지 않고 <b>설계 → 실증 → 자립</b>까지 하나로 연결합니다.</p></div></article>
+      <article class="point-row"><span class="point-no">02</span><div class="point-body"><h3>리빙랩 현장 중심</h3><p>이론이 아니라 <b>현장에서 실험하고 검증</b>하는 실전형 교육입니다.</p></div></article>
+      <article class="point-row"><span class="point-no">03</span><div class="point-body"><h3>지역회복 표준체계</h3><p>도시공동체본부의 <b>지역회복 표준 프로그램</b>을 적용·실습합니다.</p></div></article>
+      <article class="point-row"><span class="point-no">04</span><div class="point-body"><h3>전문가 네트워크</h3><p>수료 후 <b>RDC 전문가 네트워크</b>로 지속 성장·연계합니다.</p></div></article>
     </div>
   </div>
 </section>
 
-<!-- 신청 안내 -->
+<!-- 신청 절차 -->
 <section class="section" id="apply">
   <div class="container">
     <div class="section-head">
-      <div><h2 class="section-title c-green">신청 안내</h2><span class="section-en">HOW TO APPLY</span></div>
+      <div><h2 class="section-title c-green">신청 절차</h2><span class="section-en">HOW TO APPLY</span></div>
     </div>
     <p class="section-lede">아래 절차에 따라 간편하게 신청하실 수 있습니다. 세부 일정은 <a href="/learn/calendar">연간교육일정</a>에서 확인하세요.</p>
     <ol class="esg-flow esg-flow--apply" aria-label="신청 절차">
@@ -141,15 +229,50 @@
       <li><span class="ef-no">STEP 3</span><h3>등록</h3><p>수강 확정</p></li>
       <li><span class="ef-no">STEP 4</span><h3>교육 시작</h3><p>리빙랩·프로젝트</p></li>
     </ol>
+  </div>
+</section>
 
-    <div class="solar-closing">
-      <p><strong>지역의 회복은 사람에서 시작됩니다.</strong> 지역을 진단하고, 설계하고, 스스로 서게 만드는 현장 전문가 — 지역발전혁신가(RDC)의 길을 도시공동체본부가 함께합니다.</p>
-      <div class="region-cta" style="justify-content:center">
-        <a class="btn btn-primary" href="/learn/apply">교육 신청하기</a>
-        <a class="btn btn-ghost" href="/#contact">교육·컨설팅 문의</a>
-      </div>
+<!-- FAQ -->
+<section class="section section--alt" id="faq">
+  <div class="container">
+    <div class="section-head">
+      <div><h2 class="section-title c-orange">자주 묻는 질문</h2><span class="section-en">FAQ</span></div>
+    </div>
+    <div class="faq-list">
+      <details class="faq-item"><summary>전공·경력이 없어도 들을 수 있나요?</summary><div class="faq-a">네. 주민 리더·활동가부터 공공 담당자, 사회적경제 종사자까지 누구나 참여할 수 있도록 단계별로 설계되어 있습니다.</div></details>
+      <details class="faq-item"><summary>리빙랩이 무엇인가요?</summary><div class="faq-a">리빙랩(Living Lab)은 <b>주민이 참여해 지역 문제를 현장에서 실험·검증</b>하는 방식입니다. 책상 위 계획이 아니라 실제 현장에서 해결안을 만들어 봅니다.</div></details>
+      <details class="faq-item"><summary>수료 후 어떤 활동을 할 수 있나요?</summary><div class="faq-a">마을 코디네이터·지역재생 매니저, 지역재생·공동체 사업 기획·운영, 정책 자문·퍼실리테이터 등 <b>지역 현장 전문가</b>로 활동할 수 있습니다.</div></details>
+      <details class="faq-item"><summary>교육은 어떻게 진행되나요?</summary><div class="faq-a">지역회복 표준체계를 바탕으로 한 <b>리빙랩 현장 실습과 프로젝트</b> 중심으로 진행되며, 수료 후 RDC 전문가 네트워크로 이어집니다.</div></details>
+    </div>
+    <p class="faq-more">더 궁금한 점이 있으신가요? <a href="/#contact">교육 문의하기 →</a></p>
+  </div>
+</section>
+
+<!-- 마감 CTA -->
+<section class="final-cta">
+  <div class="container">
+    <h2>지역의 회복은 사람에서 시작됩니다</h2>
+    <p>지역을 진단하고, 설계하고, 스스로 서게 만드는 현장 전문가 —<br>지역발전혁신가(RDC)의 길을 도시공동체본부가 함께합니다.</p>
+    <div class="final-cta-btns">
+      <a class="btn btn-primary btn-lg" href="/learn/apply?course=<%= encodeURIComponent(RDC_COURSE) %>">교육 신청하기 →</a>
+      <a class="btn btn-ghost-light btn-lg" href="/#contact">교육·컨설팅 문의</a>
     </div>
   </div>
 </section>
+
+<!-- 모바일 고정 신청 바 -->
+<div class="lp-sticky" id="lpSticky" aria-hidden="true">
+  <div class="lp-sticky-inner">
+    <span class="lp-sticky-text">지역을 되살리는 현장 전문가가 되고 싶으신가요?<br>그럼 <b>지역개발전문가과정</b>을 지금 바로 신청하세요.</span>
+    <a class="btn btn-primary" href="/learn/apply?course=<%= encodeURIComponent(RDC_COURSE) %>">교육 신청하기</a>
+  </div>
+</div>
+<script>
+(function(){
+  var bar=document.getElementById('lpSticky'); if(!bar) return;
+  function onScroll(){ if(window.scrollY>600) bar.classList.add('is-show'); else bar.classList.remove('is-show'); }
+  window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+})();
+</script>
 
 <%- include('partials/footer') %>
