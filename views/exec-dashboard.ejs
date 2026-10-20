@@ -28,6 +28,9 @@
   .mini-rate-num{font-size:.78rem;font-weight:800;color:var(--green-800);min-width:34px;text-align:right}
   .ex-empty{padding:22px 16px;text-align:center;color:var(--muted)}
   .upd-chip{font-size:.66rem;font-weight:900;letter-spacing:.04em;color:#fff;background:#e8830c;border-radius:6px;padding:2px 7px;text-transform:uppercase}
+  .seen-chip{font-size:.74rem;font-weight:800;border-radius:999px;padding:3px 10px}
+  .seen-ok{background:#e9f6ee;color:#2b8a5a;border:1px solid #cfe6d7}
+  .seen-no{background:#f3f1ee;color:#9aa4ad;border:1px solid var(--line)}
 </style>
 <div class="container admin-wrap">
   <div class="admin-head">
@@ -119,6 +122,40 @@
         </tbody>
       </table>
     </div>
+  </section>
+
+  <!-- 임원 확인 현황 (참여도) -->
+  <section class="exec-sec">
+    <div class="sec-head">
+      <h2>임원 확인 현황</h2>
+      <span class="field-hint" style="margin:0">임원이 업무관리 페이지를 마지막으로 확인한 시각입니다.</span>
+    </div>
+    <div class="ex-table-wrap">
+      <table class="ex-table">
+        <thead>
+          <tr>
+            <th class="c-no">번호</th><th>임원</th><th class="nowrap">소속</th><th class="nowrap">직급</th>
+            <th class="nowrap">마지막 확인</th><th class="nowrap">상태</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!execs || !execs.length) { %>
+            <tr><td colspan="6" class="ex-empty">승인된 임원이 없습니다. 관리자 → 회원 상세에서 ‘임원으로 승인’하면 표시됩니다.</td></tr>
+          <% } %>
+          <% (execs || []).forEach(function(m, i){ var seen = (m.exec_seen_at || '').trim(); var isMe = (typeof viewerId !== 'undefined' && viewerId === m.id); %>
+            <tr<%= isMe ? ' style="background:#f1f8f3"' : '' %>>
+              <td class="c-no"><%= i + 1 %></td>
+              <td class="c-title"><%= esc(m.name || '-') %><% if (isMe) { %> <span class="field-hint">(나)</span><% } %></td>
+              <td class="nowrap"><% if (m.org_name) { %><%= esc(m.org_name) %><% } else { %><span class="muted">-</span><% } %></td>
+              <td class="nowrap"><% if (m.position) { %><%= esc(m.position) %><% } else { %><span class="muted">-</span><% } %></td>
+              <td class="nowrap <%= seen ? '' : 'muted' %>"><%= seen ? ((typeof fmtDateTime !== 'undefined') ? fmtDateTime(seen) : seen.slice(0,16).replace('T',' ')) : '-' %></td>
+              <td class="nowrap"><% if (seen) { %><span class="seen-chip seen-ok">확인</span><% } else { %><span class="seen-chip seen-no">미확인</span><% } %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+    <p class="field-hint" style="margin-top:8px">※ ‘마지막 확인’은 임원이 로그인 후 업무관리 화면을 연 가장 최근 시각입니다. (관리자 접속은 집계에서 제외)</p>
   </section>
 </div>
 <%- include('partials/footer') %>

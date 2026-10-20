@@ -27,7 +27,15 @@ module.exports = function execRoutes({ verifyCsrf }) {
     if (req.session && req.session.admin) { req.execName = req.session.admin.username; return next(); }
     if (req.session && req.session.member) {
       const m = db.prepare("SELECT is_exec, name FROM members WHERE id = ?").get(req.session.member.id);
-      if (m && m.is_exec) { req.execName = m.name; return next(); }
+      if (m && m.is_exec) {
+        req.execName = m.name;
+        req.execMemberId = req.session.member.id;
+        // 임원이 업무관리 페이지를 '확인'한 시각 기록(참여도) — 조회(GET) 시
+        if (req.method === "GET") {
+          try { db.prepare("UPDATE members SET exec_seen_at = ? WHERE id = ?").run(new Date().toISOString(), req.session.member.id); } catch (_) {}
+        }
+        return next();
+      }
     }
     // 비인가(크롤러·비로그인·일반회원): GET은 OG를 포함한 공개 게이트(200)를 렌더 → 링크 미리보기 노출
     if (req.method === "GET") {
@@ -55,6 +63,8 @@ module.exports = function execRoutes({ verifyCsrf }) {
       ...res.locals, title: "임원 업무관리", today,
       stats: meetings.stats(), logs: meetings.listLogs().slice(0, 8), tasks: meetings.listTasks().slice(0, 12),
       pendingIds: meetings.pendingTaskIdSet(), pendingCount: meetings.pendingCount(),
+      execs: db.prepare("SELECT id, name, org_name, position, exec_seen_at FROM members WHERE is_exec = 1 ORDER BY (exec_seen_at = '') ASC, exec_seen_at DESC, name ASC").all(),
+      viewerId: req.execMemberId || 0,
     });
   });
 

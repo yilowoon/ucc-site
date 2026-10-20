@@ -218,6 +218,7 @@ try { db.exec("ALTER TABLE members ADD COLUMN reminder_optout INTEGER NOT NULL D
 // SNS 간편로그인 연동(카카오/네이버/구글)
 // 임원(이사 등) 승인 여부 — 임원 전용 업무관리 접근 권한
 try { db.exec("ALTER TABLE members ADD COLUMN is_exec INTEGER NOT NULL DEFAULT 0"); } catch (e) {}
+try { db.exec("ALTER TABLE members ADD COLUMN exec_seen_at TEXT NOT NULL DEFAULT ''"); } catch (e) {} // 임원 업무관리 최종 확인 시각
 // 임원 업무관리: 카카오톡 대화 업로드(회의록) + 파싱 메시지 + 업무(task)
 try {
   db.exec(`CREATE TABLE IF NOT EXISTS meeting_logs (
