@@ -143,14 +143,22 @@ const PAGES = {
             var s = document.createElement("script");
             s.src = "https://oapi.map.naver.com/openapi/v3/maps.js?" + p + "=" + encodeURIComponent(ID) + "&submodules=geocoder";
             s.onerror = function () { if (!failed) loadNext(); };
-            s.onload = function () { setTimeout(function () { if (!failed) init(); }, 600); };
+            s.onload = function () { waitReady(0, function () { return failed; }); };
             document.head.appendChild(s);
+          }
+          // SDK(naver.maps)가 준비될 때까지 폴링(최대 ~4초). 준비되면 init, 아니면 다음 파라미터 시도.
+          function waitReady(n, isFailed) {
+            if (ok || isFailed()) return;
+            if (window.naver && naver.maps && naver.maps.Map) { init(); return; }
+            if (n >= 40) { loadNext(); return; }
+            setTimeout(function () { waitReady(n + 1, isFailed); }, 100);
           }
           function init() {
             if (ok) return;
             if (!(window.naver && naver.maps && naver.maps.Map)) return; // 미준비/인증 실패 시 authFailure가 처리
             ok = true;
             var map = new naver.maps.Map(el, { zoom: 16, center: new naver.maps.LatLng(36.4808, 127.2890) });
+            setTimeout(function () { try { naver.maps.Event.trigger(map, "resize"); } catch (e) {} }, 200);
             if (naver.maps.Service && naver.maps.Service.geocode) {
               naver.maps.Service.geocode({ query: ADDRESS }, function (status, response) {
                 if (status === naver.maps.Service.Status.OK && response.v2.addresses && response.v2.addresses.length) {
