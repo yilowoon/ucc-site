@@ -60,8 +60,8 @@ const CSP = [
   "img-src 'self' data: blob: https:",
   "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
   "font-src 'self' data: https://cdn.jsdelivr.net",
-  "script-src 'self' 'unsafe-inline' https://t1.daumcdn.net https://*.daumcdn.net https://t1.kakaocdn.net https://*.kakaocdn.net https://*.kakao.com",
-  "connect-src 'self' https://*.daum.net https://*.daumcdn.net https://*.kakao.com https://*.kakaocdn.net",
+  "script-src 'self' 'unsafe-inline' https://t1.daumcdn.net https://*.daumcdn.net https://t1.kakaocdn.net https://*.kakaocdn.net https://*.kakao.com https://oapi.map.naver.com",
+  "connect-src 'self' https://*.daum.net https://*.daumcdn.net https://*.kakao.com https://*.kakaocdn.net https://oapi.map.naver.com https://*.map.naver.com https://naveropenapi.apigw.ntruss.com https://*.pstatic.net",
   "frame-src 'self' https://postcode.map.daum.net https://*.daum.net https://*.kakao.com",
   "upgrade-insecure-requests",
 ].join("; ");
@@ -177,6 +177,8 @@ function baseLocals(req) {
     fmtDateTime: cfg.formatDateTime,
     csrfToken: req.session ? req.session.csrf : "",
     kakaoKey: process.env.KAKAO_JS_KEY || "", // 설정 시 카카오톡 리치 공유(SDK) 활성화
+    ncpMapId: process.env.NAVER_MAP_CLIENT_ID || "",      // 오시는길 네이버 지도 Client ID(NCP Maps)
+    ncpMapParam: process.env.NAVER_MAP_AUTH_PARAM || "ncpClientId", // 신규 키는 'ncpKeyId'
     path: req.path,
     baseUrl: req.protocol + "://" + req.get("host"), // OG 절대 URL용
   };

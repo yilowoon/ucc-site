@@ -9,6 +9,9 @@
 
 <div class="container page-wrap">
   <article class="page-content">
+    <% if (page.title === '오시는길') { %>
+      <script>window.__NCP_MAP_ID=<%- JSON.stringify(typeof ncpMapId !== 'undefined' ? ncpMapId : '') %>;window.__NCP_MAP_PARAM=<%- JSON.stringify(typeof ncpMapParam !== 'undefined' ? ncpMapParam : 'ncpClientId') %>;</script>
+    <% } %>
     <%- page.html %>
   </article>
 

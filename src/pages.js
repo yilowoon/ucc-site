@@ -118,17 +118,19 @@ const PAGES = {
       </div>
       <script>
         (function () {
-          var NAVER_MAP_CLIENT_ID = "YOUR_NCP_CLIENT_ID"; /* 네이버 클라우드 플랫폼 > Maps > 인증정보의 Client ID 를 입력 */
+          /* Client ID 는 서버 .env 의 NAVER_MAP_CLIENT_ID 값을 주입(window.__NCP_MAP_ID). 인증 파라미터는 NAVER_MAP_AUTH_PARAM(기본 ncpClientId). */
+          var NAVER_MAP_CLIENT_ID = (window.__NCP_MAP_ID || "");
+          var NCP_AUTH_PARAM = (window.__NCP_MAP_PARAM || "ncpClientId");
           var ADDRESS = "세종특별자치시 연청로 1161";
           var el = document.getElementById("naverMap");
           if (!el) return;
-          if (!NAVER_MAP_CLIENT_ID || NAVER_MAP_CLIENT_ID === "YOUR_NCP_CLIENT_ID") {
+          if (!NAVER_MAP_CLIENT_ID) {
             el.classList.add("naver-map--ph");
             el.innerHTML = '<div class="map-ph"><strong>세종특별자치시 연청로 1161, 2F</strong><span>네이버 지도 표시를 위해 Client ID 설정이 필요합니다. 위 “네이버 지도에서 보기”로 확인하세요.</span></div>';
             return;
           }
           var s = document.createElement("script");
-          s.src = "https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=" + NAVER_MAP_CLIENT_ID + "&submodules=geocoder";
+          s.src = "https://oapi.map.naver.com/openapi/v3/maps.js?" + NCP_AUTH_PARAM + "=" + NAVER_MAP_CLIENT_ID + "&submodules=geocoder";
           s.onload = function () {
             var map = new naver.maps.Map(el, { zoom: 16, center: new naver.maps.LatLng(36.4808, 127.2890) });
             if (naver.maps.Service && naver.maps.Service.geocode) {
