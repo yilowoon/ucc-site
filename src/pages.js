@@ -157,15 +157,25 @@ const PAGES = {
             if (ok) return;
             if (!(window.naver && naver.maps && naver.maps.Map)) return; // 미준비/인증 실패 시 authFailure가 처리
             ok = true;
-            var map = new naver.maps.Map(el, { zoom: 16, center: new naver.maps.LatLng(36.4808, 127.2890) });
+            // 법인 주소 좌표(세종특별자치시 연청로 1161). 지오코딩 성공 시 정확 위치로 보정.
+            var POS = new naver.maps.LatLng(36.5299146, 127.4011444);
+            var map = new naver.maps.Map(el, { zoom: 17, center: POS });
+            var marker = new naver.maps.Marker({ position: POS, map: map });
+            var info = new naver.maps.InfoWindow({
+              content: '<div style="padding:8px 12px;font-size:13px;font-weight:700;color:#123a2e;white-space:nowrap">사단법인 도시공동체본부<br><span style="font-weight:400;color:#555">세종특별자치시 연청로 1161, 2F</span></div>'
+            });
+            naver.maps.Event.addListener(marker, "click", function () {
+              if (info.getMap()) info.close(); else info.open(map, marker);
+            });
             setTimeout(function () { try { naver.maps.Event.trigger(map, "resize"); } catch (e) {} }, 200);
+            // 지오코딩 가능(서비스 설정 시): 건물 단위로 좌표 보정
             if (naver.maps.Service && naver.maps.Service.geocode) {
               naver.maps.Service.geocode({ query: ADDRESS }, function (status, response) {
-                if (status === naver.maps.Service.Status.OK && response.v2.addresses && response.v2.addresses.length) {
+                if (status === naver.maps.Service.Status.OK && response.v2 && response.v2.addresses && response.v2.addresses.length) {
                   var item = response.v2.addresses[0];
                   var ll = new naver.maps.LatLng(item.y, item.x);
                   map.setCenter(ll);
-                  new naver.maps.Marker({ position: ll, map: map });
+                  marker.setPosition(ll);
                 }
               });
             }
