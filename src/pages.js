@@ -118,20 +118,35 @@ const PAGES = {
       </div>
       <script>
         (function () {
-          /* Client ID 는 서버 .env 의 NAVER_MAP_CLIENT_ID 값을 주입(window.__NCP_MAP_ID). 인증 파라미터는 NAVER_MAP_AUTH_PARAM(기본 ncpClientId). */
-          var NAVER_MAP_CLIENT_ID = (window.__NCP_MAP_ID || "");
-          var NCP_AUTH_PARAM = (window.__NCP_MAP_PARAM || "ncpClientId");
+          /* Client ID 는 서버 .env 의 NAVER_MAP_CLIENT_ID 값(또는 기본값)을 주입(window.__NCP_MAP_ID).
+             인증 파라미터(NAVER_MAP_AUTH_PARAM)를 비우면 ncpClientId → ncpKeyId 순으로 자동 시도한다. */
+          var ID = (window.__NCP_MAP_ID || "");
+          var FORCED = (window.__NCP_MAP_PARAM || "");
           var ADDRESS = "세종특별자치시 연청로 1161";
           var el = document.getElementById("naverMap");
           if (!el) return;
-          if (!NAVER_MAP_CLIENT_ID) {
+          function ph(msg) {
             el.classList.add("naver-map--ph");
-            el.innerHTML = '<div class="map-ph"><strong>세종특별자치시 연청로 1161, 2F</strong><span>네이버 지도 표시를 위해 Client ID 설정이 필요합니다. 위 “네이버 지도에서 보기”로 확인하세요.</span></div>';
-            return;
+            el.innerHTML = '<div class="map-ph"><strong>세종특별자치시 연청로 1161, 2F</strong><span>' +
+              (msg || '네이버 지도 표시를 위해 Client ID 설정이 필요합니다. 위 “네이버 지도에서 보기”로 확인하세요.') + '</span></div>';
           }
-          var s = document.createElement("script");
-          s.src = "https://oapi.map.naver.com/openapi/v3/maps.js?" + NCP_AUTH_PARAM + "=" + NAVER_MAP_CLIENT_ID + "&submodules=geocoder";
-          s.onload = function () {
+          if (!ID) { ph(); return; }
+          var queue = FORCED ? [FORCED] : ["ncpClientId", "ncpKeyId"];
+          var ok = false;
+          window.navermap_authFailure = function () { if (!ok) loadNext(); };
+          function loadNext() {
+            if (!queue.length) { ph('네이버 지도 인증에 실패했습니다. 네이버 클라우드 콘솔에서 Web 서비스 URL(https://ucc.or.kr) 등록을 확인해 주세요.'); return; }
+            var p = queue.shift();
+            var s = document.createElement("script");
+            s.src = "https://oapi.map.naver.com/openapi/v3/maps.js?" + p + "=" + ID + "&submodules=geocoder";
+            s.onerror = function () { loadNext(); };
+            s.onload = function () { setTimeout(init, 400); };
+            document.head.appendChild(s);
+          }
+          function init() {
+            if (ok) return;
+            if (!(window.naver && naver.maps && naver.maps.Map)) return; // 미준비/인증 실패 시 authFailure가 처리
+            ok = true;
             var map = new naver.maps.Map(el, { zoom: 16, center: new naver.maps.LatLng(36.4808, 127.2890) });
             if (naver.maps.Service && naver.maps.Service.geocode) {
               naver.maps.Service.geocode({ query: ADDRESS }, function (status, response) {
@@ -143,8 +158,8 @@ const PAGES = {
                 }
               });
             }
-          };
-          document.head.appendChild(s);
+          }
+          loadNext();
         })();
       </script>
     `,

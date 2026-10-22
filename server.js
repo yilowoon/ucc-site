@@ -177,8 +177,8 @@ function baseLocals(req) {
     fmtDateTime: cfg.formatDateTime,
     csrfToken: req.session ? req.session.csrf : "",
     kakaoKey: process.env.KAKAO_JS_KEY || "", // 설정 시 카카오톡 리치 공유(SDK) 활성화
-    ncpMapId: process.env.NAVER_MAP_CLIENT_ID || "",      // 오시는길 네이버 지도 Client ID(NCP Maps)
-    ncpMapParam: process.env.NAVER_MAP_AUTH_PARAM || "ncpClientId", // 신규 키는 'ncpKeyId'
+    ncpMapId: process.env.NAVER_MAP_CLIENT_ID || "k7izdcx2bd", // 오시는길 네이버 지도 Client ID(공개 클라이언트 키, 도메인 제한)
+    ncpMapParam: process.env.NAVER_MAP_AUTH_PARAM || "",        // 비우면 ncpClientId→ncpKeyId 자동 시도
     path: req.path,
     baseUrl: req.protocol + "://" + req.get("host"), // OG 절대 URL용
   };
