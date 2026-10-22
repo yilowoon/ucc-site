@@ -106,15 +106,15 @@ const PAGES = {
     html: `
       <ul class="page-list">
         <li><strong>기관명</strong> 사단법인 도시공동체본부 (행정안전부 소관 비영리법인)</li>
-        <li><strong>주소</strong> 세종특별자치시 연청로 1161, 2F</li>
+        <li><strong>주소</strong> 대전광역시 유성구 대정로 28번안길 71</li>
         <li><strong>전화</strong> 1670-9678</li>
         <li><strong>이메일</strong> contact@ucc.or.kr</li>
         <li><strong>웹사이트</strong> <a href="https://ucc.or.kr" target="_blank" rel="noopener">ucc.or.kr</a></li>
       </ul>
       <div id="naverMap" class="naver-map"></div>
       <div class="map-actions">
-        <a class="btn btn-primary btn-sm" href="https://map.naver.com/p/search/%EC%84%B8%EC%A2%85%ED%8A%B9%EB%B3%84%EC%9E%90%EC%B9%98%EC%8B%9C%20%EC%97%B0%EC%B2%AD%EB%A1%9C%201161" target="_blank" rel="noopener">네이버 지도에서 보기</a>
-        <a class="btn btn-neutral btn-sm" href="https://map.naver.com/p/directions/-/-/-/transit?c=15.00,0,0,0,dh&destination=%EC%84%B8%EC%A2%85%ED%8A%B9%EB%B3%84%EC%9E%90%EC%B9%98%EC%8B%9C%20%EC%97%B0%EC%B2%AD%EB%A1%9C%201161" target="_blank" rel="noopener">길찾기</a>
+        <a class="btn btn-primary btn-sm" href="https://map.naver.com/p/search/%EB%8C%80%EC%A0%84%EA%B4%91%EC%97%AD%EC%8B%9C%20%EC%9C%A0%EC%84%B1%EA%B5%AC%20%EB%8C%80%EC%A0%95%EB%A1%9C%2028%EB%B2%88%EC%95%88%EA%B8%B8%2071" target="_blank" rel="noopener">네이버 지도에서 보기</a>
+        <a class="btn btn-neutral btn-sm" href="https://map.naver.com/p/directions/-/-/-/transit?c=15.00,0,0,0,dh&destination=%EB%8C%80%EC%A0%84%EA%B4%91%EC%97%AD%EC%8B%9C%20%EC%9C%A0%EC%84%B1%EA%B5%AC%20%EB%8C%80%EC%A0%95%EB%A1%9C%2028%EB%B2%88%EC%95%88%EA%B8%B8%2071" target="_blank" rel="noopener">길찾기</a>
       </div>
       <script>
         (function () {
@@ -122,12 +122,12 @@ const PAGES = {
              인증 파라미터(NAVER_MAP_AUTH_PARAM)를 비우면 ncpClientId → ncpKeyId 순으로 자동 시도한다. */
           var ID = (window.__NCP_MAP_ID || "");
           var FORCED = (window.__NCP_MAP_PARAM || "");
-          var ADDRESS = "세종특별자치시 연청로 1161";
+          var ADDRESS = "대전광역시 유성구 대정로 28번안길 71";
           var el = document.getElementById("naverMap");
           if (!el) return;
           function ph(msg) {
             el.classList.add("naver-map--ph");
-            el.innerHTML = '<div class="map-ph"><strong>세종특별자치시 연청로 1161, 2F</strong><span>' +
+            el.innerHTML = '<div class="map-ph"><strong>대전광역시 유성구 대정로 28번안길 71</strong><span>' +
               (msg || '네이버 지도 표시를 위해 Client ID 설정이 필요합니다. 위 “네이버 지도에서 보기”로 확인하세요.') + '</span></div>';
           }
           if (!ID) { ph(); return; }
@@ -157,12 +157,12 @@ const PAGES = {
             if (ok) return;
             if (!(window.naver && naver.maps && naver.maps.Map)) return; // 미준비/인증 실패 시 authFailure가 처리
             ok = true;
-            // 법인 주소 좌표(세종특별자치시 연청로 1161). 지오코딩 성공 시 정확 위치로 보정.
-            var POS = new naver.maps.LatLng(36.5299146, 127.4011444);
+            // 법인 주소 좌표(대전광역시 유성구 대정로 28번안길 71). 지오코딩 성공 시 정확 위치로 보정.
+            var POS = new naver.maps.LatLng(36.3145240, 127.3230251);
             var map = new naver.maps.Map(el, { zoom: 17, center: POS });
             var marker = new naver.maps.Marker({ position: POS, map: map });
             var info = new naver.maps.InfoWindow({
-              content: '<div style="padding:8px 12px;font-size:13px;font-weight:700;color:#123a2e;white-space:nowrap">사단법인 도시공동체본부<br><span style="font-weight:400;color:#555">세종특별자치시 연청로 1161, 2F</span></div>'
+              content: '<div style="padding:8px 12px;font-size:13px;font-weight:700;color:#123a2e;white-space:nowrap">사단법인 도시공동체본부<br><span style="font-weight:400;color:#555">대전광역시 유성구 대정로 28번안길 71</span></div>'
             });
             naver.maps.Event.addListener(marker, "click", function () {
               if (info.getMap()) info.close(); else info.open(map, marker);

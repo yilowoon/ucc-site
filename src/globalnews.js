@@ -30,7 +30,7 @@ const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingm
 
 const COLOPHON = [
   "사단법인 도시공동체본부  ·  행정안전부 소관 비영리법인",
-  "대전광역시 서구 대덕대로242번길 15, 501호-G19",
+  "대전광역시 유성구 대정로 28번안길 71",
   "Tel. 1670-9678   ·   E-mail. contact@ucc.or.kr",
   `본 자료는 도시공동체본부가 공개자료를 바탕으로 매일 정리한 '${PERSONA}'이며, 인용 원문의 저작권은 각 매체에 있습니다.`,
 ];
