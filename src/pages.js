@@ -131,16 +131,19 @@ const PAGES = {
               (msg || '네이버 지도 표시를 위해 Client ID 설정이 필요합니다. 위 “네이버 지도에서 보기”로 확인하세요.') + '</span></div>';
           }
           if (!ID) { ph(); return; }
-          var queue = FORCED ? [FORCED] : ["ncpClientId", "ncpKeyId"];
+          // 신규 키는 ncpKeyId, 구 키는 ncpClientId. 비우면 신규 → 구 순으로 자동 시도.
+          var queue = FORCED ? [FORCED] : ["ncpKeyId", "ncpClientId"];
           var ok = false;
-          window.navermap_authFailure = function () { if (!ok) loadNext(); };
           function loadNext() {
-            if (!queue.length) { ph('네이버 지도 인증에 실패했습니다. 네이버 클라우드 콘솔에서 Web 서비스 URL(https://ucc.or.kr) 등록을 확인해 주세요.'); return; }
+            if (ok) return;
+            if (!queue.length) { ph('네이버 지도 인증에 실패했습니다. 네이버 클라우드 콘솔 > Application(uccmap)에 <b>Web Dynamic Map</b> 서비스가 추가되어 있고, Web 서비스 URL에 현재 도메인이 등록되어 있는지 확인해 주세요.'); return; }
             var p = queue.shift();
+            var failed = false;
+            window.navermap_authFailure = function () { failed = true; loadNext(); }; // 이 시도 인증 실패 → 다음 파라미터
             var s = document.createElement("script");
-            s.src = "https://oapi.map.naver.com/openapi/v3/maps.js?" + p + "=" + ID + "&submodules=geocoder";
-            s.onerror = function () { loadNext(); };
-            s.onload = function () { setTimeout(init, 400); };
+            s.src = "https://oapi.map.naver.com/openapi/v3/maps.js?" + p + "=" + encodeURIComponent(ID) + "&submodules=geocoder";
+            s.onerror = function () { if (!failed) loadNext(); };
+            s.onload = function () { setTimeout(function () { if (!failed) init(); }, 600); };
             document.head.appendChild(s);
           }
           function init() {
