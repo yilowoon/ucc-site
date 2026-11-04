@@ -58,6 +58,29 @@ function fixName(name) {
   }
 }
 
+// ---- 관리자 로그인 무차별 대입(brute-force) 방어 ----
+// IP 기준 10분 내 실패 10회 초과 시 차단(아이디 로테이션 우회 방지). 성공 시 즉시 해제.
+const LOGIN_WIN_MS = 10 * 60 * 1000;
+const LOGIN_MAX_FAILS = 10;
+const loginFails = new Map(); // ip -> [실패 timestamp]
+function loginIp(req) {
+  let ip = req.ip || "";
+  if (ip.startsWith("::ffff:")) ip = ip.slice(7);
+  if (ip === "::1") ip = "127.0.0.1";
+  return ip.slice(0, 45);
+}
+function loginAllowed(ip) {
+  const now = Date.now();
+  const arr = (loginFails.get(ip) || []).filter((t) => now - t < LOGIN_WIN_MS);
+  loginFails.set(ip, arr);
+  return arr.length < LOGIN_MAX_FAILS;
+}
+function loginFailed(ip) {
+  const arr = (loginFails.get(ip) || []).filter((t) => Date.now() - t < LOGIN_WIN_MS);
+  arr.push(Date.now());
+  loginFails.set(ip, arr);
+}
+
 module.exports = function adminRoutes({ verifyCsrf }) {
   const router = express.Router();
 
@@ -96,11 +119,21 @@ module.exports = function adminRoutes({ verifyCsrf }) {
   router.post("/login", verifyCsrf, (req, res) => {
     const { username, password } = req.body;
     const nextUrl = safeNext(req.body.next);
+    const ip = loginIp(req);
+    if (!loginAllowed(ip)) {
+      return res.status(429).render("admin-login", {
+        ...res.locals,
+        title: "관리자 로그인",
+        error: "로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요.",
+        next: nextUrl,
+      });
+    }
     const admin = db
       .prepare("SELECT * FROM admins WHERE username = ?")
       .get((username || "").trim());
     const ok = admin && bcrypt.compareSync(password || "", admin.password_hash);
     if (!ok) {
+      loginFailed(ip);
       return res.status(401).render("admin-login", {
         ...res.locals,
         title: "관리자 로그인",
@@ -108,6 +141,7 @@ module.exports = function adminRoutes({ verifyCsrf }) {
         next: nextUrl,
       });
     }
+    loginFails.delete(ip); // 성공 시 실패 카운트 해제
     req.session.regenerate((e) => {
       if (e) {
         console.error(e);
