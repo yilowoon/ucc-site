@@ -41,7 +41,7 @@
   .ba-illus{grid-column:span 2;position:relative;margin:0;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-sm);overflow:hidden;background:var(--paper)}
   .ba-illus img{display:block;width:100%;height:auto}
   .ba-illus figcaption{position:absolute;right:12px;bottom:10px;font-size:.68rem;color:var(--muted);background:rgba(255,255,255,.72);border-radius:999px;padding:2px 10px}
-  .ba-card--top{align-self:start}
+  .ba-colstack{display:flex;flex-direction:column;gap:18px;align-self:start}
   @media(max-width:1023px){.ba-illus{grid-column:auto}}
   @media(max-width:420px){.ba-card{grid-template-columns:1fr}.ba-arrow{transform:rotate(90deg)}}
   /* 교육 현장 */
@@ -348,11 +348,18 @@
         <span class="ba-arrow" aria-hidden="true">→</span>
         <div class="ba-after"><span class="ba-tag ba-tag--on">AFTER</span><p>AI 에이전트로 <b>반복 업무를 자동화</b></p></div>
       </article>
-      <article class="ba-card ba-card--top">
-        <div class="ba-before"><span class="ba-tag">BEFORE</span><p>AI는 남의 이야기 같던 막연함</p></div>
-        <span class="ba-arrow" aria-hidden="true">→</span>
-        <div class="ba-after"><span class="ba-tag ba-tag--on">AFTER</span><p>내 일과 지역에 <b>AI를 자신 있게 활용</b></p></div>
-      </article>
+      <div class="ba-colstack">
+        <article class="ba-card">
+          <div class="ba-before"><span class="ba-tag">BEFORE</span><p>AI는 남의 이야기 같던 막연함</p></div>
+          <span class="ba-arrow" aria-hidden="true">→</span>
+          <div class="ba-after"><span class="ba-tag ba-tag--on">AFTER</span><p>내 일과 지역에 <b>AI를 자신 있게 활용</b></p></div>
+        </article>
+        <article class="ba-card">
+          <div class="ba-before"><span class="ba-tag">BEFORE</span><p>꼭 필요한 줄 알면서도 시간이 없어 미루던 SNS 홍보</p></div>
+          <span class="ba-arrow" aria-hidden="true">→</span>
+          <div class="ba-after"><span class="ba-tag ba-tag--on">AFTER</span><p>AI가 알아서 꾸준히 운영해 <b>홍보 걱정 끝</b></p></div>
+        </article>
+      </div>
       <figure class="ba-illus">
         <img src="/img/ai-blog-case.webp" width="1672" height="941" loading="lazy" decoding="async" alt="삼백집 삼겹살 식당 사장님이 ‘블로그만 운영했는데, 손님이 3배 늘었어요’라고 인터뷰하는 모습 — 손님으로 가득 찬 가게">
         <figcaption>AI 활용 사례 이미지 · 예시</figcaption>
