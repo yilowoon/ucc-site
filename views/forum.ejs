@@ -241,7 +241,7 @@
       author: c.author || "도시공동체본부", date: c.date || c.dateline || "", read_min: c.read_min || 0, category: c.category || "기고문" };
   });
 %>
-<section class="section section--alt" id="columns"<% if (!dcOpen) { %> hidden<% } %>>
+<section class="section section--alt" id="columns">
   <div class="container">
     <div class="section-head">
       <div><h2 class="section-title c-green">두잉 기고문</h2><span class="section-en">DOING · COLUMN</span></div>
@@ -358,14 +358,9 @@
   }
 
   document.addEventListener("click", function(e){
-    // 히어로 '두잉 기고문 보기' → 섹션 노출 + 최신 기고문 내용을 기본 출력 상태로 펼침
+    // 히어로 '두잉 기고문 보기' → 하단에 항상 노출된 두잉 기고문(요약) 섹션으로 이동
     var jump = e.target.closest("[data-col-jump]");
-    if (jump) {
-      e.preventDefault();
-      if (LATEST_SLUG) showContent(LATEST_SLUG, false, SEC, true);
-      else { reveal(); scrollTo(SEC, true); }
-      return;
-    }
+    if (jump) { e.preventDefault(); reveal(); scrollTo(SEC, true); return; }
 
     var read = e.target.closest("[data-dc-read]");
     if (read) {
