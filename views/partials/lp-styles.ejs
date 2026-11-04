@@ -36,6 +36,10 @@
   .ba-before p,.ba-after p{margin:0;font-size:.96rem;line-height:1.5;color:var(--ink-soft)}
   .ba-after p b{color:var(--green-800)}
   .ba-arrow{display:grid;place-items:center;color:var(--ci-green-d);font-size:1.5rem;font-weight:800}
+  .ba-illus{grid-column:span 2;position:relative;margin:0;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-sm);overflow:hidden;background:var(--paper)}
+  .ba-illus svg{display:block;width:100%;height:auto}
+  .ba-illus figcaption{position:absolute;right:12px;bottom:10px;font-size:.68rem;color:var(--muted);background:rgba(255,255,255,.72);border-radius:999px;padding:2px 10px}
+  @media(max-width:1023px){.ba-illus{grid-column:auto}}
   @media(max-width:420px){.ba-card{grid-template-columns:1fr}.ba-arrow{transform:rotate(90deg)}}
   .onsite-highlights{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
   .onsite-hl{text-align:center;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:26px 20px;box-shadow:var(--shadow-sm);transition:transform .22s var(--ease),box-shadow .22s var(--ease)}
