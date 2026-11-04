@@ -333,6 +333,106 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     res.redirect(`/board/${post.board}`);
   });
 
+  // ---------- 두잉 기고문(칼럼) 관리 ----------
+  function coverUpload(req, res, next) {
+    upload.single("cover_file")(req, res, (err) => {
+      if (err) { req.uploadError = err.publicMessage || "이미지 업로드 중 오류가 발생했습니다."; }
+      else if (req.file && !/^image\//.test(req.file.mimetype || "")) {
+        safeUnlink(req.file.filename); req.file = null; req.uploadError = "대표 이미지는 이미지 파일만 업로드할 수 있습니다.";
+      }
+      next();
+    });
+  }
+  // 본문 HTML에서 목차(h2) 추출 + 읽기 시간 계산
+  function buildColToc(body) {
+    const out = [];
+    const re = /<h2[^>]*id="([^"]+)"[^>]*>[\s\S]*?<span class="col-h2-num">([^<]*)<\/span><span class="col-h2-txt">([\s\S]*?)<\/span>/g;
+    let m;
+    while ((m = re.exec(body))) {
+      const label = m[3].replace(/<[^>]+>/g, "").trim();
+      if (m[2].trim()) out.push({ id: m[1], num: m[2].trim(), label });
+    }
+    return out;
+  }
+  function colReadMin(body) {
+    const plain = String(body || "").replace(/<[^>]+>/g, "").replace(/\s+/g, "");
+    return Math.max(3, Math.round(plain.length / 650));
+  }
+  function colBodyFromForm(req) {
+    const tags = String(req.body.tags || "").split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
+    return {
+      slug: (req.body.slug || "").trim().toLowerCase().replace(/[^a-z0-9\-]/g, ""),
+      category: (req.body.category || "정책 논고").trim(),
+      eyebrow: (req.body.eyebrow || "두잉 기고문 · DIF COLUMN").trim(),
+      title: (req.body.title || "").trim(),
+      subtitle: (req.body.subtitle || "").trim(),
+      author: (req.body.author || "").trim(),
+      author_title: (req.body.author_title || "").trim(),
+      dateline: (req.body.dateline || "").trim(),
+      lede: (req.body.lede || "").trim(),
+      tags, body: req.body.body || "",
+      pinned: req.body.pinned ? 1 : 0,
+      published: req.body.published ? 1 : 0,
+    };
+  }
+
+  router.get("/columns", requireAdmin, (req, res) => {
+    const rows = db.prepare("SELECT id, slug, title, author, dateline, published, pinned, views, created_at FROM columns ORDER BY pinned DESC, id DESC").all();
+    res.render("admin-columns", { ...res.locals, title: "기고문 관리", columns: rows, msg: req.query.msg || null });
+  });
+  router.get("/columns/new", requireAdmin, (req, res) => {
+    res.render("admin-column-form", { ...res.locals, title: "기고문 작성", mode: "new", c: { category: "정책 논고", eyebrow: "두잉 기고문 · DIF COLUMN", published: 1, pinned: 0, tags: [] }, error: null });
+  });
+  router.get("/columns/:id/edit", requireAdmin, (req, res, next) => {
+    const c = db.prepare("SELECT * FROM columns WHERE id = ?").get(parseInt(req.params.id, 10));
+    if (!c) return next();
+    try { c.tags = JSON.parse(c.tags || "[]"); } catch (e) { c.tags = []; }
+    res.render("admin-column-form", { ...res.locals, title: "기고문 수정", mode: "edit", c, error: null });
+  });
+  router.post("/columns", requireAdmin, coverUpload, verifyCsrf, (req, res) => {
+    const f = colBodyFromForm(req);
+    const back = (error) => res.status(400).render("admin-column-form", { ...res.locals, title: "기고문 작성", mode: "new", c: { ...f, tags: f.tags }, error });
+    if (req.uploadError) return back(req.uploadError);
+    if (!f.title) return back("제목을 입력해 주세요.");
+    const cover = req.file ? "/uploads/" + req.file.filename : (req.body.cover || "").trim();
+    if (f.slug && db.prepare("SELECT id FROM columns WHERE slug = ?").get(f.slug)) return back("이미 사용 중인 slug입니다. 다른 값을 입력해 주세요.");
+    const created = f.dateline ? new Date(f.dateline + "T09:00:00+09:00").toISOString() : new Date().toISOString();
+    const now = new Date().toISOString();
+    db.prepare(
+      "INSERT INTO columns (slug, category, eyebrow, title, subtitle, author, author_title, dateline, cover, lede, tags, toc, body, read_min, pinned, published, created_at, updated_at) " +
+      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    ).run(f.slug, f.category, f.eyebrow, f.title, f.subtitle, f.author, f.author_title, f.dateline, cover, f.lede,
+      JSON.stringify(f.tags), JSON.stringify(buildColToc(f.body)), f.body, colReadMin(f.body), f.pinned, f.published, created, now);
+    res.redirect("/admin/columns?msg=" + encodeURIComponent("기고문이 등록되었습니다."));
+  });
+  router.post("/columns/:id", requireAdmin, coverUpload, verifyCsrf, (req, res, next) => {
+    const id = parseInt(req.params.id, 10);
+    const cur = db.prepare("SELECT * FROM columns WHERE id = ?").get(id);
+    if (!cur) { if (req.file) safeUnlink(req.file.filename); return next(); }
+    const f = colBodyFromForm(req);
+    const back = (error) => res.status(400).render("admin-column-form", { ...res.locals, title: "기고문 수정", mode: "edit", c: { ...cur, ...f }, error });
+    if (req.uploadError) return back(req.uploadError);
+    if (!f.title) return back("제목을 입력해 주세요.");
+    if (f.slug && db.prepare("SELECT id FROM columns WHERE slug = ? AND id <> ?").get(f.slug, id)) return back("이미 사용 중인 slug입니다.");
+    let cover = cur.cover;
+    if (req.file) { if (/^\/uploads\//.test(cur.cover)) safeUnlink(cur.cover); cover = "/uploads/" + req.file.filename; }
+    else if (typeof req.body.cover === "string" && req.body.cover.trim()) cover = req.body.cover.trim();
+    const created = f.dateline ? new Date(f.dateline + "T09:00:00+09:00").toISOString() : cur.created_at;
+    db.prepare(
+      "UPDATE columns SET slug = ?, category = ?, eyebrow = ?, title = ?, subtitle = ?, author = ?, author_title = ?, dateline = ?, cover = ?, lede = ?, tags = ?, toc = ?, body = ?, read_min = ?, pinned = ?, published = ?, created_at = ?, updated_at = ? WHERE id = ?"
+    ).run(f.slug, f.category, f.eyebrow, f.title, f.subtitle, f.author, f.author_title, f.dateline, cover, f.lede,
+      JSON.stringify(f.tags), JSON.stringify(buildColToc(f.body)), f.body, colReadMin(f.body), f.pinned, f.published, created, new Date().toISOString(), id);
+    res.redirect("/admin/columns?msg=" + encodeURIComponent("기고문이 수정되었습니다."));
+  });
+  router.post("/columns/:id/delete", requireAdmin, verifyCsrf, (req, res, next) => {
+    const id = parseInt(req.params.id, 10);
+    const c = db.prepare("SELECT cover FROM columns WHERE id = ?").get(id);
+    if (!c) return next();
+    if (/^\/uploads\//.test(c.cover || "")) safeUnlink(c.cover);
+    db.prepare("DELETE FROM columns WHERE id = ?").run(id);
+    res.redirect("/admin/columns?msg=" + encodeURIComponent("기고문이 삭제되었습니다."));
+  });
+
   // ---------- 비밀번호 변경 ----------
   router.get("/password", requireAdmin, (req, res) => {
     res.render("admin-password", { ...res.locals, title: "비밀번호 변경", error: null, done: false });

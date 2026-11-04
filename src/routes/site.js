@@ -131,7 +131,53 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   router.get("/about/vision", (req, res) => res.render("vision", { ...res.locals, title: "비전과 목표" }));
   router.get("/about/org", (req, res) => res.render("org", { ...res.locals, title: "조직도" }));
   router.get("/business", (req, res) => res.render("biz", { ...res.locals, title: "프로젝트" }));
-  router.get("/projects/forum", (req, res) => res.render("forum", { ...res.locals, title: "두잉새롬마당" }));
+  router.get("/projects/forum", (req, res) => {
+    const columns = db.prepare(
+      "SELECT id, slug, category, title, subtitle, author, dateline, cover, lede, read_min, views, created_at FROM columns WHERE published = 1 ORDER BY pinned DESC, id DESC LIMIT 4"
+    ).all().map((c) => ({ ...c, date: cfg.formatDate(c.created_at || c.dateline), href: "/projects/forum/columns/" + (c.slug || c.id) }));
+    res.render("forum", { ...res.locals, title: "두잉새롬마당", columns });
+  });
+
+  // ---------- 두잉 기고문(칼럼): 목록 · 상세 ----------
+  function colHref(c) { return "/projects/forum/columns/" + (c.slug || c.id); }
+  router.get("/projects/forum/columns", (req, res) => {
+    const rows = db.prepare(
+      "SELECT id, slug, category, title, subtitle, author, author_title, dateline, cover, lede, tags, read_min, views, created_at FROM columns WHERE published = 1 ORDER BY pinned DESC, id DESC"
+    ).all().map((c) => {
+      let tags = []; try { tags = JSON.parse(c.tags || "[]"); } catch (e) {}
+      return { ...c, tags, date: cfg.formatDate(c.created_at), href: colHref(c) };
+    });
+    res.render("columns", {
+      ...res.locals, title: "두잉 기고문", items: rows,
+      ogTitle: "두잉 기고문 | 사단법인 도시공동체본부",
+      ogDescription: "도시의 혁신 생태계를 만들어가는 혁신가들의 생각을 행동으로 잇는 기고문 모음입니다.",
+    });
+  });
+  router.get("/projects/forum/columns/:slug", (req, res, next) => {
+    const key = req.params.slug;
+    const byId = /^\d+$/.test(key);
+    const c = byId
+      ? db.prepare("SELECT * FROM columns WHERE id = ?").get(parseInt(key, 10))
+      : db.prepare("SELECT * FROM columns WHERE slug = ?").get(key);
+    if (!c || (c.published !== 1 && !(req.session && req.session.admin))) return next();
+    try { db.prepare("UPDATE columns SET views = views + 1 WHERE id = ?").run(c.id); c.views = (c.views || 0) + 1; } catch (e) {}
+    try { c.tags = JSON.parse(c.tags || "[]"); } catch (e) { c.tags = []; }
+    try { c.toc = JSON.parse(c.toc || "[]"); } catch (e) { c.toc = []; }
+    c.date = cfg.formatDate(c.created_at || c.dateline);
+    const prev = db.prepare("SELECT slug, id, title FROM columns WHERE published = 1 AND id < ? ORDER BY id DESC LIMIT 1").get(c.id);
+    const nextRow = db.prepare("SELECT slug, id, title FROM columns WHERE published = 1 AND id > ? ORDER BY id ASC LIMIT 1").get(c.id);
+    const more = db.prepare("SELECT slug, id, title, cover, dateline, read_min FROM columns WHERE published = 1 AND id <> ? ORDER BY pinned DESC, id DESC LIMIT 3").all(c.id);
+    res.render("column", {
+      ...res.locals, title: c.title, c,
+      prev: prev ? { ...prev, href: colHref(prev) } : null,
+      next: nextRow ? { ...nextRow, href: colHref(nextRow) } : null,
+      more: more.map((m) => ({ ...m, href: colHref(m) })),
+      pageCss: "/css/column.css?v=1",
+      ogTitle: c.title + " | 두잉 기고문",
+      ogDescription: c.lede || c.subtitle,
+      ogImage: c.cover || undefined,
+    });
+  });
   router.get("/projects/community", (req, res) => res.render("community", { ...res.locals, title: "커뮤니티모임" }));
   router.get("/projects/convergence", (req, res) => res.render("convergence", { ...res.locals, title: "문화예술과학융합" }));
   // 엑스시그마 플랫폼 — 독립 레이아웃(자체 head·스타일) 페이지

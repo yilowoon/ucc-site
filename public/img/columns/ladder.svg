@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 520" role="img" aria-label="사회연대경제 성장 사다리 4단계">
+  <defs>
+    <linearGradient id="la-1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a6b54"/><stop offset="1" stop-color="#1e5a47"/></linearGradient>
+    <linearGradient id="la-4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cd9b4c"/><stop offset="1" stop-color="#b8863b"/></linearGradient>
+    <style>text{font-family:"Pretendard Variable",Pretendard,"Malgun Gothic",sans-serif}</style>
+  </defs>
+  <rect width="1200" height="520" rx="26" fill="#f4f1e9"/>
+  <circle cx="1040" cy="120" r="150" fill="#cd9b4c" opacity="0.08"/>
+  <line x1="70" y1="470" x2="1130" y2="470" stroke="#d9d3c4" stroke-width="2"/>
+
+  <!-- 상승 점선 화살표 -->
+  <path d="M120 400 C 420 360 620 250 980 150" fill="none" stroke="#b8863b" stroke-width="4" stroke-dasharray="2 12" stroke-linecap="round"/>
+
+  <!-- 4 계단 -->
+  <g text-anchor="middle">
+    <g transform="translate(90 360)"><rect width="220" height="110" rx="10" fill="url(#la-1)"/>
+      <text x="110" y="-14" font-size="17" font-weight="700" fill="#1e5a47">씨앗</text>
+      <text x="110" y="48" font-size="21" font-weight="800" fill="#fff">자활기업</text>
+      <text x="110" y="80" font-size="14" font-weight="500" fill="#d9e6df">복지 → 노동 자립</text></g>
+
+    <g transform="translate(330 290)"><rect width="220" height="180" rx="10" fill="url(#la-1)"/>
+      <text x="110" y="-14" font-size="17" font-weight="700" fill="#1e5a47">새싹</text>
+      <text x="110" y="52" font-size="21" font-weight="800" fill="#fff">마을기업</text>
+      <text x="110" y="84" font-size="14" font-weight="500" fill="#d9e6df">지역 자원·공동체</text></g>
+
+    <g transform="translate(570 220)"><rect width="220" height="250" rx="10" fill="url(#la-1)"/>
+      <text x="110" y="-14" font-size="17" font-weight="700" fill="#1e5a47">나무</text>
+      <text x="110" y="54" font-size="20" font-weight="800" fill="#fff">(예비)사회적기업</text>
+      <text x="110" y="86" font-size="14" font-weight="500" fill="#d9e6df">사회적 목적·공공 판로</text></g>
+
+    <g transform="translate(810 150)"><rect width="300" height="320" rx="10" fill="url(#la-4)"/>
+      <text x="150" y="-14" font-size="17" font-weight="700" fill="#b8863b">숲</text>
+      <text x="150" y="56" font-size="21" font-weight="800" fill="#fff">생산형 협동조합</text>
+      <text x="150" y="86" font-size="21" font-weight="800" fill="#fff">· 소셜벤처</text>
+      <text x="150" y="120" font-size="14" font-weight="500" fill="#fff6e8">스스로 생산하는 혁신 기업</text>
+      <!-- 깃발 -->
+      <g transform="translate(150 175)"><path d="M0 60 V-30" stroke="#fff" stroke-width="5" stroke-linecap="round"/><path d="M0-30 L44-18 L0-6 z" fill="#fff"/></g></g>
+  </g>
+  <text x="90" y="506" font-size="15" font-weight="600" fill="#6b766f">각 단계는 부처별로 끊기지 않고 통합 지원 위에서 다음 단계로 이어진다 — 단계마다 혁신 지원 내장</text>
+</svg>

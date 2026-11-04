@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" role="img" aria-label="사회적경제 다섯 조직의 성장 경로">
+  <defs>
+    <linearGradient id="ec-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e5a47"/><stop offset="1" stop-color="#123a2e"/></linearGradient>
+    <marker id="ec-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#b8863b"/></marker>
+    <style>text{font-family:"Pretendard Variable",Pretendard,"Malgun Gothic",sans-serif}</style>
+  </defs>
+  <rect width="1200" height="620" rx="26" fill="#f4f1e9"/>
+  <circle cx="160" cy="140" r="180" fill="#cd9b4c" opacity="0.07"/>
+  <circle cx="1050" cy="500" r="200" fill="#1e5a47" opacity="0.05"/>
+  <text x="600" y="78" text-anchor="middle" font-size="26" font-weight="800" fill="#123a2e">하나의 성장 경로로 이어지는 다섯 조직</text>
+
+  <!-- 성장 경로 곡선 -->
+  <path d="M150 470 C 330 470 330 230 500 230 S 700 470 870 470 S 1040 250 1060 250" fill="none" stroke="#d9d3c4" stroke-width="3" stroke-dasharray="3 9"/>
+
+  <!-- 노드 -->
+  <g font-size="17" font-weight="700" fill="#fff" text-anchor="middle">
+    <g transform="translate(170 450)"><circle r="52" fill="url(#ec-g)"/><text y="-2">자활</text><text y="18">기업</text></g>
+    <g transform="translate(360 300)"><circle r="52" fill="url(#ec-g)"/><text y="-2">마을</text><text y="18">기업</text></g>
+    <g transform="translate(560 230)"><circle r="56" fill="url(#ec-g)"/><text y="-2">사회적</text><text y="18">기업</text></g>
+    <g transform="translate(770 300)"><circle r="56" fill="url(#ec-g)"/><text y="-2">협동</text><text y="18">조합</text></g>
+    <g transform="translate(1000 250)"><circle r="58" fill="#b8863b"/><text y="-2">소셜</text><text y="18">벤처</text></g>
+  </g>
+  <!-- 진행 화살표 -->
+  <g fill="none" stroke="#b8863b" stroke-width="4" marker-end="url(#ec-arrow)">
+    <path d="M232 430 C 280 390 300 350 322 332"/>
+    <path d="M418 290 C 460 270 480 258 500 252"/>
+    <path d="M620 250 C 670 268 690 278 712 290"/>
+    <path d="M828 288 C 890 270 910 262 940 258"/>
+  </g>
+
+  <!-- 라벨 밴드 -->
+  <g text-anchor="middle" font-size="15" font-weight="600" fill="#1e5a47">
+    <text x="170" y="540">복지→노동 사다리</text>
+    <text x="360" y="548">지역 공동체</text>
+    <text x="560" y="150">사회적 목적 인증</text>
+    <text x="770" y="392">사람이 주인인 그릇</text>
+    <text x="1000" y="345">혁신·성장 지향</text>
+  </g>
+</svg>

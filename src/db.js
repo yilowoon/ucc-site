@@ -518,4 +518,59 @@ function ensurePartners() {
 }
 ensurePartners();
 
+/* ---- 두잉 기고문(칼럼): 테이블 + 시드 ---- */
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS columns (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug         TEXT    NOT NULL DEFAULT '',
+    category     TEXT    NOT NULL DEFAULT '정책 논고',
+    eyebrow      TEXT    NOT NULL DEFAULT '두잉 기고문 · DIF COLUMN',
+    title        TEXT    NOT NULL,
+    subtitle     TEXT    NOT NULL DEFAULT '',
+    author       TEXT    NOT NULL DEFAULT '',
+    author_title TEXT    NOT NULL DEFAULT '',
+    dateline     TEXT    NOT NULL DEFAULT '',          -- 게재일 YYYY-MM-DD
+    cover        TEXT    NOT NULL DEFAULT '',           -- 대표 이미지 경로
+    lede         TEXT    NOT NULL DEFAULT '',           -- 요약(도입)
+    tags         TEXT    NOT NULL DEFAULT '[]',         -- JSON 배열
+    toc          TEXT    NOT NULL DEFAULT '[]',         -- JSON 목차
+    body         TEXT    NOT NULL DEFAULT '',           -- 본문 HTML
+    read_min     INTEGER NOT NULL DEFAULT 5,
+    pinned       INTEGER NOT NULL DEFAULT 0,
+    published    INTEGER NOT NULL DEFAULT 1,
+    views        INTEGER NOT NULL DEFAULT 0,
+    created_at   TEXT    NOT NULL,
+    updated_at   TEXT    NOT NULL DEFAULT ''
+  );`);
+  db.exec("CREATE INDEX IF NOT EXISTS idx_columns_list ON columns(published, pinned DESC, id DESC)");
+  db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_columns_slug ON columns(slug) WHERE slug <> ''");
+} catch (e) {}
+
+/* columns-seed.js 에 있으나 DB에 없는 기고문만 slug 기준으로 추가(관리자 수정값 보존). */
+function ensureColumns() {
+  let SEED = [];
+  try { SEED = require("./columns-seed") || []; } catch (e) { return; }
+  if (!SEED.length) return;
+  const findBySlug = db.prepare("SELECT id FROM columns WHERE slug = ?");
+  const ins = db.prepare(
+    "INSERT INTO columns (slug, category, eyebrow, title, subtitle, author, author_title, dateline, cover, lede, tags, toc, body, read_min, pinned, published, created_at, updated_at) " +
+    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  );
+  let added = 0;
+  for (const c of SEED) {
+    if (!c.title) continue;
+    if (c.slug && findBySlug.get(c.slug)) continue;
+    const created = c.dateline ? new Date(c.dateline + "T09:00:00+09:00").toISOString() : new Date().toISOString();
+    ins.run(
+      c.slug || "", c.category || "정책 논고", c.eyebrow || "두잉 기고문 · DIF COLUMN",
+      c.title, c.subtitle || "", c.author || "", c.author_title || "", c.dateline || "",
+      c.cover || "", c.lede || "", JSON.stringify(c.tags || []), JSON.stringify(c.toc || []),
+      c.body || "", c.read_min | 0, c.pinned ? 1 : 0, c.published === 0 ? 0 : 1, created, ""
+    );
+    added++;
+  }
+  if (added) console.log("[columns] 기고문 시드 추가:", added + "건");
+}
+ensureColumns();
+
 module.exports = { db, DATA_DIR, UPLOAD_DIR, DB_PATH, getSetting, setSetting };

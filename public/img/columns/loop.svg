@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" role="img" aria-label="혁신 DNA 내재화 루틴 5단계 순환">
+  <defs>
+    <linearGradient id="lp-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e5a47"/><stop offset="1" stop-color="#123a2e"/></linearGradient>
+    <marker id="lp-arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#b8863b"/></marker>
+    <style>text{font-family:"Pretendard Variable",Pretendard,"Malgun Gothic",sans-serif}</style>
+  </defs>
+  <rect width="1200" height="560" rx="26" fill="#f4f1e9"/>
+
+  <!-- 순환 화살표(시계방향) -->
+  <g fill="none" stroke="#b8863b" stroke-width="5" marker-end="url(#lp-arrow)">
+    <path d="M648 128 A 185 185 0 0 1 742 205"/>
+    <path d="M782 272 A 185 185 0 0 1 742 375"/>
+    <path d="M662 455 A 185 185 0 0 1 538 455"/>
+    <path d="M458 375 A 185 185 0 0 1 418 272"/>
+    <path d="M458 205 A 185 185 0 0 1 552 128"/>
+  </g>
+
+  <!-- 중심 -->
+  <g transform="translate(600 290)">
+    <circle r="92" fill="url(#lp-g)"/>
+    <text x="0" y="-6" text-anchor="middle" font-size="24" font-weight="800" fill="#dcb26a">혁신 랩</text>
+    <text x="0" y="24" text-anchor="middle" font-size="15" font-weight="600" fill="#fff">리빙랩 실증</text>
+  </g>
+
+  <!-- 5 노드 -->
+  <g text-anchor="middle">
+    <g transform="translate(600 105)"><circle r="56" fill="#fff" stroke="#1e5a47" stroke-width="3"/><text y="-8" font-size="22" font-weight="800" fill="#b8863b">1</text><text y="16" font-size="16" font-weight="700" fill="#123a2e">문제 발견</text></g>
+    <g transform="translate(776 233)"><circle r="56" fill="#fff" stroke="#1e5a47" stroke-width="3"/><text y="-8" font-size="22" font-weight="800" fill="#b8863b">2</text><text y="16" font-size="15" font-weight="700" fill="#123a2e">아이디어·기획</text></g>
+    <g transform="translate(709 440)"><circle r="56" fill="#fff" stroke="#1e5a47" stroke-width="3"/><text y="-8" font-size="22" font-weight="800" fill="#b8863b">3</text><text y="16" font-size="16" font-weight="700" fill="#123a2e">실험·실증</text></g>
+    <g transform="translate(491 440)"><circle r="56" fill="#fff" stroke="#1e5a47" stroke-width="3"/><text y="-8" font-size="22" font-weight="800" fill="#b8863b">4</text><text y="16" font-size="16" font-weight="700" fill="#123a2e">사업화</text></g>
+    <g transform="translate(424 233)"><circle r="56" fill="#fff" stroke="#1e5a47" stroke-width="3"/><text y="-8" font-size="22" font-weight="800" fill="#b8863b">5</text><text y="16" font-size="15" font-weight="700" fill="#123a2e">학습·확산</text></g>
+  </g>
+</svg>

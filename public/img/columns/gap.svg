@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" role="img" aria-label="혁신이 빠진 사회적경제와 분리된 두 중간조직 세계">
+  <defs>
+    <linearGradient id="ga-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1e5a47"/><stop offset="1" stop-color="#123a2e"/></linearGradient>
+    <style>text{font-family:"Pretendard Variable",Pretendard,"Malgun Gothic",sans-serif}</style>
+  </defs>
+  <rect width="1200" height="620" rx="26" fill="#f4f1e9"/>
+  <circle cx="600" cy="540" r="240" fill="#c0392b" opacity="0.04"/>
+  <text x="600" y="80" text-anchor="middle" font-size="26" font-weight="800" fill="#123a2e">따로 도는 두 개의 중간조직 세계</text>
+
+  <!-- 왼쪽 세계 -->
+  <g transform="translate(290 320)">
+    <circle r="150" fill="#fff" stroke="#1e5a47" stroke-width="3" stroke-dasharray="6 8"/>
+    <g fill="url(#ga-g)"><circle cx="-40" cy="-30" r="20"/><circle cx="40" cy="-30" r="20"/><circle cx="0" cy="40" r="20"/>
+      <path d="M-40 -10 L0 20M40 -10 L0 20" stroke="#1e5a47" stroke-width="3"/></g>
+    <text x="0" y="110" text-anchor="middle" font-size="20" font-weight="800" fill="#123a2e">사회적경제 중간조직</text>
+    <text x="0" y="136" text-anchor="middle" font-size="15" font-weight="600" fill="#6b766f">공동체 조직 · 행정 전달</text>
+  </g>
+
+  <!-- 오른쪽 세계 -->
+  <g transform="translate(910 320)">
+    <circle r="150" fill="#fff" stroke="#b8863b" stroke-width="3" stroke-dasharray="6 8"/>
+    <g fill="#b8863b">
+      <rect x="-54" y="-40" width="40" height="40" rx="6"/><rect x="14" y="-40" width="40" height="40" rx="6"/>
+      <path d="M0-8 l16 8 a86 86 0 0 1 0 0" />
+      <g transform="translate(0 44)"><path d="M0-30 l10 5 a34 34 0 0 1 9 5 l10-4 8 14-8 8 a34 34 0 0 1 0 10 l8 8-8 14-10-4 a34 34 0 0 1-9 5 l-10 5-10-5 a34 34 0 0 1-9-5 l-10 4-8-14 8-8 a34 34 0 0 1 0-10 l-8-8 8-14 10 4 a34 34 0 0 1 9-5z"/><circle r="14" fill="#fff"/></g>
+    </g>
+    <text x="0" y="110" text-anchor="middle" font-size="20" font-weight="800" fill="#123a2e">일반 혁신 생태계</text>
+    <text x="0" y="136" text-anchor="middle" font-size="15" font-weight="600" fill="#6b766f">테크노파크 · 대학 · 연구기관</text>
+  </g>
+
+  <!-- 끊어진 다리 -->
+  <g transform="translate(600 300)">
+    <line x1="-160" y1="0" x2="-40" y2="0" stroke="#9aa39c" stroke-width="8" stroke-linecap="round"/>
+    <line x1="40" y1="0" x2="160" y2="0" stroke="#9aa39c" stroke-width="8" stroke-linecap="round"/>
+    <g stroke="#c0392b" stroke-width="7" stroke-linecap="round"><path d="M-18-20 L18 20M18-20 L-18 20"/></g>
+    <text x="0" y="-36" text-anchor="middle" font-size="20" font-weight="800" fill="#c0392b">혁신 부재 · 단절</text>
+  </g>
+</svg>

@@ -1,0 +1,111 @@
+<%- include('partials/header') %>
+<div class="col-progress" id="colProgress" aria-hidden="true"></div>
+
+<article class="col-page">
+  <div class="col-shell">
+    <header class="col-hero">
+      <nav class="col-breadcrumb" aria-label="위치">
+        <a href="/projects/forum">두잉새롬마당</a> ·
+        <a href="/projects/forum/columns">두잉 기고문</a>
+      </nav>
+      <% if (c.category) { %><span class="col-cat"><%= c.category %></span><% } %>
+      <div class="col-eyebrow"><%= c.eyebrow || "두잉 기고문 · DIF COLUMN" %></div>
+      <h1 class="col-title"><%= c.title %></h1>
+      <% if (c.subtitle) { %><p class="col-sub"><%= c.subtitle %></p><% } %>
+
+      <div class="col-byline">
+        <div class="col-author">
+          <span class="col-avatar" aria-hidden="true"><%= (c.author || "U").slice(0,1) %></span>
+          <span>
+            <span class="col-author-name"><%= c.author || "도시공동체본부" %></span>
+            <% if (c.author_title) { %><br><span class="col-author-title"><%= c.author_title %></span><% } %>
+          </span>
+        </div>
+        <div class="col-meta">
+          <% if (c.date) { %><span><b>게재</b> <%= c.date %></span><% } %>
+          <span><b>읽는 시간</b> 약 <%= c.read_min %>분</span>
+          <span><b>조회</b> <%= c.views %></span>
+        </div>
+      </div>
+    </header>
+
+    <% if (c.cover) { %>
+    <figure class="col-cover"><img src="<%= c.cover %>" alt="<%= c.title %> 대표 이미지" width="1200" height="620" /></figure>
+    <% } %>
+
+    <% if (c.lede) { %><p class="col-lede"><%= c.lede %></p><% } %>
+
+    <% if (c.toc && c.toc.length) { %>
+    <details class="col-toc" open>
+      <summary>이 글의 목차</summary>
+      <ol>
+        <% c.toc.forEach(function(t){ %>
+          <li><a href="#<%= t.id %>"><%= t.label %></a></li>
+        <% }); %>
+      </ol>
+    </details>
+    <% } %>
+
+    <div class="col-body"><%- c.body %></div>
+
+    <% if (c.tags && c.tags.length) { %>
+    <div class="col-tags">
+      <% c.tags.forEach(function(tag){ %><span class="col-tag"># <%= tag %></span><% }); %>
+    </div>
+    <% } %>
+
+    <footer class="col-foot">
+      <div class="col-signoff">
+        <div class="s-en">DOING INNOVATION FORUM</div>
+        <h4>생각을 행동으로 잇는 두잉새롬마당</h4>
+        <p>두잉 기고문은 도시의 혁신 생태계를 만들어가는 혁신가들의 생각과 실천을 기록합니다. 함께 쓰고 함께 실천할 동행자를 기다립니다.</p>
+        <div class="s-actions">
+          <a class="btn btn-primary" href="/projects/forum">두잉새롬마당 알아보기</a>
+          <a class="btn btn-ghost-dark" href="/projects/forum/columns">다른 기고문 보기</a>
+        </div>
+      </div>
+
+      <% if (prev || next) { %>
+      <nav class="col-adjacent" aria-label="이웃 기고문">
+        <% if (prev) { %><a class="col-adj prev" href="<%= prev.href %>"><span class="dir">◀ 이전 글</span><span class="t"><%= prev.title %></span></a><% } else { %><span></span><% } %>
+        <% if (next) { %><a class="col-adj next" href="<%= next.href %>"><span class="dir">다음 글 ▶</span><span class="t"><%= next.title %></span></a><% } %>
+      </nav>
+      <% } %>
+
+      <% if (more && more.length) { %>
+      <section class="col-more">
+        <h3>함께 읽으면 좋은 기고문</h3>
+        <div class="col-more-grid">
+          <% more.forEach(function(m){ %>
+          <a class="ccard" href="<%= m.href %>">
+            <div class="ccard-media"><% if (m.cover) { %><img src="<%= m.cover %>" alt="" loading="lazy" /><% } %></div>
+            <div class="ccard-body">
+              <h3 class="ccard-title" style="font-size:1.05rem"><%= m.title %></h3>
+              <div class="ccard-meta" style="margin-top:12px"><span><%= m.dateline %></span><span>약 <%= m.read_min %>분</span></div>
+            </div>
+          </a>
+          <% }); %>
+        </div>
+      </section>
+      <% } %>
+    </footer>
+  </div>
+</article>
+
+<script>
+(function(){
+  var bar = document.getElementById("colProgress");
+  var body = document.querySelector(".col-body");
+  if (!bar || !body) return;
+  function upd(){
+    var top = body.offsetTop, h = body.offsetHeight, y = window.scrollY || window.pageYOffset;
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    var p = (y + vh - top) / (h) ; if (p < 0) p = 0; if (p > 1) p = 1;
+    bar.style.width = (p * 100).toFixed(1) + "%";
+  }
+  window.addEventListener("scroll", upd, { passive: true });
+  window.addEventListener("resize", upd); upd();
+})();
+</script>
+
+<%- include('partials/footer') %>

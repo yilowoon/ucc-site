@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" role="img" aria-label="한국 협동조합의 양적 성장과 질적 정체">
+  <defs>
+    <linearGradient id="ko-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a6b54"/><stop offset="1" stop-color="#123a2e"/></linearGradient>
+    <style>text{font-family:"Pretendard Variable",Pretendard,"Malgun Gothic",sans-serif}</style>
+  </defs>
+  <rect width="1200" height="620" rx="26" fill="#f4f1e9"/>
+  <circle cx="1060" cy="140" r="190" fill="#cd9b4c" opacity="0.07"/>
+  <text x="80" y="80" font-size="26" font-weight="800" fill="#123a2e">수는 늘었지만, 절반만 사업 · 평균 적자</text>
+
+  <!-- 막대(설립 수 증가) -->
+  <g transform="translate(90 150)">
+    <line x1="0" y1="300" x2="720" y2="300" stroke="#d9d3c4" stroke-width="2"/>
+    <g fill="url(#ko-g)">
+      <rect x="20" y="210" width="90" height="90" rx="4"/>
+      <rect x="150" y="150" width="90" height="150" rx="4"/>
+      <rect x="280" y="92" width="90" height="208" rx="4"/>
+      <rect x="410" y="44" width="90" height="256" rx="4"/>
+      <rect x="540" y="18" width="90" height="282" rx="4"/>
+    </g>
+    <g font-size="15" font-weight="600" fill="#1e5a47" text-anchor="middle">
+      <text x="65" y="322">2014</text><text x="195" y="322">2018</text><text x="325" y="322">2022</text><text x="455" y="322">2024</text><text x="585" y="322">2025e</text>
+    </g>
+    <text x="585" y="4" text-anchor="middle" font-size="18" font-weight="800" fill="#123a2e">3만+</text>
+    <text x="20" y="-6" font-size="15" font-weight="700" fill="#6b766f">협동조합 누계 (개)</text>
+
+    <!-- 적자 라인(순이익 하락) -->
+    <polyline points="65,120 195,150 325,185 455,232" fill="none" stroke="#c0392b" stroke-width="5" stroke-linecap="round"/>
+    <g fill="#c0392b"><circle cx="65" cy="120" r="7"/><circle cx="195" cy="150" r="7"/><circle cx="325" cy="185" r="7"/><circle cx="455" cy="232" r="7"/></g>
+    <text x="470" y="228" font-size="15" font-weight="700" fill="#c0392b">평균 순이익 −1,180만원</text>
+  </g>
+
+  <!-- 운영률 도넛 53.8% -->
+  <g transform="translate(960 330)">
+    <circle r="118" fill="#fff" stroke="#eee6d4" stroke-width="26"/>
+    <circle r="118" fill="none" stroke="#b8863b" stroke-width="26" stroke-linecap="round"
+      stroke-dasharray="398.98 741.4" transform="rotate(-90)"/>
+    <text x="0" y="-2" text-anchor="middle" font-size="52" font-weight="800" fill="#123a2e">53.8%</text>
+    <text x="0" y="34" text-anchor="middle" font-size="18" font-weight="600" fill="#6b766f">실제 사업 운영률</text>
+    <text x="0" y="162" text-anchor="middle" font-size="16" font-weight="600" fill="#1e5a47">10년째 제자리 — 사업모델 부족</text>
+  </g>
+</svg>

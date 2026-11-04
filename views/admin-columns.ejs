@@ -1,0 +1,48 @@
+<%- include('partials/header') %>
+<div class="container admin-wrap">
+  <div class="admin-head">
+    <div>
+      <h1>두잉 기고문 관리</h1>
+      <p class="admin-sub"><b>두잉새롬마당 · 두잉 기고문</b>에 노출되는 글을 등록·관리합니다. 게시로 설정하면 <a href="/projects/forum/columns" target="_blank" rel="noopener">기고문 목록</a>에 자동 출력됩니다.</p>
+    </div>
+    <div class="admin-head-actions">
+      <a class="btn btn-primary btn-sm" href="/admin/columns/new">+ 기고문 작성</a>
+      <a class="btn btn-neutral btn-sm" href="/admin">대시보드</a>
+    </div>
+  </div>
+
+  <% if (msg) { %><p class="form-alert ok"><%= msg %></p><% } %>
+
+  <% if (!columns.length) { %>
+    <p class="post-empty">등록된 기고문이 없습니다. <a href="/admin/columns/new">첫 기고문 작성하기</a></p>
+  <% } else { %>
+  <div class="member-scroll">
+    <table class="log-table">
+      <thead>
+        <tr><th>ID</th><th>제목</th><th>필자</th><th>게재일</th><th>상태</th><th>조회</th><th>관리</th></tr>
+      </thead>
+      <tbody>
+        <% columns.forEach(function(c){ %>
+          <tr>
+            <td><%= c.id %></td>
+            <td class="log-path"><b><%= esc(c.title) %></b><% if (c.pinned) { %> <span class="field-hint">📌고정</span><% } %><br><span class="field-hint">/projects/forum/columns/<%= esc(c.slug || String(c.id)) %></span></td>
+            <td><%= esc(c.author || '-') %></td>
+            <td><%= esc(c.dateline || '-') %></td>
+            <td><% if (c.published) { %><span style="color:var(--green-600);font-weight:700">게시</span><% } else { %><span style="color:var(--muted)">비공개</span><% } %></td>
+            <td><%= c.views %></td>
+            <td>
+              <a class="linkbtn" href="/projects/forum/columns/<%= esc(c.slug || String(c.id)) %>" target="_blank" rel="noopener">보기</a>
+              <a class="linkbtn" href="/admin/columns/<%= c.id %>/edit">수정</a>
+              <form action="/admin/columns/<%= c.id %>/delete" method="post" style="display:inline" onsubmit="return confirm('이 기고문을 삭제하시겠습니까?');">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <button type="submit" class="linkbtn linkbtn-danger">삭제</button>
+              </form>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</div>
+<%- include('partials/footer') %>

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" role="img" aria-label="혁신 DNA 내재화">
+  <defs>
+    <linearGradient id="dn-g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1e5a47"/><stop offset="1" stop-color="#2a6b54"/></linearGradient>
+    <linearGradient id="dn-gold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#cd9b4c"/><stop offset="1" stop-color="#dcb26a"/></linearGradient>
+    <style>text{font-family:"Pretendard Variable",Pretendard,"Malgun Gothic",sans-serif}</style>
+  </defs>
+  <rect width="1200" height="620" rx="26" fill="#f4f1e9"/>
+  <circle cx="200" cy="140" r="190" fill="#1e5a47" opacity="0.05"/>
+  <circle cx="1030" cy="500" r="200" fill="#cd9b4c" opacity="0.08"/>
+
+  <!-- 이중나선 -->
+  <g transform="translate(320 310)">
+    <!-- 두 가닥 -->
+    <path d="M-40 -230 C 160 -150 -160 -70 40 10 C 160 60 -160 150 40 230" fill="none" stroke="url(#dn-g)" stroke-width="12" stroke-linecap="round"/>
+    <path d="M40 -230 C -160 -150 160 -70 -40 10 C -160 60 160 150 -40 230" fill="none" stroke="url(#dn-gold)" stroke-width="12" stroke-linecap="round"/>
+    <!-- 가로 결합(루틴) -->
+    <g stroke="#b8863b" stroke-width="5" stroke-linecap="round" opacity="0.85">
+      <path d="M-28 -190 H28"/><path d="M34 -120 H-34"/><path d="M-20 -50 H20"/><path d="M-20 60 H20"/><path d="M34 130 H-34"/><path d="M-28 196 H28"/>
+    </g>
+    <g fill="#123a2e"><circle cx="-40" cy="-230" r="9"/><circle cx="40" cy="-230" r="9"/><circle cx="40" cy="230" r="9"/><circle cx="-40" cy="230" r="9"/></g>
+  </g>
+
+  <!-- 설명 블록 -->
+  <g transform="translate(650 180)">
+    <text x="0" y="0" font-size="30" font-weight="800" fill="#123a2e">혁신 DNA 내재화</text>
+    <text x="0" y="40" font-size="18" font-weight="600" fill="#6b766f">= 조직 안에 혁신이 반복되는 구조(루틴)</text>
+    <g font-size="19" font-weight="700" fill="#1e5a47">
+      <g transform="translate(0 86)"><circle cx="12" cy="-6" r="7" fill="#b8863b"/><text x="34" y="0">혁신 리더 — 혁신을 이끄는 사람</text></g>
+      <g transform="translate(0 134)"><circle cx="12" cy="-6" r="7" fill="#b8863b"/><text x="34" y="0">혁신 자본 — 혁신에 쓸 돈</text></g>
+      <g transform="translate(0 182)"><circle cx="12" cy="-6" r="7" fill="#b8863b"/><text x="34" y="0">혁신형 중간조직 — 함께하는 파트너</text></g>
+    </g>
+    <path d="M0 220 H470" stroke="#d9d3c4" stroke-width="2"/>
+    <text x="0" y="256" font-size="17" font-weight="600" fill="#123a2e">‘지원의 통합’에서 ‘혁신의 체계화’로</text>
+  </g>
+</svg>

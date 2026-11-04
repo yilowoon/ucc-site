@@ -1,0 +1,44 @@
+<%- include('partials/header') %>
+<link rel="stylesheet" href="/css/column.css?v=1" />
+
+<section class="page-banner">
+  <div class="container">
+    <span class="page-banner-en">DOING INNOVATION FORUM · COLUMN</span>
+    <h1 class="page-banner-title">두잉 기고문</h1>
+    <p class="page-banner-desc">생각을 행동으로 — 혁신가들이 쓰는 도시혁신 이야기</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <p class="cols-intro section-lede">
+      <strong>두잉 기고문</strong>은 도시의 혁신 생태계를 만들어가는 혁신가들의 생각과 실천을 기록하는 지면입니다.
+      말이 아닌 <strong>행동(Doing)</strong>으로 이어지는 관점과 제안을, 한 편의 글로 모아 전합니다.
+    </p>
+
+    <% if (items && items.length) { %>
+    <div class="cols-grid" style="margin-top:34px">
+      <% items.forEach(function(c, i){ %>
+      <a class="ccard<%= (i === 0 && c.cover) ? ' is-feature' : '' %>" href="<%= c.href %>">
+        <% if (c.cover) { %><div class="ccard-media"><img src="<%= c.cover %>" alt="" loading="<%= i < 2 ? 'eager' : 'lazy' %>" /></div><% } %>
+        <div class="ccard-body">
+          <div class="ccard-cat"><%= c.category || "기고문" %></div>
+          <h2 class="ccard-title"><%= c.title %></h2>
+          <% if (c.subtitle) { %><p class="ccard-sub"><%= c.subtitle %></p><% } %>
+          <% if (c.lede) { %><p class="ccard-lede"><%= c.lede %></p><% } %>
+          <div class="ccard-meta">
+            <span><b><%= c.author || "도시공동체본부" %></b></span>
+            <% if (c.date) { %><span><%= c.date %></span><% } %>
+            <span>약 <%= c.read_min %>분</span>
+          </div>
+        </div>
+      </a>
+      <% }); %>
+    </div>
+    <% } else { %>
+    <p class="cols-empty">아직 게재된 기고문이 없습니다. 곧 첫 글로 찾아뵙겠습니다.</p>
+    <% } %>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

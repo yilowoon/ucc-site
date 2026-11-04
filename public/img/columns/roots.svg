@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" role="img" aria-label="1844년 로치데일 공정개척자조합">
+  <defs>
+    <linearGradient id="ro-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e5a47"/><stop offset="1" stop-color="#123a2e"/></linearGradient>
+    <linearGradient id="ro-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#dcb26a"/><stop offset="1" stop-color="#b8863b"/></linearGradient>
+    <style>text{font-family:"Pretendard Variable",Pretendard,"Malgun Gothic",sans-serif}</style>
+  </defs>
+  <rect width="1200" height="620" rx="26" fill="#f4f1e9"/>
+  <circle cx="150" cy="500" r="200" fill="#1e5a47" opacity="0.05"/>
+  <circle cx="1060" cy="120" r="200" fill="#cd9b4c" opacity="0.08"/>
+
+  <!-- 가게 -->
+  <g transform="translate(600 330)">
+    <!-- 바닥 그림자 -->
+    <ellipse cy="196" rx="300" ry="20" fill="#123a2e" opacity="0.06"/>
+    <!-- 건물 -->
+    <rect x="-230" y="-150" width="460" height="330" rx="10" fill="#fff" stroke="#e4ddcc" stroke-width="2"/>
+    <!-- 간판 -->
+    <rect x="-230" y="-150" width="460" height="62" rx="10" fill="url(#ro-g)"/>
+    <text x="0" y="-108" text-anchor="middle" font-size="30" font-weight="800" fill="#dcb26a" letter-spacing="1">ROCHDALE · 1844</text>
+    <!-- 차양(스트라이프) -->
+    <g>
+      <path d="M-240 -88 h480 l-24 44 h-432 z" fill="#b8863b"/>
+      <g fill="#dcb26a"><path d="M-240 -88 h40 l-20 44 h-40z"/><path d="M-160 -88 h40 l-20 44 h-40z"/><path d="M-80 -88 h40 l-20 44 h-40z"/><path d="M0 -88 h40 l-20 44 h-40z"/><path d="M80 -88 h40 l-20 44 h-40z"/><path d="M160 -88 h40 l-20 44 h-40z"/></g>
+    </g>
+    <!-- 문 -->
+    <rect x="-46" y="40" width="92" height="140" rx="4" fill="url(#ro-g)"/>
+    <circle cx="30" cy="112" r="5" fill="#dcb26a"/>
+    <!-- 진열창 -->
+    <rect x="-196" y="-20" width="130" height="110" rx="6" fill="#eaf1ed" stroke="#cdd8d2" stroke-width="2"/>
+    <rect x="66" y="-20" width="130" height="110" rx="6" fill="#eaf1ed" stroke="#cdd8d2" stroke-width="2"/>
+    <!-- 저울(정직한 계량) -->
+    <g transform="translate(-131 40)" stroke="#1e5a47" stroke-width="4" fill="none" stroke-linecap="round"><path d="M0-34 V8"/><path d="M-26-24 H26"/><path d="M-26-24 l-10 22 a16 10 0 0 0 20 0z"/><path d="M26-24 l-10 22 a16 10 0 0 0 20 0z"/><path d="M-12 8 H12"/></g>
+  </g>
+
+  <!-- 동전 쌓기(자기 출자) -->
+  <g transform="translate(250 430)">
+    <g fill="url(#ro-gold)" stroke="#b8863b" stroke-width="2">
+      <ellipse cy="60" rx="46" ry="14"/><ellipse cy="40" rx="46" ry="14"/><ellipse cy="20" rx="46" ry="14"/><ellipse cy="0" rx="46" ry="14"/>
+    </g>
+    <text x="0" y="110" text-anchor="middle" font-size="20" font-weight="700" fill="#123a2e">1인 1파운드</text>
+  </g>
+  <!-- 조합원 28명 -->
+  <g transform="translate(950 430)" fill="url(#ro-g)">
+    <g><circle cx="0" cy="0" r="13"/><circle cx="34" cy="0" r="13"/><circle cx="68" cy="0" r="13"/><circle cx="17" cy="30" r="13"/><circle cx="51" cy="30" r="13"/></g>
+    <text x="34" y="78" text-anchor="middle" font-size="20" font-weight="700" fill="#123a2e">노동자 28명</text>
+  </g>
+</svg>

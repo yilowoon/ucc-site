@@ -1,0 +1,67 @@
+<%- include('partials/header') %>
+<div class="container admin-wrap">
+  <div class="admin-head">
+    <div>
+      <h1><%= mode === 'edit' ? '기고문 수정' : '기고문 작성' %></h1>
+      <p class="admin-sub">본문은 HTML로 작성합니다. 섹션 제목은 <code>&lt;h2 id="sec-1" class="col-h2"&gt;&lt;span class="col-h2-num"&gt;1&lt;/span&gt;&lt;span class="col-h2-txt"&gt;제목&lt;/span&gt;&lt;/h2&gt;</code> 형식을 쓰면 목차·읽기시간이 자동 생성됩니다.</p>
+    </div>
+    <div class="admin-head-actions">
+      <a class="btn btn-neutral btn-sm" href="/admin/columns">← 목록</a>
+    </div>
+  </div>
+
+  <% if (error) { %><p class="form-alert err"><%= error %></p><% } %>
+
+  <form class="admin-form-fields" method="post"
+        action="<%= mode === 'edit' ? '/admin/columns/' + c.id : '/admin/columns' %>"
+        enctype="multipart/form-data" autocomplete="off">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+    <div class="field"><label for="title">제목 <span class="field-hint">필수</span></label><input type="text" id="title" name="title" value="<%= esc(c.title || '') %>" required /></div>
+    <div class="field"><label for="subtitle">부제</label><input type="text" id="subtitle" name="subtitle" value="<%= esc(c.subtitle || '') %>" placeholder="예: 혁신 DNA를 내재화한 협동조합과 사회연대경제를 위하여" /></div>
+
+    <div class="write-grid">
+      <div class="field"><label for="category">분류</label><input type="text" id="category" name="category" value="<%= esc(c.category || '정책 논고') %>" placeholder="예: 정책 논고 / 칼럼 / 현장 리포트" /></div>
+      <div class="field"><label for="eyebrow">상단 라벨</label><input type="text" id="eyebrow" name="eyebrow" value="<%= esc(c.eyebrow || '두잉 기고문 · DIF COLUMN') %>" /></div>
+    </div>
+    <div class="write-grid">
+      <div class="field"><label for="author">필자</label><input type="text" id="author" name="author" value="<%= esc(c.author || '') %>" placeholder="예: 다니엘" /></div>
+      <div class="field"><label for="author_title">필자 직함</label><input type="text" id="author_title" name="author_title" value="<%= esc(c.author_title || '') %>" placeholder="예: 두잉새롬마당 혁신가" /></div>
+    </div>
+    <div class="write-grid">
+      <div class="field"><label for="dateline">게재일</label><input type="date" id="dateline" name="dateline" value="<%= esc(c.dateline || '') %>" /></div>
+      <div class="field"><label for="slug">slug <span class="field-hint">URL 영문·숫자·하이픈(비우면 ID 사용)</span></label><input type="text" id="slug" name="slug" value="<%= esc(c.slug || '') %>" placeholder="예: coop-essence-korea-tasks" /></div>
+    </div>
+
+    <div class="field"><label for="tags">태그 <span class="field-hint">쉼표로 구분</span></label><input type="text" id="tags" name="tags" value="<%= esc((c.tags || []).join(', ')) %>" placeholder="협동조합, 사회연대경제, 혁신" /></div>
+
+    <div class="field"><label for="lede">리드(요약)</label><textarea id="lede" name="lede" rows="3" placeholder="글의 핵심을 2~3문장으로"><%= esc(c.lede || '') %></textarea></div>
+
+    <div class="write-grid">
+      <div class="field">
+        <label for="cover_file">대표 이미지 업로드 <span class="field-hint">이미지 파일 · 최대 12MB</span></label>
+        <input type="file" id="cover_file" name="cover_file" accept="image/*" />
+      </div>
+      <div class="field">
+        <label for="cover">또는 이미지 경로 직접 입력</label>
+        <input type="text" id="cover" name="cover" value="<%= esc(c.cover || '') %>" placeholder="예: /img/columns/intro.svg" />
+        <% if (c.cover) { %><div class="field-hint" style="margin-top:6px">현재: <%= esc(c.cover) %></div><% } %>
+      </div>
+    </div>
+
+    <div class="field"><label for="body">본문(HTML) <span class="field-hint">필수</span></label>
+      <textarea id="body" name="body" rows="22" style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.86rem;line-height:1.5"><%= c.body || '' %></textarea>
+    </div>
+
+    <div class="field" style="display:flex;gap:24px;align-items:center">
+      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="published" value="1" <%= (c.published === undefined || c.published) ? 'checked' : '' %> /> 게시(공개)</label>
+      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="pinned" value="1" <%= c.pinned ? 'checked' : '' %> /> 상단 고정</label>
+    </div>
+
+    <div class="admin-head-actions" style="margin-top:10px">
+      <button type="submit" class="btn btn-primary"><%= mode === 'edit' ? '수정 저장' : '기고문 등록' %></button>
+      <a class="btn btn-neutral" href="/admin/columns">취소</a>
+    </div>
+  </form>
+</div>
+<%- include('partials/footer') %>
