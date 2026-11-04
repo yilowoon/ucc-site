@@ -358,6 +358,33 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     const plain = String(body || "").replace(/<[^>]+>/g, "").replace(/\s+/g, "");
     return Math.max(3, Math.round(plain.length / 650));
   }
+  function escHtml(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  // 본문 정규화: WYSIWYG/소스 어느 쪽으로 들어오든 섹션 제목(h2)을 표준형으로 통일.
+  //   번호 섹션:   <h2 id="sec-K" class="col-h2"><span class="col-h2-num">N</span><span class="col-h2-txt">제목</span></h2>
+  //   무번호 섹션: <h2 id="sec-K" class="col-h2 col-h2--plain"><span class="col-h2-txt">제목</span></h2>  (예: 출처 — 목차·번호 제외)
+  // → 편집기에서 '섹션 제목(H2)'만 지정하면 번호·id·목차·읽기시간이 자동 생성/재정렬된다(멱등).
+  //   무번호로 두려면 h2 class에 col-h2--plain(또는 data-nonum)을 넣거나, 기존 빈 번호칸을 유지하면 된다.
+  function normalizeColBody(body) {
+    let hIdx = 0, num = 0;
+    return String(body || "").replace(/<h2\b([^>]*)>([\s\S]*?)<\/h2>/gi, (full, attrs, inner) => {
+      const txt = inner.match(/<span[^>]*class="[^"]*col-h2-txt[^"]*"[^>]*>([\s\S]*?)<\/span>/i);
+      let label = txt ? txt[1] : inner.replace(/<span[^>]*class="[^"]*col-h2-num[^"]*"[^>]*>[\s\S]*?<\/span>/i, "");
+      label = label.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+      if (!label) return full; // 빈 제목은 그대로 둔다
+      hIdx += 1;
+      const id = "sec-" + hIdx;
+      const emptyNum = /<span[^>]*class="[^"]*col-h2-num[^"]*"[^>]*>\s*<\/span>/i.test(inner);
+      const plain = /col-h2--plain/i.test(attrs) || /data-nonum/i.test(attrs) || emptyNum;
+      if (plain) {
+        return '<h2 id="' + id + '" class="col-h2 col-h2--plain"><span class="col-h2-txt">' + escHtml(label) + "</span></h2>";
+      }
+      num += 1;
+      return '<h2 id="' + id + '" class="col-h2"><span class="col-h2-num">' + num +
+        '</span><span class="col-h2-txt">' + escHtml(label) + "</span></h2>";
+    });
+  }
   function colBodyFromForm(req) {
     const tags = String(req.body.tags || "").split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
     return {
@@ -392,6 +419,7 @@ module.exports = function adminRoutes({ verifyCsrf }) {
   });
   router.post("/columns", requireAdmin, coverUpload, verifyCsrf, (req, res) => {
     const f = colBodyFromForm(req);
+    f.body = normalizeColBody(f.body);
     const back = (error) => res.status(400).render("admin-column-form", { ...res.locals, title: "기고문 작성", mode: "new", c: { ...f, tags: f.tags }, error });
     if (req.uploadError) return back(req.uploadError);
     if (!f.title) return back("제목을 입력해 주세요.");
@@ -406,11 +434,37 @@ module.exports = function adminRoutes({ verifyCsrf }) {
       JSON.stringify(f.tags), JSON.stringify(buildColToc(f.body)), f.body, colReadMin(f.body), f.pinned, f.published, created, now);
     res.redirect("/admin/columns?msg=" + encodeURIComponent("기고문이 등록되었습니다."));
   });
+  // 본문 에디터(TinyMCE) 인라인 이미지 업로드 — JSON({location}) 응답. (반드시 "/columns/:id" 보다 먼저 등록)
+  const IMG_EXT = new Set([".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"]);
+  function uploadImageSingle(req, res, next) {
+    upload.single("file")(req, res, (err) => {
+      if (err) {
+        const msg = err.code === "LIMIT_FILE_SIZE" ? "이미지는 최대 12MB까지 가능합니다." : (err.publicMessage || "이미지 업로드 중 오류가 발생했습니다.");
+        return res.status(400).json({ error: msg });
+      }
+      next();
+    });
+  }
+  router.post("/columns/upload-image", requireAdmin, uploadImageSingle, (req, res) => {
+    // 멀티파트 바디의 _csrf 검증(에디터에는 JSON으로 응답)
+    if (!req.body || req.body._csrf !== (req.session && req.session.csrf)) {
+      if (req.file) safeUnlink(req.file.filename);
+      return res.status(403).json({ error: "보안 토큰이 일치하지 않습니다. 새로고침 후 다시 시도해 주세요." });
+    }
+    if (!req.file) return res.status(400).json({ error: "이미지 파일이 없습니다." });
+    const ext = path.extname(req.file.filename).toLowerCase();
+    if (!IMG_EXT.has(ext) || !/^image\//.test(req.file.mimetype || "")) {
+      safeUnlink(req.file.filename);
+      return res.status(400).json({ error: "이미지 파일만 업로드할 수 있습니다." });
+    }
+    res.json({ location: "/uploads/" + req.file.filename });
+  });
   router.post("/columns/:id", requireAdmin, coverUpload, verifyCsrf, (req, res, next) => {
     const id = parseInt(req.params.id, 10);
     const cur = db.prepare("SELECT * FROM columns WHERE id = ?").get(id);
     if (!cur) { if (req.file) safeUnlink(req.file.filename); return next(); }
     const f = colBodyFromForm(req);
+    f.body = normalizeColBody(f.body);
     const back = (error) => res.status(400).render("admin-column-form", { ...res.locals, title: "기고문 수정", mode: "edit", c: { ...cur, ...f }, error });
     if (req.uploadError) return back(req.uploadError);
     if (!f.title) return back("제목을 입력해 주세요.");
