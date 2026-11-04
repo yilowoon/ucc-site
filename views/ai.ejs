@@ -38,6 +38,11 @@
   .ba-before p,.ba-after p{margin:0;font-size:.96rem;line-height:1.5;color:var(--ink-soft)}
   .ba-after p b{color:var(--green-800)}
   .ba-arrow{display:grid;place-items:center;color:var(--ci-green-d);font-size:1.5rem;font-weight:800}
+  .ba-illus{grid-column:span 2;position:relative;margin:0;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-sm);overflow:hidden;background:var(--paper)}
+  .ba-illus img{display:block;width:100%;height:auto}
+  .ba-illus figcaption{position:absolute;right:12px;bottom:10px;font-size:.68rem;color:var(--muted);background:rgba(255,255,255,.72);border-radius:999px;padding:2px 10px}
+  .ba-card--top{align-self:start}
+  @media(max-width:1023px){.ba-illus{grid-column:auto}}
   @media(max-width:420px){.ba-card{grid-template-columns:1fr}.ba-arrow{transform:rotate(90deg)}}
   /* 교육 현장 */
   .onsite-photo{position:relative;border-radius:18px;overflow:hidden;box-shadow:var(--shadow);margin:0 0 26px;aspect-ratio:16/9}
@@ -343,103 +348,13 @@
         <span class="ba-arrow" aria-hidden="true">→</span>
         <div class="ba-after"><span class="ba-tag ba-tag--on">AFTER</span><p>AI 에이전트로 <b>반복 업무를 자동화</b></p></div>
       </article>
-      <article class="ba-card">
+      <article class="ba-card ba-card--top">
         <div class="ba-before"><span class="ba-tag">BEFORE</span><p>AI는 남의 이야기 같던 막연함</p></div>
         <span class="ba-arrow" aria-hidden="true">→</span>
         <div class="ba-after"><span class="ba-tag ba-tag--on">AFTER</span><p>내 일과 지역에 <b>AI를 자신 있게 활용</b></p></div>
       </article>
       <figure class="ba-illus">
-        <svg viewBox="0 0 720 300" role="img" aria-label="삼백집 식당이 삼겹살을 먹는 손님들로 가득 차고, 카운터에서 사장님이 '블로그만 운영했는데, 손님이 3배 늘었어요'라고 인터뷰하는 모습" xmlns="http://www.w3.org/2000/svg" font-family="Pretendard, system-ui, sans-serif">
-          <!-- 벽/바닥 -->
-          <rect x="0" y="0" width="720" height="300" fill="#faf4e8"/>
-          <rect x="0" y="0" width="720" height="226" fill="#f4ead6"/>
-          <rect x="0" y="226" width="720" height="74" fill="#e4d2ac"/>
-          <rect x="0" y="222" width="720" height="6" fill="#d8c398"/>
-          <!-- 창문 -->
-          <rect x="250" y="40" width="150" height="86" rx="6" fill="#dfeef0" stroke="#cdbf9f" stroke-width="2"/>
-          <line x1="325" y1="40" x2="325" y2="126" stroke="#cdbf9f" stroke-width="2"/>
-          <line x1="250" y1="83" x2="400" y2="83" stroke="#cdbf9f" stroke-width="2"/>
-          <!-- 간판: 삼백집 -->
-          <g>
-            <line x1="70" y1="12" x2="70" y2="26" stroke="#9a7a3f" stroke-width="2"/>
-            <line x1="180" y1="12" x2="180" y2="26" stroke="#9a7a3f" stroke-width="2"/>
-            <rect x="26" y="24" width="168" height="56" rx="10" fill="#2f8f4e" stroke="#d9a93a" stroke-width="3"/>
-            <text x="110" y="62" text-anchor="middle" font-size="30" font-weight="800" fill="#fff" letter-spacing="4">삼백집</text>
-            <!-- 홍등 -->
-            <g>
-              <line x1="40" y1="82" x2="40" y2="92" stroke="#9a7a3f" stroke-width="2"/>
-              <ellipse cx="40" cy="100" rx="10" ry="12" fill="#d64b3f"/><rect x="34" y="88" width="12" height="4" rx="2" fill="#d9a93a"/><rect x="34" y="110" width="12" height="4" rx="2" fill="#d9a93a"/>
-              <line x1="180" y1="82" x2="180" y2="92" stroke="#9a7a3f" stroke-width="2"/>
-              <ellipse cx="180" cy="100" rx="10" ry="12" fill="#d64b3f"/><rect x="174" y="88" width="12" height="4" rx="2" fill="#d9a93a"/><rect x="174" y="110" width="12" height="4" rx="2" fill="#d9a93a"/>
-            </g>
-          </g>
-          <!-- 테이블 A -->
-          <g>
-            <path d="M60 210 h8 v44 h-8 z M112 210 h8 v44 h-8 z" fill="#8c5f31"/>
-            <ellipse cx="150" cy="216" rx="98" ry="24" fill="#b07e45"/>
-            <ellipse cx="150" cy="210" rx="98" ry="22" fill="#c6914f"/>
-            <!-- 불판 -->
-            <ellipse cx="150" cy="206" rx="34" ry="14" fill="#33312e"/>
-            <ellipse cx="150" cy="204" rx="27" ry="10" fill="#4a4642"/>
-            <ellipse cx="136" cy="203" rx="8" ry="4" fill="#dd8a58"/><ellipse cx="156" cy="206" rx="9" ry="4" fill="#e59a66"/><ellipse cx="166" cy="201" rx="7" ry="3.5" fill="#c9693b"/>
-            <!-- 연기 -->
-            <path d="M150 196 q-7 -11 2 -20 q7 -8 -1 -18" fill="none" stroke="#cdbf9f" stroke-width="3" stroke-linecap="round" opacity=".7"/>
-            <path d="M166 198 q6 -10 -1 -18" fill="none" stroke="#cdbf9f" stroke-width="3" stroke-linecap="round" opacity=".5"/>
-            <!-- 손님 좌 -->
-            <path d="M74 214 q0 -24 24 -24 q24 0 24 24 z" fill="#6aa9d6"/>
-            <circle cx="98" cy="176" r="16" fill="#f1c9a5"/><path d="M83 171 q15 -16 30 0 q-6 -9 -15 -9 q-9 0 -15 9z" fill="#3b3330"/>
-            <!-- 손님 우 -->
-            <path d="M178 214 q0 -24 24 -24 q24 0 24 24 z" fill="#e0995f"/>
-            <circle cx="202" cy="176" r="16" fill="#e8b58c"/><path d="M187 171 q15 -16 30 0 q-6 -9 -15 -9 q-9 0 -15 9z" fill="#2c2420"/>
-          </g>
-          <!-- 테이블 B (앞) -->
-          <g>
-            <path d="M320 238 h9 v52 h-9 z M452 238 h9 v52 h-9 z" fill="#7a5129"/>
-            <ellipse cx="392" cy="246" rx="112" ry="27" fill="#a5743d"/>
-            <ellipse cx="392" cy="239" rx="112" ry="24" fill="#bd8747"/>
-            <ellipse cx="392" cy="234" rx="38" ry="15" fill="#2d2b28"/>
-            <ellipse cx="392" cy="232" rx="30" ry="11" fill="#484440"/>
-            <ellipse cx="376" cy="231" rx="9" ry="4.5" fill="#dd8a58"/><ellipse cx="398" cy="234" rx="10" ry="4.5" fill="#e59a66"/><ellipse cx="408" cy="229" rx="8" ry="4" fill="#c9693b"/>
-            <path d="M392 222 q-8 -12 2 -22 q8 -9 -1 -20" fill="none" stroke="#cdbf9f" stroke-width="3" stroke-linecap="round" opacity=".7"/>
-            <path d="M410 224 q7 -11 -1 -20" fill="none" stroke="#cdbf9f" stroke-width="3" stroke-linecap="round" opacity=".5"/>
-            <!-- 손님 좌 -->
-            <path d="M300 240 q0 -27 27 -27 q27 0 27 27 z" fill="#d98f8f"/>
-            <circle cx="327" cy="198" r="18" fill="#f1c9a5"/><path d="M309 193 q18 -18 36 0 q-7 -11 -18 -11 q-11 0 -18 11z" fill="#3b3330"/>
-            <!-- 손님 우 -->
-            <path d="M430 240 q0 -27 27 -27 q27 0 27 27 z" fill="#8d7bc0"/>
-            <circle cx="457" cy="198" r="18" fill="#e8b58c"/><path d="M439 193 q18 -18 36 0 q-7 -11 -18 -11 q-11 0 -18 11z" fill="#2c2420"/>
-          </g>
-          <!-- 카운터 + 사장님 인터뷰 -->
-          <g>
-            <!-- 사장님 -->
-            <circle cx="636" cy="150" r="21" fill="#f1c9a5"/>
-            <path d="M615 146 q21 -20 42 0 q-6 -13 -21 -13 q-15 0 -21 13z" fill="#2c2420"/>
-            <circle cx="629" cy="152" r="2.2" fill="#2c2420"/><circle cx="645" cy="152" r="2.2" fill="#2c2420"/>
-            <path d="M629 160 q7 5 14 0" fill="none" stroke="#b5724f" stroke-width="2" stroke-linecap="round"/>
-            <!-- 몸통/앞치마 -->
-            <path d="M604 232 q0 -58 32 -58 q32 0 32 58 z" fill="#2f8f4e"/>
-            <path d="M620 232 v-40 q0 -14 16 -14 q16 0 16 14 v40 z" fill="#f4f0e6"/>
-            <rect x="620" y="200" width="32" height="5" fill="#d9a93a"/>
-            <!-- 손 흔들기 -->
-            <circle cx="602" cy="176" r="7" fill="#f1c9a5"/><path d="M604 200 q-10 -14 -2 -26" fill="none" stroke="#2f8f4e" stroke-width="12" stroke-linecap="round"/>
-            <!-- 카운터 -->
-            <rect x="556" y="232" width="150" height="60" rx="6" fill="#8c5f31"/>
-            <rect x="552" y="224" width="158" height="14" rx="4" fill="#a5743d"/>
-            <rect x="566" y="248" width="130" height="30" rx="4" fill="#7a5129" opacity=".5"/>
-            <!-- 기자(인터뷰어) 뒷모습 -->
-            <path d="M520 292 q0 -34 30 -34 q30 0 30 34 z" fill="#4a5a68"/>
-            <circle cx="550" cy="246" r="20" fill="#3b3330"/>
-            <!-- 마이크 -->
-            <line x1="568" y1="214" x2="588" y2="196" stroke="#555" stroke-width="4" stroke-linecap="round"/>
-            <ellipse cx="592" cy="191" rx="9" ry="10" fill="#2c2c2c"/><ellipse cx="592" cy="189" rx="6" ry="6" fill="#555"/>
-          </g>
-          <!-- 말풍선 -->
-          <g>
-            <path d="M636 128 l-14 -14 h-176 q-16 0 -16 -16 v-56 q0 -16 16 -16 h248 q16 0 16 16 v56 q0 16 -16 16 h-44 z" fill="#fff" stroke="#2f8f4e" stroke-width="2.5"/>
-            <text x="454" y="56" font-size="18" font-weight="700" fill="#2c3a2e">블로그만 운영했는데,</text>
-            <text x="454" y="86" font-size="18" font-weight="700" fill="#2c3a2e">손님이 <tspan fill="#2f8f4e" font-size="21" font-weight="800">3배</tspan> 늘었어요!</text>
-          </g>
-        </svg>
+        <img src="/img/ai-blog-case.webp" width="1672" height="941" loading="lazy" decoding="async" alt="삼백집 삼겹살 식당 사장님이 ‘블로그만 운영했는데, 손님이 3배 늘었어요’라고 인터뷰하는 모습 — 손님으로 가득 찬 가게">
         <figcaption>AI 활용 사례 이미지 · 예시</figcaption>
       </figure>
     </div>
