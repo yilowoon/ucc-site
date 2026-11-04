@@ -131,38 +131,57 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   router.get("/about/vision", (req, res) => res.render("vision", { ...res.locals, title: "비전과 목표" }));
   router.get("/about/org", (req, res) => res.render("org", { ...res.locals, title: "조직도" }));
   router.get("/business", (req, res) => res.render("biz", { ...res.locals, title: "프로젝트" }));
-  // 두잉 기고문은 별도 페이지가 아니라 두잉새롬마당 하단 섹션에서 바뀐다.
-  // 목록(기본) ↔ 선택한 글 전문(?column=slug)을 같은 페이지에서 교체.
+  // 두잉 기고문: 두잉새롬마당 하단 섹션에서 '요약 테이블 + 펼침 레이어'로 제공.
+  // 요약(최신 글) 옆 [내용 읽기]→전문 레이어, [목록 보기]→목록 테이블 레이어.
   function colHref(c) { return "/projects/forum?column=" + encodeURIComponent(c.slug || c.id); }
-  router.get("/projects/forum", (req, res) => {
-    // 하단 섹션 목록(카드)
-    const columns = db.prepare(
-      "SELECT id, slug, category, title, subtitle, author, dateline, cover, lede, read_min, views, created_at FROM columns WHERE published = 1 ORDER BY pinned DESC, id DESC"
-    ).all().map((c) => ({ ...c, date: cfg.formatDate(c.created_at || c.dateline), href: colHref(c) }));
-
-    // ?column=slug 이면 그 글 전문을 같은 섹션에 렌더
-    let article = null;
-    const key = (req.query.column || "").trim();
-    if (key) {
-      const byId = /^\d+$/.test(key);
-      const c = byId
-        ? db.prepare("SELECT * FROM columns WHERE id = ?").get(parseInt(key, 10))
-        : db.prepare("SELECT * FROM columns WHERE slug = ?").get(key);
-      if (c && (c.published === 1 || (req.session && req.session.admin))) {
-        try { db.prepare("UPDATE columns SET views = views + 1 WHERE id = ?").run(c.id); c.views = (c.views || 0) + 1; } catch (e) {}
-        try { c.tags = JSON.parse(c.tags || "[]"); } catch (e) { c.tags = []; }
-        try { c.toc = JSON.parse(c.toc || "[]"); } catch (e) { c.toc = []; }
-        c.date = cfg.formatDate(c.created_at || c.dateline);
-        c.more = db.prepare("SELECT slug, id, title, cover, dateline, read_min FROM columns WHERE published = 1 AND id <> ? ORDER BY pinned DESC, id DESC LIMIT 3")
-          .all(c.id).map((m) => ({ ...m, href: colHref(m) }));
-        article = c;
-      }
+  // 전문(본문 포함) 로드 — tags/toc 파싱·게재일 가공
+  function loadColumnFull(key, opts) {
+    const byId = /^\d+$/.test(String(key));
+    const c = byId
+      ? db.prepare("SELECT * FROM columns WHERE id = ?").get(parseInt(key, 10))
+      : db.prepare("SELECT * FROM columns WHERE slug = ?").get(key);
+    if (!c) return null;
+    const isAdmin = opts && opts.admin;
+    if (c.published !== 1 && !isAdmin) return null;
+    if (opts && opts.countView) {
+      try { db.prepare("UPDATE columns SET views = views + 1 WHERE id = ?").run(c.id); c.views = (c.views || 0) + 1; } catch (e) {}
     }
+    try { c.tags = JSON.parse(c.tags || "[]"); } catch (e) { c.tags = []; }
+    try { c.toc = JSON.parse(c.toc || "[]"); } catch (e) { c.toc = []; }
+    c.date = cfg.formatDate(c.created_at || c.dateline);
+    return c;
+  }
+  router.get("/projects/forum", (req, res) => {
+    // 요약·목록용 메타(본문 제외 — 페이지 경량화)
+    const COL_META = "id, slug, category, title, subtitle, purpose, author, author_title, dateline, cover, lede, read_min, views, created_at";
+    const columns = db.prepare(
+      "SELECT " + COL_META + " FROM columns WHERE published = 1 ORDER BY pinned DESC, id DESC"
+    ).all().map((c) => ({ ...c, date: cfg.formatDate(c.created_at || c.dateline), href: colHref(c) }));
+    // 요약 테이블은 '가장 최근에 작성된' 기고문(게재일·id 기준) — 고정 여부와 무관
+    const latestRow = db.prepare(
+      "SELECT " + COL_META + " FROM columns WHERE published = 1 ORDER BY created_at DESC, id DESC LIMIT 1"
+    ).get();
+    const latest = latestRow ? { ...latestRow, date: cfg.formatDate(latestRow.created_at || latestRow.dateline), href: colHref(latestRow) } : null;
+
+    // ?column=slug → 해당 글 전문을 레이어에 펼친 상태로 서버 렌더(무JS·직접링크·SEO 대응)
+    let openArticle = null;
+    const key = (req.query.column || "").trim();
+    if (key) openArticle = loadColumnFull(key, { admin: req.session && req.session.admin, countView: true });
+
     res.render("forum", {
-      ...res.locals, title: "두잉새롬마당", columns, article,
-      ogTitle: article ? (article.title + " | 두잉새롬마당") : undefined,
-      ogDescription: article ? (article.lede || article.subtitle) : undefined,
-      ogImage: article && article.cover ? article.cover : undefined,
+      ...res.locals, title: "두잉새롬마당", columns, latest, openArticle,
+      ogTitle: openArticle ? (openArticle.title + " | 두잉새롬마당") : undefined,
+      ogDescription: openArticle ? (openArticle.lede || openArticle.subtitle) : undefined,
+      ogImage: openArticle && openArticle.cover ? openArticle.cover : undefined,
+    });
+  });
+  // 기고문 본문 온디맨드 로드(JSON) — [내용 읽기]/목록 행 클릭 시 레이어 프레임 주입
+  router.get("/api/columns/:slug", (req, res) => {
+    const c = loadColumnFull(req.params.slug, { admin: req.session && req.session.admin, countView: true });
+    if (!c) return res.status(404).json({ ok: false });
+    req.app.render("partials/column-article", { ...res.locals, c }, (err, html) => {
+      if (err) { console.error("[columns] 렌더 오류:", err.message); return res.status(500).json({ ok: false }); }
+      res.json({ ok: true, title: c.title, href: colHref(c), html });
     });
   });
   // 이전 분리형 URL → 통합 섹션으로 리다이렉트(기존 링크 보존)

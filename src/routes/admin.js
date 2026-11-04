@@ -366,6 +366,7 @@ module.exports = function adminRoutes({ verifyCsrf }) {
       eyebrow: (req.body.eyebrow || "두잉 기고문 · DIF COLUMN").trim(),
       title: (req.body.title || "").trim(),
       subtitle: (req.body.subtitle || "").trim(),
+      purpose: (req.body.purpose || "").trim(),
       author: (req.body.author || "").trim(),
       author_title: (req.body.author_title || "").trim(),
       dateline: (req.body.dateline || "").trim(),
@@ -399,9 +400,9 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     const created = f.dateline ? new Date(f.dateline + "T09:00:00+09:00").toISOString() : new Date().toISOString();
     const now = new Date().toISOString();
     db.prepare(
-      "INSERT INTO columns (slug, category, eyebrow, title, subtitle, author, author_title, dateline, cover, lede, tags, toc, body, read_min, pinned, published, created_at, updated_at) " +
-      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    ).run(f.slug, f.category, f.eyebrow, f.title, f.subtitle, f.author, f.author_title, f.dateline, cover, f.lede,
+      "INSERT INTO columns (slug, category, eyebrow, title, subtitle, purpose, author, author_title, dateline, cover, lede, tags, toc, body, read_min, pinned, published, created_at, updated_at) " +
+      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    ).run(f.slug, f.category, f.eyebrow, f.title, f.subtitle, f.purpose, f.author, f.author_title, f.dateline, cover, f.lede,
       JSON.stringify(f.tags), JSON.stringify(buildColToc(f.body)), f.body, colReadMin(f.body), f.pinned, f.published, created, now);
     res.redirect("/admin/columns?msg=" + encodeURIComponent("기고문이 등록되었습니다."));
   });
@@ -419,8 +420,8 @@ module.exports = function adminRoutes({ verifyCsrf }) {
     else if (typeof req.body.cover === "string" && req.body.cover.trim()) cover = req.body.cover.trim();
     const created = f.dateline ? new Date(f.dateline + "T09:00:00+09:00").toISOString() : cur.created_at;
     db.prepare(
-      "UPDATE columns SET slug = ?, category = ?, eyebrow = ?, title = ?, subtitle = ?, author = ?, author_title = ?, dateline = ?, cover = ?, lede = ?, tags = ?, toc = ?, body = ?, read_min = ?, pinned = ?, published = ?, created_at = ?, updated_at = ? WHERE id = ?"
-    ).run(f.slug, f.category, f.eyebrow, f.title, f.subtitle, f.author, f.author_title, f.dateline, cover, f.lede,
+      "UPDATE columns SET slug = ?, category = ?, eyebrow = ?, title = ?, subtitle = ?, purpose = ?, author = ?, author_title = ?, dateline = ?, cover = ?, lede = ?, tags = ?, toc = ?, body = ?, read_min = ?, pinned = ?, published = ?, created_at = ?, updated_at = ? WHERE id = ?"
+    ).run(f.slug, f.category, f.eyebrow, f.title, f.subtitle, f.purpose, f.author, f.author_title, f.dateline, cover, f.lede,
       JSON.stringify(f.tags), JSON.stringify(buildColToc(f.body)), f.body, colReadMin(f.body), f.pinned, f.published, created, new Date().toISOString(), id);
     res.redirect("/admin/columns?msg=" + encodeURIComponent("기고문이 수정되었습니다."));
   });

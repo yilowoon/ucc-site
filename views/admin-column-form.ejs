@@ -19,6 +19,7 @@
 
     <div class="field"><label for="title">제목 <span class="field-hint">필수</span></label><input type="text" id="title" name="title" value="<%= esc(c.title || '') %>" required /></div>
     <div class="field"><label for="subtitle">부제</label><input type="text" id="subtitle" name="subtitle" value="<%= esc(c.subtitle || '') %>" placeholder="예: 혁신 DNA를 내재화한 협동조합과 사회연대경제를 위하여" /></div>
+    <div class="field"><label for="purpose">기고문의 목적 <span class="field-hint">두잉새롬마당 요약 테이블에 공통 출력 (1~2문장)</span></label><textarea id="purpose" name="purpose" rows="2" placeholder="이 기고문이 다루는 핵심 목적을 한두 문장으로"><%= esc(c.purpose || '') %></textarea></div>
 
     <div class="write-grid">
       <div class="field"><label for="category">분류</label><input type="text" id="category" name="category" value="<%= esc(c.category || '정책 논고') %>" placeholder="예: 정책 논고 / 칼럼 / 현장 리포트" /></div>

@@ -67,6 +67,40 @@
   #columns[hidden]{display:none}
   #columns.df-flash{animation:dfFlash 1.6s var(--ease)}
   @keyframes dfFlash{0%{box-shadow:inset 0 0 0 3px var(--gold-400)}100%{box-shadow:inset 0 0 0 3px transparent}}
+  /* 최신 기고문 요약 테이블 + 액션 */
+  .dc-summary{display:flex;gap:0;align-items:stretch;background:var(--paper);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow-sm);overflow:hidden;margin-top:26px}
+  .dc-table{flex:1;border-collapse:collapse;font-size:.98rem}
+  .dc-table th{width:96px;text-align:left;vertical-align:top;padding:14px 10px 14px 26px;color:var(--gold-600);font-weight:800;font-size:.84rem;white-space:nowrap;border-bottom:1px solid var(--paper-alt)}
+  .dc-table td{padding:14px 26px 14px 0;color:var(--ink-soft);line-height:1.55;border-bottom:1px solid var(--paper-alt);word-break:keep-all}
+  .dc-table tr:last-child th,.dc-table tr:last-child td{border-bottom:0}
+  .dc-table .dc-t{font-weight:800;color:var(--green-900);font-size:1.14rem;letter-spacing:-.02em}
+  .dc-table .dc-mut{color:var(--muted);font-weight:500}
+  .dc-actions{flex:0 0 auto;display:flex;flex-direction:column;gap:10px;justify-content:center;padding:22px 24px;background:var(--paper-warm);border-left:1px solid var(--line);min-width:200px}
+  .dc-cat{font-size:.72rem;font-weight:800;letter-spacing:.08em;color:var(--gold-600);text-transform:uppercase;text-align:center;margin-bottom:4px}
+  .dc-actions .btn{width:100%;justify-content:center}
+  @media(max-width:720px){.dc-summary{flex-direction:column}.dc-actions{flex-direction:row;flex-wrap:wrap;border-left:0;border-top:1px solid var(--line);min-width:0}.dc-cat{width:100%}.dc-table th{padding-left:18px}.dc-table td{padding-right:18px}.dc-actions .btn{flex:1}}
+  /* 펼침 레이어(프레임) */
+  .dc-layer{margin-top:14px;border:1px solid var(--line);border-radius:18px;background:var(--paper);box-shadow:var(--shadow);overflow:hidden;animation:dcExpand .34s var(--ease)}
+  .dc-layer[hidden]{display:none}
+  @keyframes dcExpand{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+  .dc-layer-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 22px;background:var(--green-800);color:#fff}
+  .dc-layer-title{font-weight:800;font-size:1rem;display:flex;align-items:center}
+  .dc-chip{font-size:.68rem;font-weight:800;color:var(--gold-400);letter-spacing:.14em;margin-right:10px;border:1px solid rgba(220,178,106,.5);border-radius:999px;padding:2px 9px}
+  .dc-layer-close{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.32);color:#fff;border-radius:999px;padding:6px 15px;font-weight:700;font-size:.84rem;cursor:pointer;transition:background .18s var(--ease)}
+  .dc-layer-close:hover{background:rgba(255,255,255,.24)}
+  .dc-frame{padding:clamp(18px,3vw,34px) var(--gutter)}
+  .dc-frame .col-shell{padding:0}
+  .dc-loading{text-align:center;color:var(--muted);font-weight:600;padding:50px 0}
+  /* 목록 테이블 */
+  .dc-list-wrap{overflow-x:auto}
+  .dc-list{width:100%;border-collapse:collapse;font-size:.95rem;min-width:520px}
+  .dc-list thead th{background:var(--green-800);color:#fff;font-weight:700;text-align:left;padding:12px 16px;font-size:.88rem;white-space:nowrap}
+  .dc-list td{padding:14px 16px;border-bottom:1px solid var(--paper-alt);color:var(--ink-soft);vertical-align:middle}
+  .dc-list tbody tr:hover{background:var(--paper-warm)}
+  .dc-list .dl-title{font-weight:800;color:var(--green-900)}
+  .dc-list .dl-sub{display:block;color:var(--muted);font-size:.84rem;margin-top:3px;font-weight:500}
+  .dc-list .dl-nowrap{white-space:nowrap}
+  .dc-list .btn{padding:7px 16px;font-size:.84rem;white-space:nowrap}
 </style>
 
 <!-- 히어로 -->
@@ -206,112 +240,54 @@
   </div>
 </section>
 
-<!-- 두잉 기고문 : 평소엔 숨김. 히어로/마감 CTA의 '두잉 기고문 보기' 클릭 시 이 자리에 노출(목록 ↔ 전문 교체) -->
-<section class="section section--alt" id="columns"<% if (!(typeof article !== "undefined" && article)) { %> hidden<% } %>>
-  <% if (typeof article !== "undefined" && article) { %>
-  <!-- ===== 선택한 기고문 전문 ===== -->
-  <div class="col-shell">
-    <header class="col-hero" style="padding-top:clamp(8px,2vw,20px)">
-      <nav class="col-breadcrumb" aria-label="위치">
-        <a href="/projects/forum#columns" data-col-back>두잉 기고문</a> · <span><%= article.title %></span>
-      </nav>
-      <a class="col-back-btn" href="/projects/forum#columns" data-col-back>← 기고문 목록으로</a>
-      <% if (article.category) { %><span class="col-cat"><%= article.category %></span><% } %>
-      <div class="col-eyebrow"><%= article.eyebrow || "두잉 기고문 · DIF COLUMN" %></div>
-      <h2 class="col-title"><%= article.title %></h2>
-      <% if (article.subtitle) { %><p class="col-sub"><%= article.subtitle %></p><% } %>
-      <div class="col-byline">
-        <div class="col-author">
-          <span class="col-avatar" aria-hidden="true"><%= (article.author || "U").slice(0,1) %></span>
-          <span>
-            <span class="col-author-name"><%= article.author || "도시공동체본부" %></span>
-            <% if (article.author_title) { %><br><span class="col-author-title"><%= article.author_title %></span><% } %>
-          </span>
-        </div>
-        <div class="col-meta">
-          <% if (article.date) { %><span><b>게재</b> <%= article.date %></span><% } %>
-          <span><b>읽는 시간</b> 약 <%= article.read_min %>분</span>
-          <span><b>조회</b> <%= article.views %></span>
-        </div>
-      </div>
-    </header>
-
-    <% if (article.cover) { %><figure class="col-cover"><img src="<%= article.cover %>" alt="<%= article.title %> 대표 이미지" width="1200" height="620" /></figure><% } %>
-    <% if (article.lede) { %><p class="col-lede"><%= article.lede %></p><% } %>
-
-    <% if (article.toc && article.toc.length) { %>
-    <details class="col-toc" open>
-      <summary>이 글의 목차</summary>
-      <ol><% article.toc.forEach(function(t){ %><li><a href="#<%= t.id %>"><%= t.label %></a></li><% }); %></ol>
-    </details>
-    <% } %>
-
-    <div class="col-body"><%- article.body %></div>
-
-    <% if (article.tags && article.tags.length) { %>
-    <div class="col-tags"><% article.tags.forEach(function(tag){ %><span class="col-tag"># <%= tag %></span><% }); %></div>
-    <% } %>
-
-    <footer class="col-foot">
-      <div class="col-signoff">
-        <div class="s-en">DOING INNOVATION FORUM</div>
-        <h4>생각을 행동으로 잇는 두잉새롬마당</h4>
-        <p>두잉 기고문은 도시의 혁신 생태계를 만들어가는 혁신가들의 생각과 실천을 기록합니다. 함께 쓰고 함께 실천할 동행자를 기다립니다.</p>
-        <div class="s-actions">
-          <a class="btn btn-primary" href="/projects/forum#columns" data-col-back>← 기고문 목록</a>
-          <a class="btn btn-ghost-dark" href="/signup">두잉새롬마당 참여 신청</a>
-        </div>
-      </div>
-      <% if (article.more && article.more.length) { %>
-      <section class="col-more">
-        <h3>다른 기고문</h3>
-        <div class="col-more-grid">
-          <% article.more.forEach(function(m){ %>
-          <a class="ccard" href="<%= m.href %>" data-col-link>
-            <div class="ccard-media"><% if (m.cover) { %><img src="<%= m.cover %>" alt="" loading="lazy" /><% } %></div>
-            <div class="ccard-body">
-              <h3 class="ccard-title" style="font-size:1.05rem"><%= m.title %></h3>
-              <div class="ccard-meta" style="margin-top:12px"><span><%= m.dateline %></span><span>약 <%= m.read_min %>분</span></div>
-            </div>
-          </a>
-          <% }); %>
-        </div>
-      </section>
-      <% } %>
-    </footer>
-  </div>
-  <% } else { %>
-  <!-- ===== 기고문 목록(두잉 기고문 탭) ===== -->
+<!-- 두잉 기고문: 최신 글 요약 테이블 + [내용 읽기]/[목록 보기] 펼침 레이어. 평소엔 숨김(히어로 버튼으로 노출) -->
+<%
+  var dcLatest = (typeof latest !== "undefined" && latest) ? latest : ((typeof columns !== "undefined" && columns && columns.length) ? columns[0] : null);
+  var dcOpen = (typeof openArticle !== "undefined" && openArticle) ? openArticle : null;
+  var dcList = (typeof columns !== "undefined" && columns ? columns : []).map(function(c){
+    return { slug: String(c.slug || c.id), title: c.title, subtitle: c.subtitle || "",
+      author: c.author || "도시공동체본부", date: c.date || c.dateline || "", read_min: c.read_min || 0, category: c.category || "기고문" };
+  });
+%>
+<section class="section section--alt" id="columns"<% if (!dcOpen) { %> hidden<% } %>>
   <div class="container">
     <div class="section-head">
       <div><h2 class="section-title c-green">두잉 기고문</h2><span class="section-en">DOING · COLUMN</span></div>
     </div>
-    <p class="section-lede">도시의 혁신 생태계를 만들어가는 혁신가들의 활동은 <strong>생각</strong>에서 시작해 <strong>행동(Doing)</strong>으로 이어집니다. 두잉 기고문은 그 생각과 실천을 한 편의 글로 기록해, 다음 행동의 출발점으로 삼습니다.</p>
 
-    <% if (typeof columns !== "undefined" && columns && columns.length) { %>
-    <div class="cols-grid" style="margin-top:28px">
-      <% columns.forEach(function(c, i){ %>
-      <a class="ccard<%= (i === 0 && c.cover) ? ' is-feature' : '' %>" href="<%= c.href %>" data-col-link>
-        <% if (c.cover) { %><div class="ccard-media"><img src="<%= c.cover %>" alt="" loading="lazy" /></div><% } %>
-        <div class="ccard-body">
-          <div class="ccard-cat"><%= c.category || "기고문" %></div>
-          <h3 class="ccard-title"><%= c.title %></h3>
-          <% if (c.subtitle) { %><p class="ccard-sub"><%= c.subtitle %></p><% } %>
-          <% if (i === 0 && c.lede) { %><p class="ccard-lede"><%= c.lede %></p><% } %>
-          <div class="ccard-meta">
-            <span><b><%= c.author || "도시공동체본부" %></b></span>
-            <% if (c.date) { %><span><%= c.date %></span><% } %>
-            <span>약 <%= c.read_min %>분</span>
-          </div>
-        </div>
-      </a>
-      <% }); %>
+    <% if (dcLatest) { %>
+    <!-- 최신 기고문 요약 테이블 + 액션 -->
+    <div class="dc-summary">
+      <table class="dc-table"><tbody>
+        <tr><th>제목</th><td class="dc-t"><%= dcLatest.title %></td></tr>
+        <% if (dcLatest.subtitle) { %><tr><th>부제</th><td><%= dcLatest.subtitle %></td></tr><% } %>
+        <tr><th>목적</th><td><%= dcLatest.purpose || dcLatest.lede || "—" %></td></tr>
+        <tr><th>작성자</th><td><%= dcLatest.author || "도시공동체본부" %><% if (dcLatest.author_title) { %> <span class="dc-mut">· <%= dcLatest.author_title %></span><% } %></td></tr>
+        <tr><th>작성일</th><td><%= dcLatest.date %></td></tr>
+        <tr><th>소요 시간</th><td>약 <%= dcLatest.read_min %>분</td></tr>
+      </tbody></table>
+      <div class="dc-actions">
+        <span class="dc-cat"><%= dcLatest.category || "정책 논고" %></span>
+        <button type="button" class="btn btn-primary" data-dc-read="<%= dcLatest.slug || dcLatest.id %>">📖 내용 읽기</button>
+        <button type="button" class="btn btn-ghost" data-dc-list>☰ 목록 보기</button>
+      </div>
     </div>
+
+    <!-- 펼침 레이어(프레임) -->
+    <div class="dc-layer"<% if (!dcOpen) { %> hidden<% } %>>
+      <div class="dc-layer-head">
+        <span class="dc-layer-title"><span class="dc-chip">READING</span><span class="dc-layer-label">내용 읽기</span></span>
+        <button type="button" class="dc-layer-close" data-dc-close>✕ 닫기</button>
+      </div>
+      <div class="dc-frame" id="dcFrame" data-slug="<%= dcOpen ? (dcOpen.slug || dcOpen.id) : '' %>" data-mode="<%= dcOpen ? 'content' : '' %>">
+        <% if (dcOpen) { %><%- include('partials/column-article', { c: dcOpen }) %><% } %>
+      </div>
+    </div>
+    <script type="application/json" id="dcData"><%- JSON.stringify(dcList).replace(/</g, "\\u003c") %></script>
     <% } else { %>
     <div class="df-callout" style="grid-template-columns:1fr;margin-top:24px"><div class="df-co"><span>첫 기고문을 준비하고 있습니다. 곧 이 자리에서 만나보실 수 있습니다.</span></div></div>
     <% } %>
   </div>
-  <% } %>
 </section>
 
 <!-- 마감 CTA -->
@@ -328,49 +304,101 @@
 </section>
 
 <script>
-/* 두잉 기고문: 같은 페이지에서 하단 섹션(#columns)만 목록 ↔ 전문으로 교체 + 상단 버튼으로 이동 */
+/* 두잉 기고문 하단 섹션:
+   - 히어로/마감 버튼 → 섹션(요약 테이블) 노출
+   - [내용 읽기] → 레이어에 전문 프레임 펼침, [목록 보기] → 같은 레이어에 목록 테이블 펼침 */
 (function(){
-  var SEL = "#columns";
-  function headerOffset(){ var h = document.getElementById("siteHeader"); return (h ? h.offsetHeight : 70) + 14; }
-  function reveal(){ var el = document.querySelector(SEL); if (el) el.removeAttribute("hidden"); }
-  function scrollToCols(flash){
-    var el = document.querySelector(SEL); if (!el) return;
-    el.removeAttribute("hidden");
-    // 레이아웃 반영 후 스크롤(숨김 해제 직후 reflow 보정) — scroll-margin-top:90px 로 헤더 간격 확보
+  var SEC = document.getElementById("columns");
+  if (!SEC) return;
+  var layer = SEC.querySelector(".dc-layer");
+  var frame = SEC.querySelector("#dcFrame");
+  var labelEl = SEC.querySelector(".dc-layer-label");
+  var chipEl = SEC.querySelector(".dc-chip");
+  var LIST = [];
+  try { LIST = JSON.parse((document.getElementById("dcData")||{}).textContent || "[]"); } catch (e) {}
+
+  function reveal(){ SEC.removeAttribute("hidden"); }
+  function scrollTo(el, flash){
+    if (!el) return;
     requestAnimationFrame(function(){
       el.scrollIntoView({ behavior: "smooth", block: "start" });
-      if (flash) { el.classList.remove("df-flash"); void el.offsetWidth; el.classList.add("df-flash"); }
+      if (flash) { SEC.classList.remove("df-flash"); void SEC.offsetWidth; SEC.classList.add("df-flash"); }
     });
   }
-  function swap(url, push){
-    fetch(url, { headers: { "X-Requested-With": "fetch" } })
-      .then(function(r){ return r.text(); })
-      .then(function(html){
-        var doc = new DOMParser().parseFromString(html, "text/html");
-        var fresh = doc.querySelector(SEL), cur = document.querySelector(SEL);
-        if (!fresh || !cur) { window.location.href = url; return; }
-        fresh.removeAttribute("hidden"); // 사용자가 연 패널은 계속 노출
-        cur.replaceWith(fresh);
-        if (push) history.pushState({ col: url }, "", url);
-        scrollToCols(false);
-      })
-      .catch(function(){ window.location.href = url; });
+  function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+  function setHead(label, chip){ if (labelEl) labelEl.textContent = label; if (chipEl) chipEl.textContent = chip; }
+  function closeLayer(push){
+    if (layer) layer.setAttribute("hidden", "");
+    if (frame) frame.dataset.mode = "";
+    if (push && location.search) history.replaceState({}, "", "/projects/forum");
   }
-  document.addEventListener("click", function(e){
-    // 상단/하단 '두잉 기고문 보기' 버튼 → 숨겨진 기고문 섹션을 노출하고 이동(+강조)
-    var jump = e.target.closest("[data-col-jump]");
-    if (jump) {
-      e.preventDefault();
-      if (location.search) { swap("/projects/forum", true); } // 전문 열람 중이면 목록으로 전환
-      else { reveal(); scrollToCols(true); }
+  function showContent(slug, push){
+    reveal();
+    if (!layer || !frame) { window.location.href = "/projects/forum?column=" + encodeURIComponent(slug) + "#columns"; return; }
+    layer.removeAttribute("hidden"); setHead("내용 읽기", "READING");
+    // 이미 같은 글이 로드돼 있으면 재요청 없이 펼침
+    if (frame.dataset.mode === "content" && frame.dataset.slug === String(slug) && frame.querySelector(".dc-article")) {
+      scrollTo(layer);
+      if (push) history.pushState({}, "", "/projects/forum?column=" + encodeURIComponent(slug));
       return;
     }
-    var a = e.target.closest("[data-col-link], [data-col-back]");
-    if (!a || a.target === "_blank" || e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
-    e.preventDefault();
-    swap(a.getAttribute("href").split("#")[0] || "/projects/forum", true);
+    frame.innerHTML = '<div class="dc-loading">기고문을 불러오는 중…</div>';
+    scrollTo(layer);
+    fetch("/api/columns/" + encodeURIComponent(slug), { headers: { "X-Requested-With": "fetch" } })
+      .then(function(r){ if (!r.ok) throw 0; return r.json(); })
+      .then(function(j){
+        if (!j.ok) throw 0;
+        frame.innerHTML = j.html; frame.dataset.mode = "content"; frame.dataset.slug = String(slug);
+        if (push) history.pushState({}, "", "/projects/forum?column=" + encodeURIComponent(slug));
+      })
+      .catch(function(){ window.location.href = "/projects/forum?column=" + encodeURIComponent(slug) + "#columns"; });
+  }
+  function showList(push){
+    reveal();
+    if (!layer || !frame) return;
+    var rows = LIST.map(function(c){
+      return '<tr>'
+        + '<td><span class="dl-title">' + esc(c.title) + '</span>' + (c.subtitle ? '<span class="dl-sub">' + esc(c.subtitle) + '</span>' : '') + '</td>'
+        + '<td class="dl-nowrap">' + esc(c.author) + '</td>'
+        + '<td class="dl-nowrap">' + esc(c.date) + '</td>'
+        + '<td class="dl-nowrap">약 ' + esc(c.read_min) + '분</td>'
+        + '<td><button type="button" class="btn btn-primary" data-dc-read="' + esc(c.slug) + '">내용 읽기</button></td>'
+        + '</tr>';
+    }).join("");
+    frame.innerHTML = '<div class="dc-list-wrap"><table class="dc-list"><thead><tr><th>제목</th><th>작성자</th><th>작성일</th><th>소요</th><th></th></tr></thead><tbody>'
+      + (rows || '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:40px 0">등록된 기고문이 없습니다.</td></tr>')
+      + '</tbody></table></div>';
+    frame.dataset.mode = "list"; frame.dataset.slug = "";
+    layer.removeAttribute("hidden"); setHead("기고문 목록", "LIST");
+    scrollTo(layer);
+    if (push && location.search) history.replaceState({}, "", "/projects/forum");
+  }
+
+  document.addEventListener("click", function(e){
+    var jump = e.target.closest("[data-col-jump]");
+    if (jump) { e.preventDefault(); reveal(); scrollTo(SEC, true); return; }
+
+    var read = e.target.closest("[data-dc-read]");
+    if (read) {
+      e.preventDefault();
+      var slug = read.getAttribute("data-dc-read");
+      if (layer && !layer.hasAttribute("hidden") && frame.dataset.mode === "content" && frame.dataset.slug === String(slug)) { closeLayer(true); return; }
+      showContent(slug, true); return;
+    }
+    var list = e.target.closest("[data-dc-list]");
+    if (list) {
+      e.preventDefault();
+      if (layer && !layer.hasAttribute("hidden") && frame.dataset.mode === "list") { closeLayer(true); return; }
+      showList(true); return;
+    }
+    var close = e.target.closest("[data-dc-close]");
+    if (close) { e.preventDefault(); closeLayer(true); return; }
   });
-  window.addEventListener("popstate", function(){ swap(location.pathname + location.search, false); });
+  window.addEventListener("popstate", function(){
+    var m = location.search.match(/[?&]column=([^&#]+)/);
+    if (m) showContent(decodeURIComponent(m[1]), false);
+    else closeLayer(false);
+  });
 })();
 </script>
 

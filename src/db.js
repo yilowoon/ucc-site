@@ -545,25 +545,33 @@ try {
   db.exec("CREATE INDEX IF NOT EXISTS idx_columns_list ON columns(published, pinned DESC, id DESC)");
   db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_columns_slug ON columns(slug) WHERE slug <> ''");
 } catch (e) {}
+// 기고문의 '목적'(요약 테이블 공통 출력 항목) — 부제·리드와 별개 필드
+try { db.exec("ALTER TABLE columns ADD COLUMN purpose TEXT NOT NULL DEFAULT ''"); } catch (e) {}
 
 /* columns-seed.js 에 있으나 DB에 없는 기고문만 slug 기준으로 추가(관리자 수정값 보존). */
 function ensureColumns() {
   let SEED = [];
   try { SEED = require("./columns-seed") || []; } catch (e) { return; }
   if (!SEED.length) return;
-  const findBySlug = db.prepare("SELECT id FROM columns WHERE slug = ?");
+  const findBySlug = db.prepare("SELECT id, purpose FROM columns WHERE slug = ?");
   const ins = db.prepare(
-    "INSERT INTO columns (slug, category, eyebrow, title, subtitle, author, author_title, dateline, cover, lede, tags, toc, body, read_min, pinned, published, created_at, updated_at) " +
-    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO columns (slug, category, eyebrow, title, subtitle, purpose, author, author_title, dateline, cover, lede, tags, toc, body, read_min, pinned, published, created_at, updated_at) " +
+    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
   );
+  const patchPurpose = db.prepare("UPDATE columns SET purpose = ? WHERE slug = ? AND purpose = ''");
   let added = 0;
   for (const c of SEED) {
     if (!c.title) continue;
-    if (c.slug && findBySlug.get(c.slug)) continue;
+    const existing = c.slug ? findBySlug.get(c.slug) : null;
+    if (existing) {
+      // 기존 행: 비어 있는 purpose 만 시드 값으로 보완(관리자 수정값·다른 필드는 보존)
+      if (c.purpose && !existing.purpose) patchPurpose.run(c.purpose, c.slug);
+      continue;
+    }
     const created = c.dateline ? new Date(c.dateline + "T09:00:00+09:00").toISOString() : new Date().toISOString();
     ins.run(
       c.slug || "", c.category || "정책 논고", c.eyebrow || "두잉 기고문 · DIF COLUMN",
-      c.title, c.subtitle || "", c.author || "", c.author_title || "", c.dateline || "",
+      c.title, c.subtitle || "", c.purpose || "", c.author || "", c.author_title || "", c.dateline || "",
       c.cover || "", c.lede || "", JSON.stringify(c.tags || []), JSON.stringify(c.toc || []),
       c.body || "", c.read_min | 0, c.pinned ? 1 : 0, c.published === 0 ? 0 : 1, created, ""
     );

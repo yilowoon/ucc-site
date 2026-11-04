@@ -1,0 +1,38 @@
+<article class="col-shell dc-article">
+  <header class="col-hero" style="padding-top:clamp(6px,2vw,16px)">
+    <% if (c.category) { %><span class="col-cat"><%= c.category %></span><% } %>
+    <div class="col-eyebrow"><%= c.eyebrow || "두잉 기고문 · DIF COLUMN" %></div>
+    <h3 class="col-title" style="font-size:clamp(1.7rem,4vw,2.6rem)"><%= c.title %></h3>
+    <% if (c.subtitle) { %><p class="col-sub"><%= c.subtitle %></p><% } %>
+    <div class="col-byline">
+      <div class="col-author">
+        <span class="col-avatar" aria-hidden="true"><%= (c.author || "U").slice(0,1) %></span>
+        <span>
+          <span class="col-author-name"><%= c.author || "도시공동체본부" %></span>
+          <% if (c.author_title) { %><br><span class="col-author-title"><%= c.author_title %></span><% } %>
+        </span>
+      </div>
+      <div class="col-meta">
+        <% if (c.date) { %><span><b>게재</b> <%= c.date %></span><% } %>
+        <span><b>읽는 시간</b> 약 <%= c.read_min %>분</span>
+        <span><b>조회</b> <%= c.views %></span>
+      </div>
+    </div>
+  </header>
+
+  <% if (c.cover) { %><figure class="col-cover"><img src="<%= c.cover %>" alt="<%= c.title %> 대표 이미지" width="1200" height="620" /></figure><% } %>
+  <% if (c.lede) { %><p class="col-lede"><%= c.lede %></p><% } %>
+
+  <% if (c.toc && c.toc.length) { %>
+  <details class="col-toc" open>
+    <summary>이 글의 목차</summary>
+    <ol><% c.toc.forEach(function(t){ %><li><a href="#<%= t.id %>"><%= t.label %></a></li><% }); %></ol>
+  </details>
+  <% } %>
+
+  <div class="col-body"><%- c.body %></div>
+
+  <% if (c.tags && c.tags.length) { %>
+  <div class="col-tags"><% c.tags.forEach(function(tag){ %><span class="col-tag"># <%= tag %></span><% }); %></div>
+  <% } %>
+</article>
