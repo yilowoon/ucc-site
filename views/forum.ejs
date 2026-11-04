@@ -62,8 +62,9 @@
   .final-cta h2{font-size:clamp(1.5rem,3.6vw,2.2rem);font-weight:800;margin:0 0 14px;letter-spacing:-.5px}
   .final-cta p{color:rgba(255,255,255,.88);font-size:1.05rem;line-height:1.7;margin:0 0 28px}
   .final-cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-  /* 기고문 섹션 강조(앵커 진입 시) */
-  #columns{scroll-margin-top:90px}
+  /* 기고문 섹션 — 평소엔 숨김, '두잉 기고문 보기' 클릭 시에만 노출 */
+  /* (헤더 간격은 전역 html{scroll-padding-top:88px}로 처리되므로 scroll-margin 중복 금지) */
+  #columns[hidden]{display:none}
   #columns.df-flash{animation:dfFlash 1.6s var(--ease)}
   @keyframes dfFlash{0%{box-shadow:inset 0 0 0 3px var(--gold-400)}100%{box-shadow:inset 0 0 0 3px transparent}}
 </style>
@@ -205,8 +206,8 @@
   </div>
 </section>
 
-<!-- 두잉 활동 · 기고문 : 같은 페이지에서 목록 ↔ 전문 섹션 교체 -->
-<section class="section section--alt" id="columns">
+<!-- 두잉 기고문 : 평소엔 숨김. 히어로/마감 CTA의 '두잉 기고문 보기' 클릭 시 이 자리에 노출(목록 ↔ 전문 교체) -->
+<section class="section section--alt" id="columns"<% if (!(typeof article !== "undefined" && article)) { %> hidden<% } %>>
   <% if (typeof article !== "undefined" && article) { %>
   <!-- ===== 선택한 기고문 전문 ===== -->
   <div class="col-shell">
@@ -331,11 +332,15 @@
 (function(){
   var SEL = "#columns";
   function headerOffset(){ var h = document.getElementById("siteHeader"); return (h ? h.offsetHeight : 70) + 14; }
+  function reveal(){ var el = document.querySelector(SEL); if (el) el.removeAttribute("hidden"); }
   function scrollToCols(flash){
     var el = document.querySelector(SEL); if (!el) return;
-    var top = el.getBoundingClientRect().top + window.scrollY - headerOffset();
-    window.scrollTo({ top: top, behavior: "smooth" });
-    if (flash) { el.classList.remove("df-flash"); void el.offsetWidth; el.classList.add("df-flash"); }
+    el.removeAttribute("hidden");
+    // 레이아웃 반영 후 스크롤(숨김 해제 직후 reflow 보정) — scroll-margin-top:90px 로 헤더 간격 확보
+    requestAnimationFrame(function(){
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (flash) { el.classList.remove("df-flash"); void el.offsetWidth; el.classList.add("df-flash"); }
+    });
   }
   function swap(url, push){
     fetch(url, { headers: { "X-Requested-With": "fetch" } })
@@ -344,6 +349,7 @@
         var doc = new DOMParser().parseFromString(html, "text/html");
         var fresh = doc.querySelector(SEL), cur = document.querySelector(SEL);
         if (!fresh || !cur) { window.location.href = url; return; }
+        fresh.removeAttribute("hidden"); // 사용자가 연 패널은 계속 노출
         cur.replaceWith(fresh);
         if (push) history.pushState({ col: url }, "", url);
         scrollToCols(false);
@@ -351,12 +357,12 @@
       .catch(function(){ window.location.href = url; });
   }
   document.addEventListener("click", function(e){
-    // 상단/하단 '두잉 기고문 보기' 버튼 → 해당 섹션으로 이동(+목록이면 강조)
+    // 상단/하단 '두잉 기고문 보기' 버튼 → 숨겨진 기고문 섹션을 노출하고 이동(+강조)
     var jump = e.target.closest("[data-col-jump]");
     if (jump) {
       e.preventDefault();
-      if (location.search) { swap("/projects/forum", true); }
-      else { scrollToCols(true); }
+      if (location.search) { swap("/projects/forum", true); } // 전문 열람 중이면 목록으로 전환
+      else { reveal(); scrollToCols(true); }
       return;
     }
     var a = e.target.closest("[data-col-link], [data-col-back]");
