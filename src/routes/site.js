@@ -168,11 +168,20 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const key = (req.query.column || "").trim();
     if (key) openArticle = loadColumnFull(key, { admin: req.session && req.session.admin, countView: true });
 
+    // OG 공유 카드 — 기고문 URL이 메신저로 자주 공유되므로 혁신활동 테마 전용 이미지를 사용.
+    // (카카오톡·페이스북 등 크롤러는 SVG를 og:image로 렌더링하지 않으므로, cover가 래스터가 아니면 전용 PNG로 대체)
+    const FORUM_OG = "/img/og-forum.png?v=1";
+    const rasterCover = openArticle && /\.(png|jpe?g|webp)(\?|$)/i.test(openArticle.cover || "")
+      ? openArticle.cover : null;
     res.render("forum", {
       ...res.locals, title: "두잉새롬마당", columns, latest, openArticle,
-      ogTitle: openArticle ? (openArticle.title + " | 두잉새롬마당") : undefined,
-      ogDescription: openArticle ? (openArticle.lede || openArticle.subtitle) : undefined,
-      ogImage: openArticle && openArticle.cover ? openArticle.cover : undefined,
+      ogTitle: openArticle ? (openArticle.title + " | 두잉새롬마당")
+        : "두잉새롬마당 | 사단법인 도시공동체본부",
+      ogDescription: openArticle
+        ? (openArticle.lede || openArticle.subtitle || openArticle.purpose)
+        : "도시 혁신 생태계를 만드는 혁신가들의 활동과 기고문 — 생각을 ‘행동(Doing)’으로 잇는 공간.",
+      ogImage: rasterCover || FORUM_OG,
+      ogUrl: (res.locals.baseUrl || "") + (openArticle ? ("/projects/forum?column=" + encodeURIComponent(openArticle.slug || openArticle.id)) : "/projects/forum"),
     });
   });
   // 기고문 본문 온디맨드 로드(JSON) — [내용 읽기]/목록 행 클릭 시 레이어 프레임 주입
