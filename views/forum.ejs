@@ -188,19 +188,92 @@
   </div>
 </section>
 
-<!-- 두잉 활동 · 기고문 -->
+<!-- 두잉 활동 · 기고문 : 같은 페이지에서 목록 ↔ 전문 섹션 교체 -->
 <section class="section section--alt" id="columns">
+  <% if (typeof article !== "undefined" && article) { %>
+  <!-- ===== 선택한 기고문 전문 ===== -->
+  <div class="col-shell">
+    <header class="col-hero" style="padding-top:clamp(8px,2vw,20px)">
+      <nav class="col-breadcrumb" aria-label="위치">
+        <a href="/projects/forum#columns" data-col-back>두잉 기고문</a> · <span><%= article.title %></span>
+      </nav>
+      <a class="col-back-btn" href="/projects/forum#columns" data-col-back>← 기고문 목록으로</a>
+      <% if (article.category) { %><span class="col-cat"><%= article.category %></span><% } %>
+      <div class="col-eyebrow"><%= article.eyebrow || "두잉 기고문 · DIF COLUMN" %></div>
+      <h2 class="col-title"><%= article.title %></h2>
+      <% if (article.subtitle) { %><p class="col-sub"><%= article.subtitle %></p><% } %>
+      <div class="col-byline">
+        <div class="col-author">
+          <span class="col-avatar" aria-hidden="true"><%= (article.author || "U").slice(0,1) %></span>
+          <span>
+            <span class="col-author-name"><%= article.author || "도시공동체본부" %></span>
+            <% if (article.author_title) { %><br><span class="col-author-title"><%= article.author_title %></span><% } %>
+          </span>
+        </div>
+        <div class="col-meta">
+          <% if (article.date) { %><span><b>게재</b> <%= article.date %></span><% } %>
+          <span><b>읽는 시간</b> 약 <%= article.read_min %>분</span>
+          <span><b>조회</b> <%= article.views %></span>
+        </div>
+      </div>
+    </header>
+
+    <% if (article.cover) { %><figure class="col-cover"><img src="<%= article.cover %>" alt="<%= article.title %> 대표 이미지" width="1200" height="620" /></figure><% } %>
+    <% if (article.lede) { %><p class="col-lede"><%= article.lede %></p><% } %>
+
+    <% if (article.toc && article.toc.length) { %>
+    <details class="col-toc" open>
+      <summary>이 글의 목차</summary>
+      <ol><% article.toc.forEach(function(t){ %><li><a href="#<%= t.id %>"><%= t.label %></a></li><% }); %></ol>
+    </details>
+    <% } %>
+
+    <div class="col-body"><%- article.body %></div>
+
+    <% if (article.tags && article.tags.length) { %>
+    <div class="col-tags"><% article.tags.forEach(function(tag){ %><span class="col-tag"># <%= tag %></span><% }); %></div>
+    <% } %>
+
+    <footer class="col-foot">
+      <div class="col-signoff">
+        <div class="s-en">DOING INNOVATION FORUM</div>
+        <h4>생각을 행동으로 잇는 두잉새롬마당</h4>
+        <p>두잉 기고문은 도시의 혁신 생태계를 만들어가는 혁신가들의 생각과 실천을 기록합니다. 함께 쓰고 함께 실천할 동행자를 기다립니다.</p>
+        <div class="s-actions">
+          <a class="btn btn-primary" href="/projects/forum#columns" data-col-back>← 기고문 목록</a>
+          <a class="btn btn-ghost-dark" href="/signup">두잉새롬마당 참여 신청</a>
+        </div>
+      </div>
+      <% if (article.more && article.more.length) { %>
+      <section class="col-more">
+        <h3>다른 기고문</h3>
+        <div class="col-more-grid">
+          <% article.more.forEach(function(m){ %>
+          <a class="ccard" href="<%= m.href %>" data-col-link>
+            <div class="ccard-media"><% if (m.cover) { %><img src="<%= m.cover %>" alt="" loading="lazy" /><% } %></div>
+            <div class="ccard-body">
+              <h3 class="ccard-title" style="font-size:1.05rem"><%= m.title %></h3>
+              <div class="ccard-meta" style="margin-top:12px"><span><%= m.dateline %></span><span>약 <%= m.read_min %>분</span></div>
+            </div>
+          </a>
+          <% }); %>
+        </div>
+      </section>
+      <% } %>
+    </footer>
+  </div>
+  <% } else { %>
+  <!-- ===== 기고문 목록 ===== -->
   <div class="container">
     <div class="section-head">
       <div><h2 class="section-title c-green">행동으로 잇는 기록 · 두잉 기고문</h2><span class="section-en">DOING · COLUMN</span></div>
-      <a class="btn btn-ghost btn-sm" href="/projects/forum/columns" style="margin-left:auto;flex:none">전체 기고문 보기</a>
     </div>
     <p class="section-lede">도시의 혁신 생태계를 만들어가는 혁신가들의 활동은 <strong>생각</strong>에서 시작해 <strong>행동(Doing)</strong>으로 이어집니다. 두잉 기고문은 그 생각과 실천을 한 편의 글로 기록해, 다음 행동의 출발점으로 삼습니다.</p>
 
     <% if (typeof columns !== "undefined" && columns && columns.length) { %>
     <div class="cols-grid" style="margin-top:28px">
       <% columns.forEach(function(c, i){ %>
-      <a class="ccard<%= (i === 0 && c.cover) ? ' is-feature' : '' %>" href="<%= c.href %>">
+      <a class="ccard<%= (i === 0 && c.cover) ? ' is-feature' : '' %>" href="<%= c.href %>" data-col-link>
         <% if (c.cover) { %><div class="ccard-media"><img src="<%= c.cover %>" alt="" loading="lazy" /></div><% } %>
         <div class="ccard-body">
           <div class="ccard-cat"><%= c.category || "기고문" %></div>
@@ -220,7 +293,37 @@
     <div class="fcallout" style="margin-top:24px"><div class="fc">첫 기고문을 준비하고 있습니다. 곧 이 자리에서 만나보실 수 있습니다.</div></div>
     <% } %>
   </div>
+  <% } %>
 </section>
+
+<script>
+/* 두잉 기고문: 같은 페이지에서 하단 섹션(#columns)만 목록 ↔ 전문으로 교체 */
+(function(){
+  var SEL = "#columns";
+  function headerOffset(){ var h = document.getElementById("siteHeader"); return (h ? h.offsetHeight : 70) + 14; }
+  function swap(url, push){
+    fetch(url, { headers: { "X-Requested-With": "fetch" } })
+      .then(function(r){ return r.text(); })
+      .then(function(html){
+        var doc = new DOMParser().parseFromString(html, "text/html");
+        var fresh = doc.querySelector(SEL), cur = document.querySelector(SEL);
+        if (!fresh || !cur) { window.location.href = url; return; }
+        cur.replaceWith(fresh);
+        if (push) history.pushState({ col: url }, "", url);
+        var top = document.querySelector(SEL).getBoundingClientRect().top + window.scrollY - headerOffset();
+        window.scrollTo({ top: top, behavior: "smooth" });
+      })
+      .catch(function(){ window.location.href = url; });
+  }
+  document.addEventListener("click", function(e){
+    var a = e.target.closest("[data-col-link], [data-col-back]");
+    if (!a || a.target === "_blank" || e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
+    e.preventDefault();
+    swap(a.getAttribute("href").split("#")[0] || "/projects/forum", true);
+  });
+  window.addEventListener("popstate", function(){ swap(location.pathname + location.search, false); });
+})();
+</script>
 
 <!-- 비전 클로징 -->
 <section class="section section--dark">

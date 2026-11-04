@@ -16,6 +16,12 @@
 .col-breadcrumb { font-size: .82rem; font-weight: 600; color: var(--muted); margin-bottom: 20px; }
 .col-breadcrumb a { color: var(--green-600); text-decoration: none; }
 .col-breadcrumb a:hover { text-decoration: underline; }
+.col-breadcrumb span { color: var(--ink-soft); }
+.col-back-btn { display: inline-flex; align-items: center; gap: 6px; font-size: .86rem; font-weight: 700;
+  color: var(--green-700); background: #fff; border: 1px solid var(--line); border-radius: 999px;
+  padding: 8px 16px; text-decoration: none; margin-bottom: 20px; box-shadow: var(--shadow-sm);
+  transition: transform .18s var(--ease), border-color .18s var(--ease); }
+.col-back-btn:hover { transform: translateX(-2px); border-color: var(--green-600); }
 .col-eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: .76rem; font-weight: 700;
   letter-spacing: .18em; text-transform: uppercase; color: var(--gold-600); margin-bottom: 20px; }
 .col-eyebrow::before { content: ""; width: 26px; height: 2px; background: var(--gold-500); display: inline-block; }
