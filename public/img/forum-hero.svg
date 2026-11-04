@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 760" preserveAspectRatio="xMidYMid slice" role="img" aria-label="두잉새롬마당 — 세종 혁신 네트워크">
+  <defs>
+    <linearGradient id="fh-bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#143d2f"/><stop offset="1" stop-color="#0d261d"/></linearGradient>
+    <radialGradient id="fh-glow" cx="0.5" cy="0.3" r="0.6"><stop offset="0" stop-color="#cd9b4c" stop-opacity="0.35"/><stop offset="1" stop-color="#cd9b4c" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1600" height="760" fill="url(#fh-bg)"/>
+  <circle cx="820" cy="250" r="420" fill="url(#fh-glow)"/>
+
+  <!-- 네트워크(연결) -->
+  <g stroke="#5bb96e" stroke-width="1.4" opacity="0.28">
+    <path d="M180 180 L420 300 L300 520 M420 300 L680 200 L920 330 M680 200 L760 430 M920 330 L1180 240 L1400 380 M1180 240 L1120 470 M920 330 L1020 560 M300 520 L560 600 M760 430 L1020 560 L1260 600 M1120 470 L1400 380"/>
+  </g>
+  <g fill="#7fd08f">
+    <circle cx="180" cy="180" r="6" opacity="0.7"/><circle cx="420" cy="300" r="8" opacity="0.85"/>
+    <circle cx="680" cy="200" r="6" opacity="0.7"/><circle cx="920" cy="330" r="9" opacity="0.9"/>
+    <circle cx="1180" cy="240" r="6" opacity="0.7"/><circle cx="1400" cy="380" r="7" opacity="0.75"/>
+    <circle cx="300" cy="520" r="6" opacity="0.6"/><circle cx="760" cy="430" r="7" opacity="0.7"/>
+    <circle cx="1120" cy="470" r="6" opacity="0.6"/><circle cx="1020" cy="560" r="7" opacity="0.7"/>
+    <circle cx="560" cy="600" r="5" opacity="0.55"/><circle cx="1260" cy="600" r="6" opacity="0.6"/>
+  </g>
+  <g fill="#dcb26a">
+    <circle cx="420" cy="300" r="3"/><circle cx="920" cy="330" r="3.5"/><circle cx="1180" cy="240" r="3"/>
+  </g>
+
+  <!-- 도시 실루엣 -->
+  <g fill="#0b2018" opacity="0.6">
+    <rect x="0" y="640" width="1600" height="120"/>
+    <rect x="120" y="560" width="70" height="90" rx="3"/>
+    <rect x="210" y="590" width="54" height="60" rx="3"/>
+    <rect x="300" y="520" width="80" height="130" rx="3"/>
+    <rect x="400" y="580" width="48" height="70" rx="3"/>
+    <rect x="470" y="545" width="66" height="105" rx="3"/>
+    <rect x="690" y="505" width="74" height="145" rx="3"/>
+    <rect x="780" y="560" width="50" height="90" rx="3"/>
+    <rect x="980" y="530" width="88" height="120" rx="3"/>
+    <rect x="1085" y="575" width="52" height="75" rx="3"/>
+    <rect x="1240" y="540" width="78" height="110" rx="3"/>
+    <rect x="1340" y="585" width="60" height="65" rx="3"/>
+  </g>
+  <g fill="#cd9b4c" opacity="0.5">
+    <rect x="330" y="545" width="6" height="10"/><rect x="345" y="545" width="6" height="10"/>
+    <rect x="712" y="525" width="6" height="10"/><rect x="1008" y="552" width="6" height="10"/>
+  </g>
+</svg>

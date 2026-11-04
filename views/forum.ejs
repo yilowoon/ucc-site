@@ -1,189 +1,206 @@
 <%- include('partials/header') %>
 <link rel="stylesheet" href="/css/column.css?v=1" />
+<style>
+  /* 두잉새롬마당 — 배움터 과정(AI활용전문가과정) 계열 랜딩 디자인 */
+  .btn-ghost-light{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.5)}
+  .btn-ghost-light:hover{background:rgba(255,255,255,.18);border-color:#fff;color:#fff;transform:translateY(-2px)}
+  .lp-hero{position:relative;overflow:hidden;color:#fff;text-align:center;background:linear-gradient(rgba(16,44,33,.78), rgba(11,33,25,.9)), url('/img/forum-hero.svg') center/cover no-repeat;padding:clamp(64px,9vw,112px) 0 clamp(54px,7vw,90px)}
+  .lp-hero::after{content:"";position:absolute;left:50%;top:-80px;width:440px;height:440px;transform:translateX(-50%);background:radial-gradient(circle, rgba(205,155,76,.26), transparent 68%);pointer-events:none}
+  .lp-hero .container{position:relative;z-index:1}
+  .lp-hero-eyebrow{display:inline-block;font-size:.78rem;letter-spacing:.22em;font-weight:800;color:var(--gold-400);margin-bottom:18px}
+  .lp-hero-title{font-size:clamp(2rem,5.6vw,3.4rem);font-weight:800;line-height:1.22;letter-spacing:-1px;margin:0 0 18px}
+  .lp-hero-title strong{color:#ffd98a}
+  .lp-hero-sub{font-size:clamp(1rem,2.2vw,1.18rem);line-height:1.7;color:rgba(255,255,255,.9);margin:0 auto 30px;max-width:720px}
+  .lp-hero-sub b{color:#ffe6b0;font-weight:700}
+  .lp-hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .lp-hero-cta .btn-icon{font-size:1.05em;margin-right:4px}
+  .lp-hero-tags{list-style:none;display:flex;gap:10px 22px;justify-content:center;flex-wrap:wrap;margin:30px 0 0;padding:0}
+  .lp-hero-tags li{font-size:.92rem;font-weight:600;color:rgba(255,255,255,.82)}
+  /* 카드 공통 */
+  .persona-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+  .persona-card{text-align:center;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:30px 22px;box-shadow:var(--shadow-sm);transition:transform .24s var(--ease),box-shadow .24s var(--ease)}
+  .persona-card:hover{transform:translateY(-5px);box-shadow:var(--shadow)}
+  .persona-ico{font-size:2.3rem;line-height:1;display:block;margin-bottom:12px}
+  .persona-card h3{font-size:1.14rem;color:var(--green-800);margin:0 0 8px}
+  .persona-card p{font-size:.94rem;color:var(--ink-soft);line-height:1.58;margin:0}
+  .persona-card .pv-en{display:block;font-size:.72rem;letter-spacing:.14em;font-weight:800;color:var(--gold-600);margin-bottom:6px;text-transform:uppercase}
+  .point-list{display:grid;gap:16px}
+  .point-row{display:flex;gap:22px;align-items:flex-start;background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--ci-blue);border-radius:16px;padding:26px 30px;box-shadow:var(--shadow-sm);transition:transform .22s var(--ease),box-shadow .22s var(--ease)}
+  .point-row:hover{transform:translateX(4px);box-shadow:var(--shadow)}
+  .point-no{flex:0 0 auto;font-size:1.7rem;font-weight:800;color:var(--ci-blue-d);line-height:1;min-width:46px}
+  .point-body h3{font-size:1.2rem;color:var(--green-800);margin:0 0 7px}
+  .point-body p{margin:0;color:var(--ink-soft);font-size:1rem;line-height:1.62}
+  .point-body p b{color:var(--green-800)}
+  /* 두잉 콜아웃(豆/0701/두잉날) */
+  .df-callout{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:24px}
+  .df-co{background:var(--paper-warm);border:1px solid var(--line);border-radius:14px;padding:20px 22px;box-shadow:var(--shadow-sm)}
+  .df-co b{display:block;color:var(--gold-600);font-size:1.02rem;margin-bottom:6px}
+  .df-co span{color:var(--ink-soft);font-size:.92rem;line-height:1.55}
+  @media(max-width:720px){.df-callout{grid-template-columns:1fr}}
+  /* 색상 체계 스와치 */
+  .df-sw{display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--paper-alt)}
+  .df-sw:first-of-type{border-top:0}
+  .df-sw i{width:34px;height:34px;border-radius:8px;flex:0 0 auto}
+  .df-sw .sw-name{font-weight:700;color:var(--green-800);font-size:.92rem}
+  .df-sw .sw-hex{color:var(--muted);font-size:.78rem;font-variant-numeric:tabular-nums}
+  .df-sw .sw-mean{margin-left:auto;color:var(--ink-soft);font-size:.82rem;text-align:right}
+  /* 강조 배너 */
+  .lp-band{text-align:center;color:#fff;padding:clamp(48px,7vw,78px) 0;background:radial-gradient(120% 130% at 50% 0%, #1f5540, #0e2a20 72%);position:relative;overflow:hidden}
+  .lp-band::after{content:"";position:absolute;left:50%;top:-100px;width:420px;height:420px;transform:translateX(-50%);background:radial-gradient(circle, rgba(205,155,76,.2), transparent 68%);pointer-events:none}
+  .lp-band .container{position:relative;z-index:1}
+  .lp-band-lead{font-size:clamp(1.1rem,2.6vw,1.45rem);font-weight:700;color:#e9efe9;margin:0 0 8px}
+  .lp-band-title{font-size:clamp(1.7rem,4.4vw,2.5rem);font-weight:800;margin:0 0 14px;letter-spacing:-.5px}
+  .lp-band-title b{color:#ffd98a}
+  .lp-band-sub{color:rgba(255,255,255,.82);font-size:1.02rem;line-height:1.7;max-width:640px;margin:0 auto 26px}
+  .lp-band-stack{list-style:none;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:0;padding:0}
+  .lp-band-stack li{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:11px 20px;font-weight:700;font-size:.96rem}
+  /* 마감 CTA */
+  .final-cta{text-align:center;color:#fff;padding:clamp(56px,8vw,92px) 0;background:radial-gradient(120% 130% at 50% 0%, #1f5540, #0e2a20 70%);position:relative;overflow:hidden}
+  .final-cta::after{content:"";position:absolute;left:50%;bottom:-120px;width:460px;height:460px;transform:translateX(-50%);background:radial-gradient(circle, rgba(205,155,76,.18), transparent 68%)}
+  .final-cta .container{position:relative;z-index:1}
+  .final-cta .fc-meet{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:8px 18px;font-weight:700;font-size:.9rem;margin-bottom:18px}
+  .final-cta h2{font-size:clamp(1.5rem,3.6vw,2.2rem);font-weight:800;margin:0 0 14px;letter-spacing:-.5px}
+  .final-cta p{color:rgba(255,255,255,.88);font-size:1.05rem;line-height:1.7;margin:0 0 28px}
+  .final-cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  /* 기고문 섹션 강조(앵커 진입 시) */
+  #columns{scroll-margin-top:90px}
+  #columns.df-flash{animation:dfFlash 1.6s var(--ease)}
+  @keyframes dfFlash{0%{box-shadow:inset 0 0 0 3px var(--gold-400)}100%{box-shadow:inset 0 0 0 3px transparent}}
+</style>
 
-<section class="page-banner">
+<!-- 히어로 -->
+<section class="lp-hero">
   <div class="container">
-    <span class="page-banner-en">DOING INNOVATION FORUM · DIF</span>
-    <h1 class="page-banner-title">두잉새롬마당</h1>
-    <p class="page-banner-desc">세종의 미래를 행동으로 — Doing the Future of Sejong</p>
+    <span class="lp-hero-eyebrow">DOING INNOVATION FORUM · DIF</span>
+    <h1 class="lp-hero-title">세종의 미래를 <strong>행동(Doing)</strong>으로</h1>
+    <p class="lp-hero-sub"><b>두잉새롬마당</b>은 세종특별자치시를 중심으로 지속가능한 지역혁신 생태계를 조성하는 <b>민간 주도형 혁신 플랫폼</b>입니다. 말이 아닌 <b>행동</b>으로, 형식이 아닌 <b>실천</b>으로 세종을 사람 중심·혁신 중심 도시로 전환시켜 갑니다.</p>
+    <div class="lp-hero-cta">
+      <a class="btn btn-primary btn-lg" href="/signup">참여 신청 →</a>
+      <a class="btn btn-ghost-light btn-lg" href="#columns" data-col-jump><span class="btn-icon" aria-hidden="true">✍</span> 두잉 기고문 보기</a>
+    </div>
+    <ul class="lp-hero-tags">
+      <li>✓ 민간 주도</li>
+      <li>✓ 혁신 지향</li>
+      <li>✓ 지역 기반</li>
+      <li>✓ 글로벌 연결</li>
+    </ul>
   </div>
 </section>
 
-<!-- 인트로 -->
-<section class="section">
+<!-- 한눈에 -->
+<section class="section" id="facts" style="padding-top:38px">
   <div class="container">
-    <p class="f-intro"><strong>두잉새롬마당(Doing Innovation Forum)</strong>은 세종특별자치시를 중심으로 지속가능한 지역혁신 생태계를 조성하는 <strong>민간 주도형 혁신 플랫폼</strong>입니다. 말이 아닌 <strong>행동(Doing)</strong>으로, 형식이 아닌 <strong>실천</strong>으로 세종을 사람 중심·혁신 중심 도시로 전환시키고자 합니다.</p>
+    <div class="course-facts">
+      <div class="cf-item"><span class="cf-label">브랜드 명</span><span class="cf-value">두잉새롬마당</span></div>
+      <div class="cf-item"><span class="cf-label">영문 명</span><span class="cf-value">Doing Innovation Forum (DIF)</span></div>
+      <div class="cf-item"><span class="cf-label">태그라인</span><span class="cf-value">“세종의 미래를 행동으로”</span></div>
+      <div class="cf-item"><span class="cf-label">주도 주체</span><span class="cf-value">세종시민 · 민간 · 지역기반</span></div>
+    </div>
   </div>
 </section>
 
 <!-- 배경과 필요성 -->
-<section class="section section--alt">
+<section class="section section--alt" id="why">
   <div class="container">
     <div class="section-head"><div><h2 class="section-title c-green">배경과 필요성</h2><span class="section-en">WHY DOING</span></div></div>
-    <div class="ficard-grid">
-      <div class="ficard">
-        <span class="ficon ficon--green"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="3" width="15" height="18" rx="1.2"/><path d="M9 21v-3.5h6V21M8.5 7h.5M12 7h.5M15.5 7h.5M8.5 11h.5M12 11h.5M15.5 11h.5"/></svg></span>
-        <h4>신 행정수도 성공</h4>
-        <p>국가 균형발전 전략 아래 미래 모델 도시로 출범한 세종.</p>
-      </div>
-      <div class="ficard">
-        <span class="ficon ficon--blue"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="18" cy="18" r="2.4"/><path d="M8.3 10.9 15.7 7.1M8.3 13.1 15.7 16.9"/></svg></span>
-        <h4>생태계 연결성 강화</h4>
-        <p>혁신 주체는 있으나 이들을 연결할 중간 플랫폼이 부재합니다.</p>
-      </div>
-      <div class="ficard">
-        <span class="ficon ficon--orange"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 18h5M10.5 21h3M12 3a6 6 0 0 0-3.8 10.7c.6.5 1.3 1.4 1.3 2.3h5c0-.9.7-1.8 1.3-2.3A6 6 0 0 0 12 3Z"/></svg></span>
-        <h4>민간 혁신 동력 활성화</h4>
-        <p>중앙부처 중심 기능에 의존한 구조를 넘어서야 합니다.</p>
-      </div>
-      <div class="ficard">
-        <span class="ficon ficon--deep"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-9"/><path d="M12 13c0-3.3 2.2-5.5 6.5-5.5 0 3.3-2.2 5.5-6.5 5.5Z"/><path d="M12 13.5c0-2.8-1.9-4.7-5.5-4.7 0 2.8 1.9 4.7 5.5 4.7Z"/></svg></span>
-        <h4>지속가능성 제고</h4>
-        <p>파편화된 지역 창업과 청년 활동을 하나로 이어야 합니다.</p>
-      </div>
+    <p class="section-lede">혁신 주체는 있으나 이들을 <strong>연결할 중간 플랫폼이 부재</strong>합니다. 파편화된 지역 창업과 청년 활동을 하나로 이어, 민간이 주도하는 지속가능한 혁신 동력을 만듭니다.</p>
+    <div class="persona-grid">
+      <article class="persona-card"><span class="persona-ico">🏛️</span><h3>신 행정수도 성공</h3><p>국가 균형발전 전략 아래 미래 모델 도시로 출범한 세종</p></article>
+      <article class="persona-card"><span class="persona-ico">🔗</span><h3>생태계 연결성 강화</h3><p>혁신 주체는 있으나 이들을 연결할 중간 플랫폼이 부재</p></article>
+      <article class="persona-card"><span class="persona-ico">💡</span><h3>민간 혁신 동력 활성화</h3><p>중앙부처 중심 기능에 의존한 구조를 넘어서야 합니다</p></article>
+      <article class="persona-card"><span class="persona-ico">🌱</span><h3>지속가능성 제고</h3><p>파편화된 지역 창업과 청년 활동을 하나로 이어야 합니다</p></article>
     </div>
   </div>
 </section>
 
 <!-- 두잉새롬마당의 의미 -->
-<section class="section">
+<section class="section" id="meaning">
   <div class="container">
     <div class="section-head"><div><h2 class="section-title c-blue">두잉새롬마당의 의미</h2><span class="section-en">MEANING</span></div></div>
-    <p class="section-lede">세종시를 항상 새롭고 혁신적으로, 지속가능한 도시로 발전시켜가는 모임입니다.</p>
-    <div class="fname-grid">
-      <div class="fname-card">
-        <div class="fhead"><span class="ficon ficon--green"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-9"/><path d="M12 13c0-3.3 2.2-5.5 6.5-5.5 0 3.3-2.2 5.5-6.5 5.5Z"/><path d="M12 13.5c0-2.8-1.9-4.7-5.5-4.7 0 2.8 1.9 4.7 5.5 4.7Z"/></svg></span><h4>이름의 유래</h4></div>
-        <ul class="fname-list">
-          <li>세종시의 옛 지명 ‘두잉(豆仍)’에서 유래</li>
-          <li>지역 역사성과 미래지향성을 함께 담음</li>
-          <li>융합 시대를 향한 새로움에 도전</li>
-        </ul>
-      </div>
-      <div class="fname-card">
-        <div class="fhead"><span class="ficon ficon--blue"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg></span><h4>핵심 가치</h4></div>
-        <ul class="fname-list">
-          <li>말이 아닌 행동(Doing)으로</li>
-          <li>형식이 아닌 실천으로</li>
-          <li>세종을 사람 중심·혁신 중심 도시로</li>
-        </ul>
-      </div>
-      <div class="fname-card">
-        <div class="fhead"><span class="ficon ficon--orange"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="18" cy="18" r="2.4"/><path d="M8.3 10.9 15.7 7.1M8.3 13.1 15.7 16.9"/></svg></span><h4>플랫폼의 성격</h4></div>
-        <ul class="fname-list">
-          <li>민간이 주도하는 플랫폼</li>
-          <li>지역이 연대하는 커뮤니티</li>
-          <li>세계와 연결되는 네트워크</li>
-        </ul>
-      </div>
+    <p class="section-lede">세종시를 <strong>항상 새롭고 혁신적으로</strong>, 지속가능한 도시로 발전시켜가는 모임입니다.</p>
+    <div class="esg-mods esg-mods--3">
+      <article class="esg-mod esg-mod--green">
+        <div class="esg-mod-head"><span class="esg-mod-no">01</span><h3 class="esg-mod-title">이름의 유래</h3></div>
+        <ul class="esg-mod-list"><li>세종시의 옛 지명 ‘두잉(豆仍)’에서 유래</li><li>지역 역사성과 미래지향성을 함께 담음</li><li>융합 시대를 향한 새로움에 도전</li></ul>
+      </article>
+      <article class="esg-mod esg-mod--blue">
+        <div class="esg-mod-head"><span class="esg-mod-no">02</span><h3 class="esg-mod-title">핵심 가치</h3></div>
+        <ul class="esg-mod-list"><li>말이 아닌 행동(Doing)으로</li><li>형식이 아닌 실천으로</li><li>세종을 사람 중심·혁신 중심 도시로</li></ul>
+      </article>
+      <article class="esg-mod esg-mod--orange">
+        <div class="esg-mod-head"><span class="esg-mod-no">03</span><h3 class="esg-mod-title">플랫폼의 성격</h3></div>
+        <ul class="esg-mod-list"><li>민간이 주도하는 플랫폼</li><li>지역이 연대하는 커뮤니티</li><li>세계와 연결되는 네트워크</li></ul>
+      </article>
     </div>
-    <div class="fcallout">
-      <div class="fc"><strong>두잉(豆仍)</strong> — 豆: 씨앗·생명·시작(혁신·문화·창업) + 仍: 이어짐·지속성·계승(지속가능한 생태계)</div>
-      <div class="fc"><strong>0701</strong> — 2012년 7월 1일, 세종시 조성사업 시작일(세종시 출범일)을 기념</div>
-      <div class="fc"><strong>두잉날</strong> — 매월 셋째 주 수요일 18:30 개최 (혁신·문화·창업·지속가능발전 주제)</div>
+    <div class="df-callout">
+      <div class="df-co"><b>두(豆·仍)</b><span>豆: 씨앗·생명·시작(혁신·문화·창업) + 仍: 이어짐·지속성·계승(지속가능한 생태계)</span></div>
+      <div class="df-co"><b>0701</b><span>2012년 7월 1일, 세종시 조성사업 시작일(세종시 출범일)을 기념</span></div>
+      <div class="df-co"><b>두잉날</b><span>매월 셋째 주 수요일 18:30 개최 — 혁신·문화·창업·지속가능발전 주제</span></div>
     </div>
   </div>
 </section>
 
-<!-- 핵심 정의 -->
-<section class="section section--alt">
+<!-- 강조 배너 -->
+<section class="lp-band">
   <div class="container">
-    <div class="section-head"><div><h2 class="section-title c-orange">핵심 정의</h2><span class="section-en">DEFINITION</span></div></div>
-    <div class="fdef">
-      <div class="fdef-row"><dt>브랜드 명</dt><dd>두잉새롬마당</dd></div>
-      <div class="fdef-row"><dt>영문 명</dt><dd>Doing Innovation Forum (DIF)</dd></div>
-      <div class="fdef-row"><dt>태그라인</dt><dd><strong>“세종의 미래를 행동으로”</strong> / “Doing the Future of Sejong”</dd></div>
-      <div class="fdef-row"><dt>브랜드 성격</dt><dd>민간주도 · 혁신지향 · 지역기반 · 글로벌 연결형</dd></div>
-      <div class="fdef-row"><dt>주도 주체</dt><dd>세종시민</dd></div>
-    </div>
+    <p class="lp-band-lead">말이 아닌 행동으로, 형식이 아닌 실천으로</p>
+    <h2 class="lp-band-title">세종을 <b>사람 중심·혁신 중심</b> 도시로</h2>
+    <p class="lp-band-sub">두잉(豆仍)은 씨앗이 이어져 숲이 되듯, 작은 행동 하나하나가 지속가능한 혁신 생태계로 자라납니다.</p>
+    <ul class="lp-band-stack">
+      <li>🌱 씨앗 — 혁신·문화·창업의 시작</li>
+      <li>🔗 연결 — 생태계 구축과 커넥션</li>
+      <li>♻️ 순환 — 커뮤니티와 지속성</li>
+    </ul>
   </div>
 </section>
 
 <!-- 두잉의 핵심 가치 -->
-<section class="section">
+<section class="section" id="values">
   <div class="container">
-    <div class="section-head"><div><h2 class="section-title c-green">두잉의 핵심 가치</h2><span class="section-en">CORE VALUES</span></div></div>
-    <div class="fvalues">
-      <div class="fvalue">
-        <span class="ficon ficon--green"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg></span>
-        <span class="en">Doing</span><span class="ko">실천</span>
-        <p>말보다 실행이 중심이 되는 혁신 리더십</p>
-      </div>
-      <div class="fvalue">
-        <span class="ficon ficon--blue"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="18" cy="18" r="2.4"/><path d="M8.3 10.9 15.7 7.1M8.3 13.1 15.7 16.9"/></svg></span>
-        <span class="en">Connection</span><span class="ko">연결</span>
-        <p>세대·지역·산업 간 네트워크 활성화</p>
-      </div>
-      <div class="fvalue">
-        <span class="ficon ficon--orange"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.4-6.5-10.3A6.5 6.5 0 0 1 18.5 10.7C18.5 15.6 12 21 12 21Z"/><circle cx="12" cy="10.5" r="2.4"/></svg></span>
-        <span class="en">Localism</span><span class="ko">지역성</span>
-        <p>세종의 특색과 역사성을 살린 로컬 창의성</p>
-      </div>
-      <div class="fvalue">
-        <span class="ficon ficon--deep"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21h14M8 21V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v16"/><path d="M14 12h.6"/></svg></span>
-        <span class="en">Openness</span><span class="ko">개방성</span>
-        <p>누구나 참여 가능한 열린 구조</p>
-      </div>
-      <div class="fvalue">
-        <span class="ficon ficon--green"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12a7.5 7.5 0 0 1 12.7-5.4L20 9"/><path d="M19.5 12a7.5 7.5 0 0 1-12.7 5.4L4 15"/><path d="M20 4.5V9h-4.5M4 19.5V15h4.5"/></svg></span>
-        <span class="en">Continuity</span><span class="ko">지속성</span>
-        <p>일회성이 아닌 장기적인 생태계 구축</p>
-      </div>
+    <div class="section-head"><div><h2 class="section-title c-orange">두잉의 핵심 가치</h2><span class="section-en">CORE VALUES</span></div></div>
+    <div class="persona-grid">
+      <article class="persona-card"><span class="persona-ico">⚡</span><span class="pv-en">Doing</span><h3>실천</h3><p>말보다 실행이 중심이 되는 혁신 리더십</p></article>
+      <article class="persona-card"><span class="persona-ico">🔗</span><span class="pv-en">Connection</span><h3>연결</h3><p>세대·지역·산업 간 네트워크 활성화</p></article>
+      <article class="persona-card"><span class="persona-ico">📍</span><span class="pv-en">Localism</span><h3>지역성</h3><p>세종의 특색과 역사성을 살린 로컬 창의성</p></article>
+      <article class="persona-card"><span class="persona-ico">🚪</span><span class="pv-en">Openness</span><h3>개방성</h3><p>누구나 참여 가능한 열린 구조</p></article>
+      <article class="persona-card"><span class="persona-ico">♻️</span><span class="pv-en">Continuity</span><h3>지속성</h3><p>일회성이 아닌 장기적인 생태계 구축</p></article>
     </div>
   </div>
 </section>
 
 <!-- 브랜드 아이덴티티 -->
-<section class="section section--alt">
+<section class="section section--alt" id="identity">
   <div class="container">
     <div class="section-head"><div><h2 class="section-title c-blue">브랜드 아이덴티티</h2><span class="section-en">IDENTITY</span></div></div>
-    <div class="fident-grid">
-      <div class="fident-card">
-        <h4><span class="ficon ficon--green"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-9"/><path d="M12 13c0-3.3 2.2-5.5 6.5-5.5 0 3.3-2.2 5.5-6.5 5.5Z"/><path d="M12 13.5c0-2.8-1.9-4.7-5.5-4.7 0 2.8 1.9 4.7 5.5 4.7Z"/></svg></span> 로고 타입</h4>
-        <div class="row"><b>국문형</b><span>두잉새롬마당</span></div>
-        <div class="row"><b>영문형</b><span>Doing Innovation Forum</span></div>
-        <div class="row"><b>혼합형</b><span>DIF | 두잉혁신포럼</span></div>
-      </div>
-      <div class="fident-card">
-        <h4><span class="ficon ficon--blue"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="6.5" cy="12" r="2.5"/><circle cx="15" cy="16.5" r="2.5"/><path d="M4 20c1.5-2 3.5-3 5.5-3"/></svg></span> 색상 체계</h4>
-        <div class="fswatch"><i style="background:#4CAF50"></i><div><div class="sw-name">두잉그린</div><div class="sw-hex">#4CAF50</div></div><span class="sw-mean">생장 · 지속가능성</span></div>
-        <div class="fswatch"><i style="background:#2196F3"></i><div><div class="sw-name">두잉블루</div><div class="sw-hex">#2196F3</div></div><span class="sw-mean">신뢰 · 연결 · 글로벌</span></div>
-        <div class="fswatch"><i style="background:#6D4C41"></i><div><div class="sw-name">어스브라운</div><div class="sw-hex">#6D4C41</div></div><span class="sw-mean">지역성 · 전통</span></div>
-        <div class="fswatch"><i style="background:#9E9E9E"></i><div><div class="sw-name">실버그레이</div><div class="sw-hex">#9E9E9E</div></div><span class="sw-mean">기술 · 중립 · 전문성</span></div>
-      </div>
-      <div class="fident-card" style="grid-column:1 / -1">
-        <h4><span class="ficon ficon--orange"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="3" width="15" height="18" rx="1.2"/><path d="M9 21v-3.5h6V21M8.5 7h.5M12 7h.5M15.5 7h.5"/></svg></span> 심볼 아이덴티티</h4>
-        <div class="fcallout" style="margin-top:6px">
-          <div class="fc"><strong>豆(콩/씨앗)</strong> 지역과 창업의 시작</div>
-          <div class="fc"><strong>연결선</strong> 생태계 구축과 커넥션</div>
-          <div class="fc"><strong>원형 틀</strong> 커뮤니티와 순환성</div>
-          <div class="fc"><strong>도시 실루엣</strong> 세종시의 정체성</div>
-        </div>
-      </div>
+    <div class="esg-mods esg-mods--3">
+      <article class="esg-mod esg-mod--green">
+        <div class="esg-mod-head"><span class="esg-mod-no">A</span><h3 class="esg-mod-title">로고 타입</h3></div>
+        <ul class="esg-mod-list"><li>국문형 — 두잉새롬마당</li><li>영문형 — Doing Innovation Forum</li><li>혼합형 — DIF | 두잉혁신포럼</li></ul>
+      </article>
+      <article class="esg-mod esg-mod--blue">
+        <div class="esg-mod-head"><span class="esg-mod-no">B</span><h3 class="esg-mod-title">색상 체계</h3></div>
+        <div class="df-sw"><i style="background:#4CAF50"></i><div><div class="sw-name">두잉그린</div><div class="sw-hex">#4CAF50</div></div><span class="sw-mean">생장 · 지속가능성</span></div>
+        <div class="df-sw"><i style="background:#2196F3"></i><div><div class="sw-name">두잉블루</div><div class="sw-hex">#2196F3</div></div><span class="sw-mean">신뢰 · 연결 · 글로벌</span></div>
+        <div class="df-sw"><i style="background:#6D4C41"></i><div><div class="sw-name">어스브라운</div><div class="sw-hex">#6D4C41</div></div><span class="sw-mean">지역성 · 전통</span></div>
+        <div class="df-sw"><i style="background:#9E9E9E"></i><div><div class="sw-name">실버그레이</div><div class="sw-hex">#9E9E9E</div></div><span class="sw-mean">기술 · 전문성</span></div>
+      </article>
+      <article class="esg-mod esg-mod--orange">
+        <div class="esg-mod-head"><span class="esg-mod-no">C</span><h3 class="esg-mod-title">심볼 아이덴티티</h3></div>
+        <ul class="esg-mod-list"><li>豆(콩/씨앗) — 지역과 창업의 시작</li><li>연결선 — 생태계 구축과 커넥션</li><li>원형 틀 — 커뮤니티와 순환성</li><li>도시 실루엣 — 세종시의 정체성</li></ul>
+      </article>
     </div>
   </div>
 </section>
 
 <!-- 향후 추진 방향 -->
-<section class="section">
+<section class="section" id="roadmap">
   <div class="container">
-    <div class="section-head"><div><h2 class="section-title c-orange">향후 추진 방향</h2><span class="section-en">ROADMAP</span></div></div>
-    <div class="froadmap">
-      <div class="frow">
-        <span class="ficon ficon--green"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3.5 20c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><path d="M16 5.5a3 3 0 0 1 0 5.6M20.5 20c0-2.2-1.2-3.9-3-4.6"/></svg></span>
-        <div><h4>지역 기반 혁신 커뮤니티 형성</h4><ul><li>다양한 주체 간 협업 구조 설계</li><li>정기 포럼·커뮤니티 행사 활성화</li></ul></div>
-      </div>
-      <div class="frow">
-        <span class="ficon ficon--blue"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 18h5M10.5 21h3M12 3a6 6 0 0 0-3.8 10.7c.6.5 1.3 1.4 1.3 2.3h5c0-.9.7-1.8 1.3-2.3A6 6 0 0 0 12 3Z"/></svg></span>
-        <div><h4>청년 및 창업가 육성</h4><ul><li>세종형 혁신·창업 경진대회 운영</li><li>혁신·창업 교육, 멘토링, 초기 창업 지원</li></ul></div>
-      </div>
-      <div class="frow">
-        <span class="ficon ficon--orange"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3a2 2 0 1 1 4 0h3v3a2 2 0 1 1 0 4v3h-3a2 2 0 1 0-4 0H4v-3a2 2 0 1 0 0-4V8Z"/></svg></span>
-        <div><h4>세종형 로컬벤처 모델 구축</h4><ul><li>지역문제 해결 중심 비즈니스 모델 개발</li><li>공공–민간–시민사회 연계형 프로젝트</li></ul></div>
-      </div>
-      <div class="frow">
-        <span class="ficon ficon--deep"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.6 3 2.6 14 0 17M12 3.5c-2.6 3-2.6 14 0 17"/></svg></span>
-        <div><h4>글로벌 네트워크 연계</h4><ul><li>해외 도시 및 혁신 클러스터와 교류</li><li>국제포럼·글로벌 파트너십 구축</li></ul></div>
-      </div>
+    <div class="section-head"><div><h2 class="section-title c-green">향후 추진 방향</h2><span class="section-en">ROADMAP</span></div></div>
+    <div class="point-list">
+      <article class="point-row"><span class="point-no">01</span><div class="point-body"><h3>지역 기반 혁신 커뮤니티 형성</h3><p>다양한 주체 간 협업 구조를 설계하고, <b>정기 포럼·커뮤니티 행사</b>를 활성화합니다.</p></div></article>
+      <article class="point-row"><span class="point-no">02</span><div class="point-body"><h3>청년 및 창업가 육성</h3><p>세종형 혁신·창업 경진대회를 운영하고, <b>혁신·창업 교육·멘토링·초기 창업</b>을 지원합니다.</p></div></article>
+      <article class="point-row"><span class="point-no">03</span><div class="point-body"><h3>세종형 로컬벤처 모델 구축</h3><p>지역문제 해결 중심의 비즈니스 모델을 개발하고, <b>공공–민간–시민사회 연계형</b> 프로젝트를 추진합니다.</p></div></article>
+      <article class="point-row"><span class="point-no">04</span><div class="point-body"><h3>글로벌 네트워크 연계</h3><p>해외 도시 및 혁신 클러스터와 교류하고, <b>국제포럼·글로벌 파트너십</b>을 구축합니다.</p></div></article>
     </div>
   </div>
 </section>
@@ -263,10 +280,10 @@
     </footer>
   </div>
   <% } else { %>
-  <!-- ===== 기고문 목록 ===== -->
+  <!-- ===== 기고문 목록(두잉 기고문 탭) ===== -->
   <div class="container">
     <div class="section-head">
-      <div><h2 class="section-title c-green">행동으로 잇는 기록 · 두잉 기고문</h2><span class="section-en">DOING · COLUMN</span></div>
+      <div><h2 class="section-title c-green">두잉 기고문</h2><span class="section-en">DOING · COLUMN</span></div>
     </div>
     <p class="section-lede">도시의 혁신 생태계를 만들어가는 혁신가들의 활동은 <strong>생각</strong>에서 시작해 <strong>행동(Doing)</strong>으로 이어집니다. 두잉 기고문은 그 생각과 실천을 한 편의 글로 기록해, 다음 행동의 출발점으로 삼습니다.</p>
 
@@ -290,17 +307,36 @@
       <% }); %>
     </div>
     <% } else { %>
-    <div class="fcallout" style="margin-top:24px"><div class="fc">첫 기고문을 준비하고 있습니다. 곧 이 자리에서 만나보실 수 있습니다.</div></div>
+    <div class="df-callout" style="grid-template-columns:1fr;margin-top:24px"><div class="df-co"><span>첫 기고문을 준비하고 있습니다. 곧 이 자리에서 만나보실 수 있습니다.</span></div></div>
     <% } %>
   </div>
   <% } %>
 </section>
 
+<!-- 마감 CTA -->
+<section class="final-cta">
+  <div class="container">
+    <span class="fc-meet">📅 두잉날 — 매월 셋째 주 수요일 18:30</span>
+    <h2>함께 실천할 동행자를 기다립니다</h2>
+    <p>혁신·문화·창업·지속가능발전에 관심 있는 누구나 함께할 수 있습니다.<br>지역의 작은 행동 하나하나가 미래의 커다란 혁신이 되도록, 두잉새롬마당이 실천으로 답하겠습니다.</p>
+    <div class="final-cta-btns">
+      <a class="btn btn-primary btn-lg" href="/signup">참여 신청 →</a>
+      <a class="btn btn-ghost-light btn-lg" href="#columns" data-col-jump><span aria-hidden="true">✍</span> 두잉 기고문 보기</a>
+    </div>
+  </div>
+</section>
+
 <script>
-/* 두잉 기고문: 같은 페이지에서 하단 섹션(#columns)만 목록 ↔ 전문으로 교체 */
+/* 두잉 기고문: 같은 페이지에서 하단 섹션(#columns)만 목록 ↔ 전문으로 교체 + 상단 버튼으로 이동 */
 (function(){
   var SEL = "#columns";
   function headerOffset(){ var h = document.getElementById("siteHeader"); return (h ? h.offsetHeight : 70) + 14; }
+  function scrollToCols(flash){
+    var el = document.querySelector(SEL); if (!el) return;
+    var top = el.getBoundingClientRect().top + window.scrollY - headerOffset();
+    window.scrollTo({ top: top, behavior: "smooth" });
+    if (flash) { el.classList.remove("df-flash"); void el.offsetWidth; el.classList.add("df-flash"); }
+  }
   function swap(url, push){
     fetch(url, { headers: { "X-Requested-With": "fetch" } })
       .then(function(r){ return r.text(); })
@@ -310,12 +346,19 @@
         if (!fresh || !cur) { window.location.href = url; return; }
         cur.replaceWith(fresh);
         if (push) history.pushState({ col: url }, "", url);
-        var top = document.querySelector(SEL).getBoundingClientRect().top + window.scrollY - headerOffset();
-        window.scrollTo({ top: top, behavior: "smooth" });
+        scrollToCols(false);
       })
       .catch(function(){ window.location.href = url; });
   }
   document.addEventListener("click", function(e){
+    // 상단/하단 '두잉 기고문 보기' 버튼 → 해당 섹션으로 이동(+목록이면 강조)
+    var jump = e.target.closest("[data-col-jump]");
+    if (jump) {
+      e.preventDefault();
+      if (location.search) { swap("/projects/forum", true); }
+      else { scrollToCols(true); }
+      return;
+    }
     var a = e.target.closest("[data-col-link], [data-col-back]");
     if (!a || a.target === "_blank" || e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
     e.preventDefault();
@@ -324,44 +367,5 @@
   window.addEventListener("popstate", function(){ swap(location.pathname + location.search, false); });
 })();
 </script>
-
-<!-- 비전 클로징 -->
-<section class="section section--dark">
-  <div class="container">
-    <div class="section-head"><div><h2 class="section-title c-green">함께 만들어가는 세종의 미래</h2><span class="section-en">OUR VISION</span></div></div>
-    <div class="fvision-grid">
-      <div class="fvtier">
-        <span class="ficon ficon--green"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.6 3 2.6 14 0 17M12 3.5c-2.6 3-2.6 14 0 17"/></svg></span>
-        <h4>글로벌 혁신 허브</h4><p>세종을 로컬 혁신의 글로벌 허브로</p>
-      </div>
-      <div class="fvtier">
-        <span class="ficon ficon--blue"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12a7.5 7.5 0 0 1 12.7-5.4L20 9"/><path d="M19.5 12a7.5 7.5 0 0 1-12.7 5.4L4 15"/><path d="M20 4.5V9h-4.5M4 19.5V15h4.5"/></svg></span>
-        <h4>지속가능한 생태계</h4><p>문화와 함께하는 민간 주도의 지속가능한 혁신 생태계</p>
-      </div>
-      <div class="fvtier">
-        <span class="ficon ficon--orange"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-9"/><path d="M12 13c0-3.3 2.2-5.5 6.5-5.5 0 3.3-2.2 5.5-6.5 5.5Z"/><path d="M12 13.5c0-2.8-1.9-4.7-5.5-4.7 0 2.8 1.9 4.7 5.5 4.7Z"/></svg></span>
-        <h4>지역 기반 실천</h4><p>작은 행동이 커다란 혁신으로</p>
-      </div>
-    </div>
-    <p class="fvision-note">지금, 세종의 미래를 함께 만들어 갈 동행자들을 기다립니다.<br />두잉새롬마당은 지역의 작은 행동 하나하나가 미래의 커다란 혁신이 되도록 <strong>실천으로 답하겠습니다.</strong></p>
-  </div>
-</section>
-
-<!-- 참여 CTA -->
-<section class="section">
-  <div class="container">
-    <div class="cta-band">
-      <div>
-        <div class="fmeet"><span class="ficon"><svg class="fic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15.5" rx="2"/><path d="M4 9.5h16M8.5 3v4M15.5 3v4"/></svg></span><span><strong>두잉날</strong> 매월 셋째 주 수요일 18:30</span></div>
-        <h2>함께 실천할 동행자를 기다립니다</h2>
-        <p>혁신·문화·창업·지속가능발전에 관심 있는 누구나 함께할 수 있습니다.</p>
-      </div>
-      <div class="cta-actions">
-        <a class="btn btn-primary" href="/signup">참여 신청</a>
-        <a class="btn btn-ghost-dark" href="/board/notice">포럼 소식 보기</a>
-      </div>
-    </div>
-  </div>
-</section>
 
 <%- include('partials/footer') %>
