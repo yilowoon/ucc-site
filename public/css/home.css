@@ -157,7 +157,18 @@
   border: 1px solid var(--line); box-shadow: var(--shadow-sm);
   font-weight: 700; color: var(--green-800); font-size: 1.05rem; letter-spacing: -0.01em;
 }
+.partner--logo { padding: 16px 26px; }
+.partner--logo img {
+  display: block; height: 44px; width: auto; max-width: 210px;
+  object-fit: contain; filter: saturate(1.02);
+}
 @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+@media (max-width: 640px) {
+  .partner { padding: 14px 22px; font-size: .98rem; }
+  .partner--logo { padding: 13px 20px; }
+  .partner--logo img { height: 34px; max-width: 160px; }
+}
 
 /* ---- 약관 링크바 ---- */
 .footer-legal { display: flex; flex-wrap: wrap; gap: 8px 26px; align-items: center; padding-bottom: 24px; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,.12); }
