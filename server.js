@@ -204,6 +204,25 @@ app.use(
   })
 );
 
+// ---- AI/LLM 크롤러 차단 (User-Agent 기준) ----
+// 정적파일(/css·/js·/img·robots.txt 등)은 위에서 이미 서빙되므로 여기선 페이지(HTML) 요청만 걸린다.
+// User-Agent 기준이라 일반 방문자·사장님 브라우저·검색엔진(구글/네이버/다음)·SNS 링크 미리보기는 영향 없음.
+// 관리자 로그인 세션(=소유자)은 무조건 예외. robots.txt(public/robots.txt)와 함께 이중 방어.
+// 주의: facebookexternalhit·Twitterbot·kakaotalk-scrap(SNS 공유 미리보기)과 Googlebot·bingbot·Yeti(네이버)·Daumoa(검색)는 포함하지 않음.
+const AI_CRAWLER_UA = /(GPTBot|OAI-SearchBot|ChatGPT-User|CCBot|anthropic-ai|ClaudeBot|Claude-Web|Claude-User|PerplexityBot|Perplexity-User|Bytespider|Amazonbot|Applebot-Extended|meta-externalagent|Meta-ExternalFetcher|cohere-ai|Diffbot|ImagesiftBot|Omgili(?:bot)?|YouBot|DataForSeoBot|AI2Bot|Timpibot|PanguBot|Webzio-Extended|img2dataset|Scrapy)/i;
+app.use((req, res, next) => {
+  try {
+    if (req.session && req.session.admin) return next(); // 소유자(관리자)는 예외
+    const ua = req.get("user-agent") || "";
+    if (AI_CRAWLER_UA.test(ua)) {
+      res.setHeader("X-Robots-Tag", "noai, noimageai");
+      return res.status(403).type("text/plain; charset=utf-8")
+        .send("AI 크롤러 접근이 허용되지 않습니다. (This site does not allow AI crawlers.)");
+    }
+  } catch (e) { /* 차단 처리 실패는 서비스에 영향 주지 않음 */ }
+  next();
+});
+
 // ---- 트래픽 집계 (순방문자 기준; 정적파일/관리자/API/봇 제외) ----
 const insertVisit = db.prepare(
   "INSERT INTO visits (path, source, device, visitor, ip, day, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
