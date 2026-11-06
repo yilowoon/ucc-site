@@ -157,17 +157,21 @@
   border: 1px solid var(--line); box-shadow: var(--shadow-sm);
   font-weight: 700; color: var(--green-800); font-size: 1.05rem; letter-spacing: -0.01em;
 }
-.partner--logo { padding: 16px 26px; }
+/* 로고는 흰 카드 없이 배경 위에 직접 — multiply로 로고에 박힌 흰 배경(스캔본)까지 종이색에 녹임 */
+.partner--logo {
+  margin: 0 20px; padding: 8px 10px;
+  background: transparent; border: 0; box-shadow: none; border-radius: 0;
+}
 .partner--logo img {
-  display: block; height: 44px; width: auto; max-width: 210px;
-  object-fit: contain; filter: saturate(1.02);
+  display: block; height: 46px; width: auto; max-width: 220px;
+  object-fit: contain; mix-blend-mode: multiply;
 }
 @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
 @media (max-width: 640px) {
   .partner { padding: 14px 22px; font-size: .98rem; }
-  .partner--logo { padding: 13px 20px; }
-  .partner--logo img { height: 34px; max-width: 160px; }
+  .partner--logo { margin: 0 14px; padding: 6px 8px; }
+  .partner--logo img { height: 36px; max-width: 168px; }
 }
 
 /* ---- 약관 링크바 ---- */
