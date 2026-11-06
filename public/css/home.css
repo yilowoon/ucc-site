@@ -166,12 +166,15 @@
   display: block; height: 46px; width: auto; max-width: 220px;
   object-fit: contain; mix-blend-mode: multiply;
 }
+/* 심볼+글자가 세로로 쌓인 2단 로고는 같은 높이로 맞추면 글자가 작아짐 → 높이를 더 줌 */
+.partner--logo.partner--tall img { height: 62px; }
 @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
 @media (max-width: 640px) {
   .partner { padding: 14px 22px; font-size: .98rem; }
   .partner--logo { margin: 0 14px; padding: 6px 8px; }
   .partner--logo img { height: 36px; max-width: 168px; }
+  .partner--logo.partner--tall img { height: 50px; }
 }
 
 /* ---- 약관 링크바 ---- */
