@@ -22,8 +22,19 @@
   </div>
 
   <% if (error) { %><p class="form-alert err"><%= error %></p><% } %>
+  <% if (typeof notice !== 'undefined' && notice) { %><p class="form-alert ok"><%= notice %></p><% } %>
 
-  <% if (mode === 'send') { %>
+  <% if (mode === 'reset') { %>
+    <form method="post" action="/contact/pin-reset" class="admin-form-fields" autocomplete="off">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <div class="contact-hp" aria-hidden="true"><label>이 항목은 비워두세요<input type="text" name="website" tabindex="-1" autocomplete="off" /></label></div>
+      <p class="form-note">문의 시 입력하신 <b>이메일</b>로 새 <b>4자리 PIN</b>을 보내드립니다. 기존 PIN은 더 이상 사용되지 않습니다.</p>
+      <div class="field"><label for="r-email">이메일</label><input type="email" id="r-email" name="email" value="<%= esc(form.email || '') %>" required /></div>
+      <div class="field"><label for="r-cap">로봇이 아님을 확인 <span class="field-hint"><%= cap.a %> + <%= cap.b %> = ?</span></label><input class="cf-cap-in" type="text" id="r-cap" name="captcha" inputmode="numeric" autocomplete="off" placeholder="정답 숫자" required /></div>
+      <button type="submit" class="btn btn-primary btn-block">새 PIN 메일 받기</button>
+      <p class="admin-auth-hint"><a href="/contact?mode=check">← 문의 확인하기로 돌아가기</a></p>
+    </form>
+  <% } else if (mode === 'send') { %>
     <form method="post" action="/contact/send" class="admin-form-fields" autocomplete="off">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
       <div class="contact-hp" aria-hidden="true"><label>이 항목은 비워두세요<input type="text" name="website" tabindex="-1" autocomplete="off" /></label></div>
@@ -68,6 +79,7 @@
       <div class="field"><label for="v-pin">PIN <span class="field-hint">숫자 4자리</span></label><input type="password" id="v-pin" name="pin" inputmode="numeric" pattern="\d{4}" maxlength="4" autocomplete="off" oninput="this.value=this.value.replace(/[^0-9]/g,'')" required /></div>
       <div class="field"><label for="v-cap">로봇이 아님을 확인 <span class="field-hint"><%= cap.a %> + <%= cap.b %> = ?</span></label><input class="cf-cap-in" type="text" id="v-cap" name="captcha" inputmode="numeric" autocomplete="off" placeholder="정답 숫자" required /></div>
       <button type="submit" class="btn btn-primary btn-block">문의 확인하기</button>
+      <p class="admin-auth-hint">PIN을 잊으셨나요? <a href="/contact?mode=reset">이메일로 재설정</a></p>
       <% if (member) { %><p class="admin-auth-hint">회원이시면 <a href="/contact/my">내 문의 내역</a>에서 바로 확인됩니다.</p><% } %>
     </form>
   <% } %>

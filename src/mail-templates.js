@@ -156,4 +156,41 @@ function associateReminderMail(m, joinUrl, keepUrl) {
   return { subject, text, html };
 }
 
-module.exports = { welcomeMemberMail, resetPasswordMail, associateReminderMail, MEMBER_FEE, dateKo };
+// 문의하기 PIN 재설정 안내 메일 — { subject, text, html } 반환
+function contactPinMail(pin, name) {
+  const who = name || "고객";
+  const subject = "[사단법인 도시공동체본부] 문의 확인용 PIN 재설정 안내";
+  const text =
+    `${who}님, 요청하신 문의 확인용 PIN을 새로 설정했습니다.\n\n` +
+    `새 PIN(숫자 4자리): ${pin}\n\n` +
+    `‘문의하기 → 문의 확인하기’에서 이메일과 위 PIN으로 로그인하시면\n` +
+    `접수하신 문의와 답변을 확인하실 수 있습니다.\n` +
+    `보안을 위해 이 PIN은 타인에게 알려주지 마세요.\n` +
+    `본인이 요청하지 않았다면 이 메일을 무시하셔도 됩니다(기존 PIN은 더 이상 사용되지 않습니다).\n\n` +
+    `문의 확인: https://ucc.or.kr/contact?mode=check\n\n` +
+    `사단법인 도시공동체본부 사무처\n대표전화 1670-9678 · https://ucc.or.kr`;
+
+  const html =
+    '<div style="font-family:\'Malgun Gothic\',AppleSDGothicNeo,sans-serif;background:#eef1ec;padding:28px 14px">' +
+    '<div style="max-width:520px;margin:0 auto;background:#fff;border:1px solid #e4e2da;border-radius:14px;overflow:hidden">' +
+      '<div style="background:#123a2e;color:#fff;padding:22px 26px">' +
+        '<div style="font-size:13px;letter-spacing:1px;color:#d8b25f;font-weight:700;margin-bottom:4px">URBAN COMMUNITY CENTER</div>' +
+        '<div style="font-size:19px;font-weight:800">문의 확인용 PIN 재설정</div>' +
+      '</div>' +
+      '<div style="padding:26px">' +
+        `<p style="font-size:15px;color:#16211c;margin:0 0 6px"><b>${esc(who)}</b>님, 요청하신 새 PIN입니다.</p>` +
+        '<p style="font-size:14px;color:#3a463f;line-height:1.7;margin:0 0 16px">‘문의하기 → <b>문의 확인하기</b>’에서 이메일과 아래 PIN으로 로그인하시면 접수하신 문의와 답변을 확인하실 수 있습니다.</p>' +
+        `<div style="font-size:26px;font-weight:800;letter-spacing:6px;color:#123a2e;background:#f8f6f0;border:1px solid #eee7d6;border-radius:10px;text-align:center;padding:18px;margin:0 0 18px">${esc(pin)}</div>` +
+        '<p style="margin:0 0 18px"><a href="https://ucc.or.kr/contact?mode=check" style="display:inline-block;background:#123a2e;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:11px 22px;border-radius:8px">문의 확인하기</a></p>' +
+        '<p style="font-size:13px;color:#6b766f;margin:0;line-height:1.6">보안을 위해 이 PIN은 타인에게 알려주지 마세요. 본인이 요청하지 않았다면 이 메일을 무시하셔도 됩니다(기존 PIN은 더 이상 사용되지 않습니다).</p>' +
+      '</div>' +
+      '<div style="background:#f4f5f1;border-top:1px solid #e4e2da;padding:16px 26px;color:#6b766f;font-size:12px;line-height:1.6">' +
+        '<b style="color:#16211c">사단법인 도시공동체본부</b> 사무처<br>' +
+        '대표전화 1670-9678 · <a href="https://ucc.or.kr" style="color:#123a2e;text-decoration:none">ucc.or.kr</a>' +
+      '</div>' +
+    '</div></div>';
+
+  return { subject, text, html };
+}
+
+module.exports = { welcomeMemberMail, resetPasswordMail, associateReminderMail, contactPinMail, MEMBER_FEE, dateKo };

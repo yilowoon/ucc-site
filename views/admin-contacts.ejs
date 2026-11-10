@@ -6,6 +6,12 @@
   .ct-reply-form textarea:focus{outline:none;border-color:var(--green-600)}
   .ct-reply-actions{display:flex;align-items:center;gap:12px;margin-top:8px}
   .ct-replied{font-size:12px;color:var(--muted)}
+  .pin-flash{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin:0 0 18px;padding:14px 18px;border-radius:12px;border:1px solid #cfe0d3;background:#edf6ef;color:#16241d}
+  .pin-flash.err{border-color:#e6cdcd;background:#faecec}
+  .pin-flash .pf-pin{font-size:22px;font-weight:800;letter-spacing:4px;color:var(--green-900);background:#fff;border:1px solid #cfe0d3;border-radius:8px;padding:4px 14px}
+  .pin-flash .pf-meta{font-size:13px;color:var(--ink-soft)}
+  .ct-pin-form{display:inline}
+  .linkbtn-reset{color:var(--green-800)}
 </style>
 <div class="container admin-wrap">
   <div class="admin-head">
@@ -17,6 +23,18 @@
       <a class="btn btn-neutral btn-sm" href="/admin">대시보드</a>
     </div>
   </div>
+
+  <% if (typeof pinFlash !== 'undefined' && pinFlash) { %>
+    <% if (pinFlash.error) { %>
+      <div class="pin-flash err"><span><%= pinFlash.error %></span></div>
+    <% } else { %>
+      <div class="pin-flash">
+        <span>새 PIN 발급 완료 <% if (pinFlash.name) { %>· <strong><%= esc(pinFlash.name) %></strong><% } %> (<%= esc(pinFlash.email) %>)</span>
+        <span class="pf-pin"><%= esc(pinFlash.pin) %></span>
+        <span class="pf-meta"><%= pinFlash.mailed ? '회원 이메일로 발송되었습니다.' : '※ 이메일 발송은 실패했습니다. 위 PIN을 직접 안내해 주세요.' %> 이 번호는 지금만 표시됩니다.</span>
+      </div>
+    <% } %>
+  <% } %>
 
   <div class="admin-toolbar">
     <div class="admin-filter">
@@ -65,6 +83,13 @@
               <% statuses.forEach(function(s){ %><option value="<%= s %>"<%= c.status === s ? ' selected' : '' %>><%= s %></option><% }); %>
             </select>
           </form>
+          <% if (!c.member_id && c.pw_hash) { %>
+            <form class="ct-pin-form" method="post" action="/admin/contacts/<%= c.id %>/pin-reset" onsubmit="return confirm('<%= esc(c.email) %> 님의 PIN을 새로 발급하고 이메일로 보냅니다. 기존 PIN은 즉시 무효화됩니다. 진행할까요?');">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <input type="hidden" name="back" value="<%= filter === 'all' ? '' : filter %>" />
+              <button type="submit" class="linkbtn linkbtn-reset">PIN 재설정</button>
+            </form>
+          <% } %>
           <form method="post" action="/admin/contacts/<%= c.id %>/delete" onsubmit="return confirm('이 문의를 삭제하시겠습니까?');">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
             <button type="submit" class="linkbtn linkbtn-danger">삭제</button>

@@ -682,7 +682,9 @@ module.exports = function adminRoutes({ verifyCsrf }) {
       확인: db.prepare("SELECT COUNT(*) AS n FROM contacts WHERE status = '확인'").get().n,
       완료: db.prepare("SELECT COUNT(*) AS n FROM contacts WHERE status = '완료'").get().n,
     };
-    res.render("admin-contacts", { ...res.locals, title: "문의 관리", contacts, filter, counts, statuses: CONTACT_STATUS });
+    const pinFlash = req.session.contactPinFlash || null;
+    if (pinFlash) delete req.session.contactPinFlash; // 1회용(새로고침 시 사라짐)
+    res.render("admin-contacts", { ...res.locals, title: "문의 관리", contacts, filter, counts, statuses: CONTACT_STATUS, pinFlash });
   });
   router.post("/contacts/:id/status", requireAdmin, verifyCsrf, (req, res) => {
     const status = CONTACT_STATUS.includes(req.body.status) ? req.body.status : "신규";
@@ -704,6 +706,29 @@ module.exports = function adminRoutes({ verifyCsrf }) {
       db.prepare("UPDATE contacts SET reply = '', replied_at = '' WHERE id = ?").run(id);
     }
     res.redirect("/admin/contacts" + (CONTACT_STATUS.includes(req.body.back) ? "?status=" + encodeURIComponent(req.body.back) : ""));
+  });
+  // PIN 재설정 — 새 4자리 PIN을 발급해 해시로 저장 + 문의자에게 이메일 발송.
+  // 관리자에게는 새 PIN을 1회용 플래시로 보여줘(전화 안내 등) 원본 PIN을 확인할 수 있게 한다.
+  router.post("/contacts/:id/pin-reset", requireAdmin, verifyCsrf, async (req, res) => {
+    const backUrl = "/admin/contacts" + (CONTACT_STATUS.includes(req.body.back) ? "?status=" + encodeURIComponent(req.body.back) : "");
+    const c = db.prepare("SELECT id, name, email, pw_hash, member_id FROM contacts WHERE id = ?").get(parseInt(req.params.id, 10));
+    if (!c) return res.redirect(backUrl);
+    if (c.member_id || !c.email || !c.pw_hash) {
+      req.session.contactPinFlash = { error: "이 문의는 PIN이 없습니다(회원 문의는 회원 로그인으로 확인합니다)." };
+      return res.redirect(backUrl);
+    }
+    const email = c.email.toLowerCase();
+    const pin = String(crypto.randomInt(1000, 10000)); // 1000~9999 (항상 4자리)
+    const hash = bcrypt.hashSync(pin, 10);
+    db.prepare("UPDATE contacts SET pw_hash = ? WHERE email = ? AND pw_hash <> ''").run(hash, email);
+    let mailed = false;
+    if (mailer.hasSmtp()) {
+      const tpl = mailTpl.contactPinMail(pin, c.name);
+      try { const r = await mailer.sendMail(c.email, tpl.subject, tpl.text, tpl.html); mailed = !!(r && r.sent); }
+      catch (e) { console.error("[admin] 문의 PIN 재설정 메일 실패:", e.message); }
+    }
+    req.session.contactPinFlash = { email: c.email, name: c.name, pin, mailed };
+    return res.redirect(backUrl);
   });
 
   // ---------- 회원 관리 ----------

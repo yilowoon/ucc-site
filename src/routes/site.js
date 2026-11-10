@@ -12,6 +12,7 @@ const cfg = require("../config");
 const { PAGES } = require("../pages");
 const chatkb = require("../chatkb"); // 소개 챗봇: 지식베이스 + Gemini 응답
 const mailer = require("../mailer"); // 이메일 인증 코드 발송
+const mailTpl = require("../mail-templates"); // 메일 본문(문의 PIN 재설정 등)
 const IS_PROD = process.env.NODE_ENV === "production";
 const KOREA_SIDO = require("../korea-sido.json"); // 전국 시·도 경계 지오메트리
 
@@ -510,10 +511,49 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   }
 
   router.get("/contact", (req, res) => {
-    const mode = req.query.mode === "check" ? "check" : "send";
+    const mode = ["check", "reset"].includes(req.query.mode) ? req.query.mode : "send";
     res.render("contact", {
       ...res.locals, title: "문의하기", mode, cap: newCaptcha(req),
       member: sessMember(req), topics: CONTACT_TOPICS, error: null, form: {},
+    });
+  });
+
+  // PIN 재설정 남용 방지(세션당 10분 5회)
+  function pinResetAllowed(req) {
+    const now = Date.now(), win = 10 * 60 * 1000, max = 5;
+    const arr = (req.session.pinResetHits || []).filter((t) => now - t < win);
+    if (arr.length >= max) { req.session.pinResetHits = arr; return false; }
+    arr.push(now); req.session.pinResetHits = arr; return true;
+  }
+
+  // 문의 PIN 재설정: 이메일로 새 4자리 PIN 발송(비회원 셀프서비스)
+  router.post("/contact/pin-reset", verifyCsrf, async (req, res) => {
+    const back = (error) => res.status(400).render("contact", {
+      ...res.locals, title: "문의하기", mode: "reset", cap: newCaptcha(req),
+      member: sessMember(req), topics: CONTACT_TOPICS, error, form: { email: (req.body.email || "").trim() },
+    });
+    if ((req.body.website || "").trim()) return res.redirect("/contact?mode=check"); // 허니팟
+    if (!capOk(req, req.body.captcha)) return back("로봇 방지 계산의 답이 올바르지 않습니다.");
+    if (!pinResetAllowed(req)) return back("요청이 너무 잦습니다. 잠시 후 다시 시도해 주세요.");
+    const email = (req.body.email || "").trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return back("이메일을 정확히 입력해 주세요.");
+    // 메일 발송이 아예 불가하면 재설정 자체가 의미 없으므로 안내(이메일 존재 여부와 무관하게 동일 응답)
+    if (!mailer.hasSmtp()) return back("현재 메일 발송이 설정되어 있지 않아 PIN 재설정 메일을 보낼 수 없습니다. 1670-9678 또는 contact@ucc.or.kr 로 문의해 주세요.");
+    const rows = db.prepare("SELECT name FROM contacts WHERE email = ? AND pw_hash <> '' ORDER BY id DESC").all(email);
+    if (rows.length) {
+      const pin = String(crypto.randomInt(1000, 10000)); // 1000~9999 (앞자리 0 없이 항상 4자리)
+      const hash = bcrypt.hashSync(pin, 10);
+      db.prepare("UPDATE contacts SET pw_hash = ? WHERE email = ? AND pw_hash <> ''").run(hash, email);
+      const tpl = mailTpl.contactPinMail(pin, rows[0].name);
+      try { await mailer.sendMail(email, tpl.subject, tpl.text, tpl.html); }
+      catch (e) { console.error("[contact] PIN 재설정 메일 실패:", e.message); }
+    }
+    // 이메일 존재 여부를 노출하지 않도록 항상 동일한 안내(열거 공격 방지)
+    return res.status(200).render("contact", {
+      ...res.locals, title: "문의하기", mode: "check", cap: newCaptcha(req),
+      member: sessMember(req), topics: CONTACT_TOPICS, error: null,
+      notice: "입력하신 이메일로 접수된 문의가 있다면 새 PIN을 보내드렸습니다. 메일함(스팸함 포함)을 확인해 주세요.",
+      form: { email },
     });
   });
 
