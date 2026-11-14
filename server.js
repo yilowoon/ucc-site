@@ -497,6 +497,7 @@ app.get("/", (req, res) => {
       .replace(/__BASE__/g, base)
       .replace(/__CSRF__/g, csrf)
       .replace(/__BRAND_KO__/g, req.lang === "en" ? "UCC" : "도시공동체본부")
+      .replace(/__FOOTER_BRAND__/g, req.lang === "en" ? "UCC" : "사단법인 도시공동체본부")
       .replace(/__LANGTOGGLE__/g, langToggle)
       .replace(/__MEMBERNAV__/g, nav)
       .replace(/__MEMBERNAV_M__/g, navM)
