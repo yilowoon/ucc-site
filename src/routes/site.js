@@ -10,6 +10,8 @@ const multer = require("multer");
 const { db, UPLOAD_DIR } = require("../db");
 const cfg = require("../config");
 const { PAGES } = require("../pages");
+let PAGES_EN = {}; // 정적 페이지 영문 번역(빌드 산출물, 선택)
+try { PAGES_EN = require("../pages-en.json"); } catch (e) { PAGES_EN = {}; }
 const chatkb = require("../chatkb"); // 소개 챗봇: 지식베이스 + Gemini 응답
 const mailer = require("../mailer"); // 이메일 인증 코드 발송
 const mailTpl = require("../mail-templates"); // 메일 본문(문의 PIN 재설정 등)
@@ -124,8 +126,13 @@ module.exports = function siteRoutes({ verifyCsrf }) {
   // ---------- 소개/약관 콘텐츠 페이지 ----------
   function renderPage(group) {
     return (req, res, next) => {
-      const page = PAGES[req.params.slug];
-      if (!page || page.group !== group) return next();
+      const base = PAGES[req.params.slug];
+      if (!base || base.group !== group) return next();
+      const page = { ...base, slug: req.params.slug };
+      if (req.lang === "en") {
+        const en = PAGES_EN[req.params.slug];
+        if (en) { if (en.title) page.title = en.title; if (en.html) page.html = en.html; }
+      }
       res.render("page", { ...res.locals, title: page.title, page });
     };
   }
