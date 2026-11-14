@@ -136,11 +136,17 @@ function L(lang, ko) {
   return Object.prototype.hasOwnProperty.call(EN, key) ? EN[key] : ko;
 }
 
+// 자동 생성 사전(뷰 고정 한글 → 영어) 병합. tools/build-ui-dict.js 산출물(선택).
+let GEN = {};
+try { GEN = require("./i18n-generated.json"); } catch (e) { GEN = {}; }
+// 수동 사전(EN)이 생성 사전보다 우선(정제된 번역 유지).
+const MERGED = Object.assign({}, GEN, EN);
+
 // 렌더된 HTML 전체에서 사전의 한글 UI 문자열을 영어로 일괄 치환(긴 키 우선 → 부분겹침 방지).
 // 영어 사이트(/en)의 콘텐츠는 이미 _en(영어)이라, 남은 한글은 대부분 템플릿 고정 라벨뿐이다.
 function escapeRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
-const PAIRS = Object.entries(EN)
-  .filter(([k, v]) => k !== v && k)
+const PAIRS = Object.entries(MERGED)
+  .filter(([k, v]) => k !== v && k && /[가-힣]/.test(k))
   .sort((a, b) => b[0].length - a[0].length)
   .map(([k, v]) => [new RegExp(escapeRe(k), "g"), v]);
 function translateHtml(html) {
