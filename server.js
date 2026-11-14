@@ -183,6 +183,52 @@ function baseLocals(req) {
     baseUrl: req.protocol + "://" + req.get("host"), // OG 절대 URL용
   };
 }
+// ---- 언어(한국어 | ENGLISH): '/en' 경로 접두어로 영어 사이트 ----
+// '/en/...' 요청은 접두어를 벗겨 기존 라우트가 그대로 처리하게 하고, 렌더 시 영문(_en)·영문 UI를 쓴다.
+const i18n = require("./src/i18n");
+app.use((req, res, next) => {
+  const orig = req.url;
+  let lang = "ko", base = "";
+  if (req.path === "/en" || req.path.startsWith("/en/")) {
+    lang = "en"; base = "/en";
+    const rest = req.url.slice(3); // '/en' 제거
+    req.url = rest === "" || rest[0] !== "/" ? "/" + rest : rest; // '/en'→'/', '/en?x'→'/?x', '/en/a'→'/a'
+  }
+  req.lang = lang;
+  res.locals.lang = lang;
+  res.locals.langBase = base;            // 내부 링크 접두어('' | '/en')
+  res.locals.L = (ko) => i18n.L(lang, ko); // 한글 UI 문자열 → 영어
+  res.locals.href = (p) => base + (p || ""); // 링크 접두 헬퍼
+  const koPath = lang === "en" ? req.url : orig; // /en 제거된(=한국어) 경로
+  res.locals.urlKo = koPath;
+  res.locals.urlEn = "/en" + (koPath === "/" ? "" : koPath);
+  // 토글용 절대 URL(프리픽서가 건드리지 않도록 — 한국어로 돌아가는 링크 보호)
+  const abs = req.protocol + "://" + req.get("host");
+  res.locals.urlKoAbs = abs + koPath;
+  res.locals.urlEnAbs = abs + res.locals.urlEn;
+
+  // 영어 사이트: 렌더된 HTML의 내부 링크(href/action="/...")에 '/en' 접두를 자동 부여.
+  // 자산(css/js/img/uploads 등)·외부·앵커·이미 /en 인 것은 제외 → 템플릿 수정 없이 영어 내비게이션 유지.
+  if (lang === "en") {
+    const origSend = res.send.bind(res);
+    res.send = (body) => {
+      // 주의: res.render → res.send 시점엔 Content-Type 미설정(빈 값)일 수 있다.
+      // JSON/SVG/XML 등 명시적 비-HTML 타입만 제외하고, 빈 타입(=HTML 렌더)과 html 은 번역한다.
+      const ct = res.get("Content-Type") || "";
+      if (typeof body === "string" && (!ct || /html/i.test(ct)) && /<[a-z!]/i.test(body)) {
+        // 1) 내부 링크에 /en 접두
+        body = body.replace(
+          /(\s(?:href|action)=")(\/(?!en\/|en"|css\/|js\/|img\/|uploads\/|fonts\/|favicon|robots\.txt|sitemap)[^"#]*)"/g,
+          '$1/en$2"'
+        );
+        // 2) 템플릿 고정 한글 UI 라벨 → 영어(사전)
+        body = i18n.translateHtml(body);
+      }
+      return origSend(body);
+    };
+  }
+  next();
+});
 app.use((req, res, next) => {
   res.locals = { ...res.locals, ...baseLocals(req) };
   next();
@@ -385,46 +431,72 @@ app.use((req, res, next) => {
 // ---- Routes ----
 // 홈: 정적 index.html에 OG 절대 URL(__BASE__)을 요청 호스트 기준으로 주입해 서빙
 const INDEX_HTML = fs.readFileSync(path.join(__dirname, "public", "index.html"), "utf8");
-const GUEST_NAV = '<li><a href="/login">로그인</a></li><li><a href="/signup" class="nav-cta">회원가입</a></li>';
-const GUEST_NAV_M = '<a href="/login">로그인</a><a href="/signup">회원가입</a>';
-const CAL_NAV = '<li><a href="/members/calendar">멤버십캘린더</a></li>';
-const CAL_NAV_M = '<a href="/members/calendar">멤버십캘린더</a>';
+// 영문 홈(선택): tools/build-index-en.js 가 생성. 없으면 한국어 홈으로 폴백.
+let INDEX_HTML_EN = null;
+try { INDEX_HTML_EN = fs.readFileSync(path.join(__dirname, "public", "index.en.html"), "utf8"); } catch (e) { INDEX_HTML_EN = null; }
+const NAV = {
+  ko: {
+    guest: '<li><a href="/login">로그인</a></li><li><a href="/signup" class="nav-cta">회원가입</a></li>',
+    guestM: '<a href="/login">로그인</a><a href="/signup">회원가입</a>',
+    cal: '<li><a href="/members/calendar">멤버십캘린더</a></li>', calM: '<a href="/members/calendar">멤버십캘린더</a>',
+    my: '<li><a href="/mypage">마이페이지</a></li>', myM: '<a href="/mypage">마이페이지</a>',
+    logout: "로그아웃", admin: "관리자",
+  },
+  en: {
+    guest: '<li><a href="/login">Log in</a></li><li><a href="/signup" class="nav-cta">Sign up</a></li>',
+    guestM: '<a href="/login">Log in</a><a href="/signup">Sign up</a>',
+    cal: '<li><a href="/members/calendar">Membership Calendar</a></li>', calM: '<a href="/members/calendar">Membership Calendar</a>',
+    my: '<li><a href="/mypage">My Page</a></li>', myM: '<a href="/mypage">My Page</a>',
+    logout: "Log out", admin: "Admin",
+  },
+};
+const GUEST_NAV = NAV.ko.guest;
+const GUEST_NAV_M = NAV.ko.guestM;
+const CAL_NAV = NAV.ko.cal;
+const CAL_NAV_M = NAV.ko.calM;
 app.get("/", (req, res) => {
   const base = req.protocol + "://" + req.get("host");
+  const L = req.lang === "en" ? NAV.en : NAV.ko;
+  const html = (req.lang === "en" && INDEX_HTML_EN) ? INDEX_HTML_EN : INDEX_HTML;
   const member = req.session && req.session.member;
-  let nav = GUEST_NAV, navM = GUEST_NAV_M;
+  let nav = L.guest, navM = L.guestM;
   if (member) {
     nav =
-      '<li><a href="/mypage">마이페이지</a></li>' +
-      '<li><a href="#" class="nav-cta" onclick="document.getElementById(\'mLogout\').submit();return false;">로그아웃</a></li>';
+      L.my +
+      '<li><a href="#" class="nav-cta" onclick="document.getElementById(\'mLogout\').submit();return false;">' + L.logout + '</a></li>';
     navM =
-      '<a href="/mypage">마이페이지</a>' +
-      '<a href="#" onclick="document.getElementById(\'mLogout\').submit();return false;">로그아웃</a>';
+      L.myM +
+      '<a href="#" onclick="document.getElementById(\'mLogout\').submit();return false;">' + L.logout + '</a>';
   }
   // 관리자 세션(회원과 별개)에 따른 관리자 메뉴 — 서브페이지(header/footer.ejs)와 동일하게
   const isAdmin = !!(req.session && req.session.admin);
   // 회원 또는 관리자면 '멤버십캘린더' 메뉴를 맨 앞에 노출(서브페이지와 통일)
-  if (member || isAdmin) { nav = CAL_NAV + nav; navM = CAL_NAV_M + navM; }
+  if (member || isAdmin) { nav = L.cal + nav; navM = L.calM + navM; }
   const csrf = req.session.csrf || "";
   let adminNav = "", adminNavM = "";
-  let adminFoot = '<a href="/admin/login">관리자</a>';
+  let adminFoot = '<a href="/admin/login">' + L.admin + '</a>';
   if (isAdmin) {
-    adminNav = '<li><a href="/admin" class="nav-admin">관리자</a></li>';
-    adminNavM = '<a href="/admin">관리자</a>';
+    adminNav = '<li><a href="/admin" class="nav-admin">' + L.admin + '</a></li>';
+    adminNavM = '<a href="/admin">' + L.admin + '</a>';
     adminFoot =
-      '<a href="/admin">관리자</a>' +
+      '<a href="/admin">' + L.admin + '</a>' +
       '<form action="/admin/logout" method="post" style="display:inline">' +
       '<input type="hidden" name="_csrf" value="' + csrf + '" />' +
-      '<button type="submit" class="linkbtn">로그아웃</button></form>';
+      '<button type="submit" class="linkbtn">' + L.logout + '</button></form>';
   }
   // 홈 응답은 로그인 여부(세션)에 따라 메뉴가 달라지므로 캐시 금지 —
   // 브라우저/프록시가 로그인 전 게스트 화면을 캐시해 로그인 후에도 재사용하는 것을 방지
+  // 언어 토글: 한국어↔ENGLISH. 반대 언어로 가는 링크(프리픽서가 안 건드리게 절대/‘/en’ 사용).
+  const langToggle = req.lang === "en"
+    ? '<a href="' + base + '/" class="lang-toggle" rel="alternate" hreflang="ko">한국어</a>'
+    : '<a href="/en" class="lang-toggle" rel="alternate" hreflang="en">ENGLISH</a>';
   res.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
   res.set("Vary", "Cookie");
   res.type("html").send(
-    INDEX_HTML
+    html
       .replace(/__BASE__/g, base)
       .replace(/__CSRF__/g, csrf)
+      .replace(/__LANGTOGGLE__/g, langToggle)
       .replace(/__MEMBERNAV__/g, nav)
       .replace(/__MEMBERNAV_M__/g, navM)
       .replace(/__ADMINNAV__/g, adminNav)

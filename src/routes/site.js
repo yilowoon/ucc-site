@@ -13,6 +13,7 @@ const { PAGES } = require("../pages");
 const chatkb = require("../chatkb"); // 소개 챗봇: 지식베이스 + Gemini 응답
 const mailer = require("../mailer"); // 이메일 인증 코드 발송
 const mailTpl = require("../mail-templates"); // 메일 본문(문의 PIN 재설정 등)
+const i18n = require("../i18n"); // 홈 피드 게시판명 한→영
 const IS_PROD = process.env.NODE_ENV === "production";
 const KOREA_SIDO = require("../korea-sido.json"); // 전국 시·도 경계 지오메트리
 
@@ -216,7 +217,8 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const pages = Math.max(1, Math.ceil(total / PER));
     const cur = Math.min(page, pages);
     const items = db.prepare("SELECT * FROM newsletter ORDER BY id DESC LIMIT ? OFFSET ?").all(PER, (cur - 1) * PER);
-    res.render("newsletter", { ...res.locals, title: "뉴스레터", items, page: cur, pages, total, per: PER });
+    if (req.lang === "en") items.forEach((n) => { if (n.title_en) n.title = n.title_en; });
+    res.render("newsletter", { ...res.locals, title: req.lang === "en" ? "Daily News" : "데일리뉴스", items, page: cur, pages, total, per: PER });
   });
   // 생성 이미지(SVG): 기사 사진이 1장뿐일 때 키워드·제목 기반 이미지를 즉석 생성
   router.get("/newsletter/gen/:id.svg", (req, res, next) => {
@@ -238,6 +240,11 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const n = db.prepare("SELECT * FROM newsletter WHERE id = ?").get(id);
     if (!n) return next();
     try { db.prepare("UPDATE newsletter SET views = views + 1 WHERE id = ?").run(id); n.views = (n.views || 0) + 1; } catch (e) {}
+    if (req.lang === "en") {
+      if (n.title_en) n.title = n.title_en;
+      if (n.summary_en) n.summary = n.summary_en;
+      if (n.content_en) n.content = n.content_en;
+    }
     n.image1 = nlImg(n.image1, n.id);
     n.image2 = nlImg(n.image2, n.id);
     const prev = db.prepare("SELECT id, title FROM newsletter WHERE id < ? ORDER BY id DESC LIMIT 1").get(id); // 더 오래된 글
@@ -424,38 +431,40 @@ module.exports = function siteRoutes({ verifyCsrf }) {
 
   // ---------- 홈 API (최신 게시물) ----------
   router.get("/api/home", (req, res) => {
+    const en = req.lang === "en";
+    const pick = (ko, env) => (en && env ? env : ko); // 영어면 _en, 없으면 한국어
     const notices = cfg.NOTICE_BOARDS.map((b) => {
       const row = db
-        .prepare("SELECT id, title, created_at FROM posts WHERE board = ? ORDER BY pinned DESC, id DESC LIMIT 1")
+        .prepare("SELECT id, title, title_en, created_at FROM posts WHERE board = ? ORDER BY pinned DESC, id DESC LIMIT 1")
         .get(b);
       const meta = cfg.BOARDS[b];
       return {
-        board: b, name: meta.name, en: meta.en,
-        post: row ? { id: row.id, title: row.title, date: cfg.formatDate(row.created_at) } : null,
+        board: b, name: en ? i18n.L("en", meta.name) : meta.name, en: meta.en,
+        post: row ? { id: row.id, title: pick(row.title, row.title_en), date: cfg.formatDate(row.created_at) } : null,
       };
     });
 
     const newsRows = db
       .prepare(
-        `SELECT p.id, p.title, p.created_at,
+        `SELECT p.id, p.title, p.title_en, p.created_at,
                 (SELECT filename FROM attachments a WHERE a.post_id = p.id AND a.mimetype LIKE 'image/%' ORDER BY sort, id LIMIT 1) AS thumb
            FROM posts p WHERE p.board = 'news' ORDER BY p.pinned DESC, p.id DESC LIMIT 8`
       )
       .all();
     const news = newsRows.map((r) => ({
-      id: r.id, title: r.title, date: cfg.formatDate(r.created_at),
+      id: r.id, title: pick(r.title, r.title_en), date: cfg.formatDate(r.created_at),
       thumb: r.thumb ? "/uploads/" + r.thumb : null,
     }));
 
     // 최신 뉴스레터 1건 (홈 '주요 최근 소식'용)
     const nl = db
-      .prepare("SELECT id, title, summary, content, source, url, image1, image2, created_at FROM newsletter ORDER BY id DESC LIMIT 1")
+      .prepare("SELECT id, title, title_en, summary, summary_en, content, content_en, source, url, image1, image2, created_at FROM newsletter ORDER BY id DESC LIMIT 1")
       .get();
     const genImg = (v, id) => (v === "gen" ? "/newsletter/gen/" + id + ".svg" : v);
     const newsletter = nl ? {
-      id: nl.id, title: nl.title, source: nl.source, url: nl.url,
+      id: nl.id, title: pick(nl.title, nl.title_en), source: nl.source, url: nl.url,
       date: cfg.formatDate(nl.created_at),
-      lead: homeLead(nl.content, nl.summary),
+      lead: homeLead(pick(nl.content, nl.content_en), pick(nl.summary, nl.summary_en)),
       image1: genImg(nl.image1, nl.id), image2: genImg(nl.image2, nl.id),
     } : null;
 

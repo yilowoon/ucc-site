@@ -39,6 +39,16 @@
     var uccGrid = document.getElementById("uccNewsGrid");
     if (!brief && !uccGrid) return;
 
+    // 언어(한국어 | ENGLISH) — <html lang>으로 판별해 홈 피드 라벨을 전환
+    var EN = (document.documentElement.lang || "ko").toLowerCase().indexOf("en") === 0;
+    var T = {
+      dailyBadge: EN ? "Daily News" : "데일리뉴스",
+      noPosts: EN ? "No posts yet." : "등록된 게시물이 없습니다.",
+      noNews: EN ? "No news yet." : "등록된 소식이 없습니다.",
+      noImage: EN ? "No image" : "이미지 없음",
+      loadFail: EN ? "Could not load updates." : "소식을 불러오지 못했습니다.",
+    };
+
     function esc(s) {
       return String(s == null ? "" : s)
         .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -59,7 +69,7 @@
             parts.push(
               '<a class="nl-feature" href="/newsletter/' + encodeURIComponent(nl.id) + '">' +
                 '<div class="nl-feature-text">' +
-                  '<span class="nl-feature-badge">데일리뉴스</span>' +
+                  '<span class="nl-feature-badge">' + T.dailyBadge + "</span>" +
                   '<h3 class="nl-feature-title">' + esc(nl.title) + "</h3>" +
                   '<p class="nl-feature-summary">' + esc(nl.lead || nl.summary || "") + "</p>" +
                   '<span class="nl-feature-foot">' + esc(nl.source || "") +
@@ -95,7 +105,7 @@
                 '<a class="' + cls + '" href="/board/' + n.board + '">' +
                 '<span class="brief-badge">' + esc(n.name) + "</span>" +
                 '<span class="brief-en">' + esc(n.en) + "</span>" +
-                '<span class="brief-title brief-empty">등록된 게시물이 없습니다.</span>' +
+                '<span class="brief-title brief-empty">' + T.noPosts + "</span>" +
                 '<span class="brief-foot"><span class="brief-date"></span><span class="brief-arrow">→</span></span></a>'
               );
             }).join("");
@@ -109,13 +119,13 @@
         if (uccGrid) {
           var items = (data.news || []).slice(0, 3);
           if (!items.length) {
-            uccGrid.innerHTML = '<div class="ucc-empty">등록된 소식이 없습니다.</div>';
+            uccGrid.innerHTML = '<div class="ucc-empty">' + T.noNews + "</div>";
             return;
           }
           uccGrid.innerHTML = items.map(function (it) {
             var thumb = it.thumb
               ? '<span class="ucc-thumb" style="background-image:url(\'' + encodeURI(it.thumb) + "')\"></span>"
-              : '<span class="ucc-thumb ucc-thumb--empty">이미지 없음</span>';
+              : '<span class="ucc-thumb ucc-thumb--empty">' + T.noImage + "</span>";
             return (
               '<a class="ucc-card" href="/board/news/' + it.id + '">' + thumb +
               '<span class="ucc-body"><span class="ucc-title">' + esc(it.title) +
@@ -125,8 +135,8 @@
         }
       })
       .catch(function () {
-        if (brief) brief.innerHTML = '<div class="brief-loading">소식을 불러오지 못했습니다.</div>';
-        if (uccGrid) uccGrid.innerHTML = '<div class="ucc-empty">소식을 불러오지 못했습니다.</div>';
+        if (brief) brief.innerHTML = '<div class="brief-loading">' + T.loadFail + "</div>";
+        if (uccGrid) uccGrid.innerHTML = '<div class="ucc-empty">' + T.loadFail + "</div>";
       });
   })();
 

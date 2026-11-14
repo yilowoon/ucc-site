@@ -65,7 +65,7 @@ module.exports = function boardRoutes() {
 
     const rows = db
       .prepare(
-        `SELECT p.id, p.title, p.author, p.views, p.pinned, p.created_at,
+        `SELECT p.id, p.title, p.title_en, p.author, p.views, p.pinned, p.created_at,
                 (SELECT filename FROM attachments a WHERE a.post_id = p.id ORDER BY sort, id LIMIT 1) AS thumb,
                 (SELECT COUNT(*) FROM attachments a WHERE a.post_id = p.id) AS attach_count
            FROM posts p
@@ -74,6 +74,11 @@ module.exports = function boardRoutes() {
           LIMIT ? OFFSET ?`
       )
       .all(...params, PER_PAGE, offset);
+
+    // 영어 사이트: 제목을 영문본(_en)으로 표시(없으면 한국어 폴백)
+    const en = req.lang === "en";
+    if (en) rows.forEach((r) => { if (r.title_en) r.title = r.title_en; });
+    const dmeta = en ? { ...meta, name: res.locals.L(meta.name), desc: res.locals.L(meta.desc) } : meta;
 
     const listOgExtra = board === "global"
       ? {
@@ -86,9 +91,9 @@ module.exports = function boardRoutes() {
 
     res.render("board-list", {
       ...res.locals,
-      title: meta.name,
+      title: dmeta.name,
       currentBoard: board,
-      meta,
+      meta: dmeta,
       posts: rows,
       page,
       totalPages,
@@ -127,14 +132,24 @@ module.exports = function boardRoutes() {
     // 이전 / 다음 글
     const prev = db
       .prepare(
-        "SELECT id, title FROM posts WHERE board = ? AND id < ? ORDER BY id DESC LIMIT 1"
+        "SELECT id, title, title_en FROM posts WHERE board = ? AND id < ? ORDER BY id DESC LIMIT 1"
       )
       .get(board, id);
     const next_ = db
       .prepare(
-        "SELECT id, title FROM posts WHERE board = ? AND id > ? ORDER BY id ASC LIMIT 1"
+        "SELECT id, title, title_en FROM posts WHERE board = ? AND id > ? ORDER BY id ASC LIMIT 1"
       )
       .get(board, id);
+
+    // 영어 사이트: 제목·본문을 영문본(_en)으로(없으면 한국어 폴백)
+    const en = req.lang === "en";
+    const dmeta = en ? { ...cfg.BOARDS[board], name: res.locals.L(cfg.BOARDS[board].name), desc: res.locals.L(cfg.BOARDS[board].desc) } : cfg.BOARDS[board];
+    if (en) {
+      if (post.title_en) post.title = post.title_en;
+      if (post.content_en) post.content = post.content_en;
+      if (prev && prev.title_en) prev.title = prev.title_en;
+      if (next_ && next_.title_en) next_.title = next_.title_en;
+    }
 
     // 지구촌소식브리프: 외부 공유용 OG 통일(이미지 고정 + 글별 제목/설명)
     const ogExtra = board === "global"
@@ -150,7 +165,7 @@ module.exports = function boardRoutes() {
       ...res.locals,
       title: post.title,
       currentBoard: board,
-      meta: cfg.BOARDS[board],
+      meta: dmeta,
       post,
       images,
       files,

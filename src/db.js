@@ -315,6 +315,33 @@ try { db.exec("ALTER TABLE newsletter ADD COLUMN content TEXT NOT NULL DEFAULT '
 // newsletter: 조회수
 try { db.exec("ALTER TABLE newsletter ADD COLUMN views INTEGER NOT NULL DEFAULT 0"); } catch (e) {}
 
+/* ── 한국어 | ENGLISH 이원화: 영어 번역본(_en) 컬럼 ───────────────────────────
+ * 각 콘텐츠 테이블에 영문 컬럼을 멱등 ALTER 로 추가한다. 비어 있으면(''): 아직 미번역 →
+ * 렌더 시 한국어로 폴백한다. Gemini 파이프라인(src/translate.js)이 작성/수집 시 채운다. */
+const EN_COLUMNS = {
+  posts:      ["title_en", "content_en"],
+  newsletter: ["title_en", "summary_en", "content_en"],
+  columns:    ["title_en", "subtitle_en", "lede_en", "body_en", "author_title_en", "toc_en"],
+  partners:   ["name_en", "field_en", "intro_en"],
+};
+for (const [tbl, cols] of Object.entries(EN_COLUMNS)) {
+  for (const c of cols) {
+    try { db.exec(`ALTER TABLE ${tbl} ADD COLUMN ${c} TEXT NOT NULL DEFAULT ''`); } catch (e) {}
+  }
+}
+// 한글 오타 자동 교정 백업 로그(원문 보존 — 만일을 위한 복구용)
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS proofread_log (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    tbl        TEXT NOT NULL,          -- 대상 테이블(posts·columns 등)
+    row_id     INTEGER NOT NULL,       -- 대상 행 id
+    field      TEXT NOT NULL,          -- 교정된 필드명
+    original   TEXT NOT NULL,          -- 교정 전 원문
+    corrected  TEXT NOT NULL,          -- 교정 후
+    created_at TEXT NOT NULL
+  )`);
+} catch (e) {}
+
 // 회원 캘린더용 사이트 일정(관리자 직접 등록) — 구글 캘린더 일정과 함께 표시
 try {
   db.exec(`CREATE TABLE IF NOT EXISTS cal_events (

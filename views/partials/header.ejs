@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="<%= (typeof lang !== 'undefined' && lang === 'en') ? 'en' : 'ko' %>">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -127,6 +127,13 @@
             <li><a href="/signup" class="nav-cta">회원가입</a></li>
           <% } %>
           <% if (isAdmin) { %><li><a href="/admin" class="nav-admin">관리자</a></li><% } %>
+          <li class="nav-lang">
+            <% if (typeof lang !== 'undefined' && lang === 'en') { %>
+              <a href="<%= urlKoAbs %>" class="lang-toggle" rel="alternate" hreflang="ko">한국어</a>
+            <% } else { %>
+              <a href="<%= urlEn %>" class="lang-toggle" rel="alternate" hreflang="en">ENGLISH</a>
+            <% } %>
+          </li>
         </ul>
       </nav>
       <form id="mLogout" action="/logout" method="post" hidden><input type="hidden" name="_csrf" value="<%= csrfToken %>" /></form>
@@ -197,6 +204,13 @@
         <a href="/signup">회원가입</a>
       <% } %>
       <% if (isAdmin) { %><a href="/admin">관리자</a><% } %>
+      <div class="mobile-lang">
+        <% if (typeof lang !== 'undefined' && lang === 'en') { %>
+          <a href="<%= urlKoAbs %>" rel="alternate" hreflang="ko">한국어</a>
+        <% } else { %>
+          <a href="<%= urlEn %>" rel="alternate" hreflang="en">ENGLISH</a>
+        <% } %>
+      </div>
     </div>
   </header>
 

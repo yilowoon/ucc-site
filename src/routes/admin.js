@@ -10,7 +10,34 @@ const bcrypt = require("bcryptjs");
 
 const { db, UPLOAD_DIR } = require("../db");
 const cfg = require("../config");
+const translate = require("../translate"); // 한글 교정 + 한→영 번역(Gemini)
 const mailer = require("../mailer"); // 정회원 전환 시 환영 메일 발송
+
+/* 게시물 이원화 처리(백그라운드): ① 한글 오타 자동 교정(원문 교체 + 백업 로그)
+ * ② 영어 번역본(_en) 생성. 실패해도 한국어 글은 그대로 노출되므로 안전. */
+async function processPostI18n(postId) {
+  try {
+    const p = db.prepare("SELECT id, title, content FROM posts WHERE id = ?").get(postId);
+    if (!p) return;
+    // 1) 한글 오타·맞춤법·띄어쓰기 교정 → 원문 교체 + proofread_log 백업
+    for (const f of ["title", "content"]) {
+      const r = await translate.proofreadKo(p[f]);
+      if (r.changed) {
+        try {
+          db.prepare("INSERT INTO proofread_log (tbl,row_id,field,original,corrected,created_at) VALUES ('posts',?,?,?,?,?)")
+            .run(postId, f, p[f], r.text, new Date().toISOString());
+          db.prepare(`UPDATE posts SET ${f} = ? WHERE id = ?`).run(r.text, postId);
+          p[f] = r.text;
+        } catch (e) { console.error("[i18n] 교정 저장 실패:", e.message); }
+      }
+    }
+    // 2) 영어 번역본 생성(한 번의 호출로 제목+본문)
+    const en = await translate.toEnglishObject({ title: p.title, content: p.content });
+    db.prepare("UPDATE posts SET title_en = ?, content_en = ? WHERE id = ?")
+      .run(en.title || "", en.content || "", postId);
+    console.log(`[i18n] post ${postId} 교정+영문 완료`);
+  } catch (e) { console.error("[i18n] post", postId, "처리 오류:", e.message); }
+}
 const oauth = require("../oauth");   // 카카오 인가(나에게 보내기) — baseUrl/state 재사용
 const kakaoMemo = require("../kakao"); // 카카오톡 '나에게 보내기' 자동발송
 const solapi = require("../solapi"); // 카카오 친구톡(솔라피) — 회원 대상 1000자 발송
@@ -250,6 +277,7 @@ module.exports = function adminRoutes({ verifyCsrf }) {
         .run(board, title, content, author, pinned, now, now);
       const postId = info.lastInsertRowid;
       insertAttachments(postId, req.files);
+      processPostI18n(postId); // 백그라운드: 한글 교정 + 영문 번역(_en)
       res.redirect(`/board/${board}/${postId}`);
     } catch (e) {
       cleanupFiles(req.files);
@@ -313,6 +341,7 @@ module.exports = function adminRoutes({ verifyCsrf }) {
         }
       }
       insertAttachments(id, req.files);
+      processPostI18n(id); // 백그라운드: 한글 교정 + 영문 재번역(_en)
       res.redirect(`/board/${board}/${id}`);
     } catch (e) {
       cleanupFiles(req.files);
