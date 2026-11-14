@@ -1171,6 +1171,17 @@ async function _collectOnceInner({ force = false } = {}) {
 
   const out = publishReport(report, sources, seq.key, theme, true, guid);
   console.log(`[report] 발행 완료 — post ${out.postId} (AI집필/gemini, 첨부 ${out.attached}, ${Math.round((Date.now() - t0) / 1000)}초 소요)`);
+
+  // 영어 사이트용 번역(_en): 게시글 '화면 텍스트'만 번역한다. 첨부 docx(지구촌소식브리프 보고서)는 번역하지 않는다.
+  try {
+    const translate = require("./translate");
+    const row = db.prepare("SELECT title, content FROM posts WHERE id = ?").get(out.postId);
+    if (row && translate.hasGemini()) {
+      const en = await translate.toEnglishObject({ title: row.title, content: row.content });
+      db.prepare("UPDATE posts SET title_en = ?, content_en = ? WHERE id = ?").run(en.title || "", en.content || "", out.postId);
+      console.log(`[report] 영문 번역 완료 — post ${out.postId} (첨부 docx 제외)`);
+    }
+  } catch (e) { console.error("[report] 영문 번역 실패:", e.message); }
   // 카카오톡 발송은 발행과 분리되어 매일 08:00 KST 스케줄러가 '오늘자 발행 글'을 읽어 전송한다(아래 startKakaoScheduler).
   return { published: true, ai: true, provider: "gemini", dayKey: seq.key, theme: theme.key, ...out };
 }
