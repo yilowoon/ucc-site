@@ -424,13 +424,14 @@ strong { font-weight: 700; color: var(--green-700); }
   .values-grid, .sse-grid, .stats-grid { grid-template-columns: 1fr; }
 }
 
-/* 언어 토글(한국어 | ENGLISH) */
-.nav-lang { display: flex; align-items: center; }
-.nav-lang .lang-toggle {
+/* 언어 토글(한국어 | ENGLISH) — 헤더 글자색을 상속해 홈 히어로(흰색)·서브/스크롤(어두움) 모두에서 보이게 */
+.nav-lang { display: flex; align-items: center; margin-left: 2px; }
+.nav-list .nav-lang .lang-toggle {
   font-weight: 700; font-size: .78rem; letter-spacing: .04em;
-  padding: 5px 11px; border: 1px solid var(--line, #d9d9d9); border-radius: 999px;
-  color: var(--ink-soft, #566); text-decoration: none; white-space: nowrap;
+  padding: 5px 11px; border: 1px solid currentColor; border-radius: 999px;
+  text-decoration: none; white-space: nowrap; opacity: .82;
+  /* color 는 지정하지 않음 → .nav-list a 규칙(홈 히어로=흰색/스크롤·서브=어두움)을 그대로 따른다 */
 }
-.nav-lang .lang-toggle:hover { border-color: var(--green-700, #1f6b4f); color: var(--green-800, #14503b); }
+.nav-list .nav-lang .lang-toggle:hover { opacity: 1; }
 .mobile-lang { padding: 12px 0 2px; margin-top: 6px; border-top: 1px solid var(--line, #eee); }
-.mobile-lang a { font-weight: 700; text-decoration: none; }
+.mobile-lang a { font-weight: 700; text-decoration: none; color: inherit; }
