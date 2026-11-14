@@ -550,4 +550,7 @@ app.listen(PORT, () => {
   try { require("./src/member-reminder").startScheduler(); } catch (e) { console.error("[reminder] 스케줄러 시작 실패:", e.message); }
   // 회원 캘린더: 구글 캘린더(iCal) 프리페치 + 30분 주기 동기화
   try { require("./src/gcal").start(); } catch (e) { console.error("[gcal] 시작 실패:", e.message); }
+  // 한국어 | ENGLISH: 미번역 _en 콘텐츠를 부팅 후 백그라운드로 자동 번역(배포 후 1회).
+  // → 평소 배포(git pull + restart)만으로 영어 콘텐츠가 채워진다. 이미 번역된 행은 건너뜀.
+  try { require("./src/i18n-backfill").startBackfill(); } catch (e) { console.error("[i18n] 자동 백필 시작 실패:", e.message); }
 });
