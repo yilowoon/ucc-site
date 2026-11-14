@@ -55,7 +55,8 @@
         .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
     }
 
-    fetch("/api/home", { headers: { Accept: "application/json" } })
+    // 영어 홈에서는 /en/api/home 을 호출해야 영문(_en) 콘텐츠를 받는다(절대경로 fetch 는 서버 링크접두 대상 아님)
+    fetch((EN ? "/en" : "") + "/api/home", { headers: { Accept: "application/json" } })
       .then(function (r) { return r.json(); })
       .then(function (data) {
         // 주요 최근 소식: (1) 최신 뉴스레터 피처 + (2) 기존 공지 3단(공지사항·사업안내·보도자료)
