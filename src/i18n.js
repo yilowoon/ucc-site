@@ -127,6 +127,19 @@ const EN = {
   "개인정보처리방침": "Privacy Policy",
   "이용약관": "Terms of Use",
   "이메일무단수집거부": "No Email Collection",
+
+  // 랜딩 히어로(제목이 <strong>·<br>로 쪼개져 있어 조각 단위로 자연스럽게 교정)
+  //  AI: "누구나 쓰는 AI,<br><strong>나의 무기</strong>로 만드세요" → "Make everyday AI / your weapon."
+  "누구나 쓰는 AI,": "Make everyday AI",
+  "나의 무기": "your weapon",
+  "로 만드세요": ".",
+  //  ESG: "지속가능의 시대,<br><strong>ESG 전문가</strong>로 앞서가세요"
+  "지속가능의 시대,": "The age of sustainability —",
+  "ESG 전문가": "lead as an ESG Expert",
+  "로 앞서가세요": ".",
+  //  RDC: "지역을 되살리는 힘,<br><strong>지역혁신개발전문가(RDC)</strong>"
+  "지역을 되살리는 힘,": "The power to revive regions —",
+  "지역혁신개발전문가(RDC)": "Regional Innovation Development Expert (RDC)",
 };
 
 /** lang='en' 이면 사전의 영어, 없거나 한국어면 원문 그대로. */
