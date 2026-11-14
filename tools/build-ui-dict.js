@@ -71,6 +71,13 @@ function extract(htmlRaw, set) {
     const t = v.replace(/\s+/g, " ").trim();
     if (t.length >= 2 && hasKorean(t) && !looksLikeCode(t)) set.add(t);
   }
+  // EJS/JS 데이터 문자열(따옴표로 감싼 한글 리터럴) — 커리큘럼·FAQ 등 <% 배열 %> 데이터가
+  // 렌더되어 화면에 나오므로 번역 대상. (script/style 은 위에서 제거됨)
+  const reStr = /(["'])([^"'\n<>]*[가-힣][^"'\n<>]*)\1/g;
+  while ((m = reStr.exec(html))) {
+    const t = m[2].replace(/\s+/g, " ").trim();
+    if (t.length >= 2 && hasKorean(t) && !looksLikeCode(t)) set.add(t);
+  }
 }
 
 async function run() {
