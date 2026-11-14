@@ -38,16 +38,30 @@ function listViews() {
   return files;
 }
 
+// UI 라벨로 보기 어려운(코드·블록성) 조각 배제
+function looksLikeCode(t) {
+  if (t.length > 300) return true;                 // UI 라벨/짧은 문장만
+  if (/[{};]/.test(t)) return true;                // CSS/JS 조각
+  if (/\/\*|\*\/|=>|function\s|var\s|const\s|let\s/.test(t)) return true;
+  if (/^[\s0-9.,%:\/\-]+$/.test(t)) return true;   // 숫자/기호만
+  return false;
+}
+
 // 한 파일에서 '순수 리터럴 한글' 문구 추출(텍스트 노드 + 일부 속성)
-function extract(html, set) {
+function extract(htmlRaw, set) {
+  // 번역 금지 영역 제거: <script>·<style>·주석 (CSS/JS 가 텍스트로 섞이는 것 방지)
+  const html = String(htmlRaw)
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<!--[\s\S]*?-->/g, " ");
   // 텍스트 노드: >...< 사이. EJS 식(<%) 이 들어간 조각은 제외.
   const reText = />([^<>]+)</g;
   let m;
   while ((m = reText.exec(html))) {
     const raw = m[1];
-    if (raw.indexOf("<%") >= 0) continue;
+    if (raw.indexOf("<%") >= 0 || raw.indexOf("%>") >= 0) continue;
     const t = raw.replace(/\s+/g, " ").trim();
-    if (t.length >= 2 && hasKorean(t)) set.add(t);
+    if (t.length >= 2 && hasKorean(t) && !looksLikeCode(t)) set.add(t);
   }
   // 속성값: placeholder/alt/title/aria-label
   const reAttr = /\b(?:placeholder|alt|title|aria-label)="([^"]*)"/gi;
@@ -55,7 +69,7 @@ function extract(html, set) {
     const v = m[1];
     if (v.indexOf("<%") >= 0) continue;
     const t = v.replace(/\s+/g, " ").trim();
-    if (t.length >= 2 && hasKorean(t)) set.add(t);
+    if (t.length >= 2 && hasKorean(t) && !looksLikeCode(t)) set.add(t);
   }
 }
 
