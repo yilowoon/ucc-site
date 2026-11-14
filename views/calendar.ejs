@@ -10,15 +10,16 @@
 <div class="container page-wrap cal-wrap">
   <div class="cal-head">
     <a class="cal-nav" href="/learn/calendar?ym=<%= prevYm %>" aria-label="이전 달">‹</a>
-    <h2 class="cal-title"><%= year %>년 <%= month %>월</h2>
+    <h2 class="cal-title"><%= (typeof lang !== 'undefined' && lang === 'en') ? (['','January','February','March','April','May','June','July','August','September','October','November','December'][month] + ' ' + year) : (year + '년 ' + month + '월') %></h2>
     <a class="cal-nav" href="/learn/calendar?ym=<%= nextYm %>" aria-label="다음 달">›</a>
   </div>
 
   <div class="cal-grid" role="grid">
-    <div class="cal-dow cal-dow--sun">일</div>
-    <div class="cal-dow">월</div><div class="cal-dow">화</div><div class="cal-dow">수</div>
-    <div class="cal-dow">목</div><div class="cal-dow">금</div>
-    <div class="cal-dow cal-dow--sat">토</div>
+    <% var _dow = (typeof lang !== 'undefined' && lang === 'en') ? ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] : ['일','월','화','수','목','금','토']; %>
+    <div class="cal-dow cal-dow--sun"><%= _dow[0] %></div>
+    <div class="cal-dow"><%= _dow[1] %></div><div class="cal-dow"><%= _dow[2] %></div><div class="cal-dow"><%= _dow[3] %></div>
+    <div class="cal-dow"><%= _dow[4] %></div><div class="cal-dow"><%= _dow[5] %></div>
+    <div class="cal-dow cal-dow--sat"><%= _dow[6] %></div>
 
     <% weeks.forEach(function(week){ %>
       <% week.forEach(function(cell, i){ %>

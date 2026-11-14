@@ -63,6 +63,7 @@ const EN = {
   "연간교육일정": "Annual Schedule",
   "교육과정개설": "Open a Course",
   "교육신청하기": "Apply",
+  "교육 신청하기": "Apply for Training",
 
   // 함께하는사람들 하위
   "임원진": "Executives",
@@ -140,6 +141,22 @@ const EN = {
   //  RDC: "지역을 되살리는 힘,<br><strong>지역혁신개발전문가(RDC)</strong>"
   "지역을 되살리는 힘,": "The power to revive regions —",
   "지역혁신개발전문가(RDC)": "Regional Innovation Development Expert (RDC)",
+
+  // AI과정 수료생 분야 통계 라벨(src/aistats.js — .js 데이터라 사전 스캔 제외분)
+  "기획·전략": "Planning & Strategy",
+  "행정·공공": "Administration & Public",
+  "마케팅·홍보": "Marketing & PR",
+  "연구·R&amp;D": "Research &amp; R&D",
+  "교육·강사": "Education & Instruction",
+  "공공기관·지자체": "Public Institutions & Local Gov.",
+  "중소기업": "SMEs",
+  "대학·연구기관": "Universities & Research",
+  "사회적경제·비영리": "Social Economy & Nonprofit",
+  "스타트업·1인기업": "Startups & Solo Businesses",
+  "기타": "Other",
+
+  // 캘린더 요일(단일 글자는 전역 치환 위험 → 캘린더 템플릿에서 lang 처리하고, 여기서는 안전한 것만)
+  "연간교육일정": "Annual Schedule",
 };
 
 /** lang='en' 이면 사전의 영어, 없거나 한국어면 원문 그대로. */
