@@ -143,6 +143,32 @@ async function toEnglishObject(fields) {
   return out;
 }
 
+/** 긴 본문 번역: 출력 토큰 한도에 걸리지 않도록 문단(빈 줄) 경계로 쪼개 번역 후 재결합.
+ *  짧으면 toEnglish 한 번. 실패한 청크는 원문 유지(부분 손실 최소화). */
+async function toEnglishLong(text, { html, chunkChars = 3200 } = {}) {
+  const t = String(text == null ? "" : text);
+  if (!t.trim() || !GEMINI_KEY() || !hasKorean(t)) return t;
+  if (t.length <= chunkChars) return toEnglish(t, { html });
+  const paras = t.split(/\n{2,}/); // 문단 단위
+  const chunks = [];
+  let cur = "";
+  for (const p of paras) {
+    const cand = cur ? cur + "\n\n" + p : p;
+    if (cand.length > chunkChars && cur) { chunks.push(cur); cur = p; }
+    else cur = cand;
+    // 단일 문단이 너무 길면 문장 단위로 추가 분할
+    while (cur.length > chunkChars * 1.5) {
+      const cut = cur.lastIndexOf(". ", chunkChars) + 1 || cur.lastIndexOf("다. ", chunkChars) + 2 || chunkChars;
+      chunks.push(cur.slice(0, cut).trim());
+      cur = cur.slice(cut);
+    }
+  }
+  if (cur.trim()) chunks.push(cur);
+  const out = [];
+  for (const c of chunks) out.push(await toEnglish(c, { html }));
+  return out.join("\n\n");
+}
+
 function hasGemini() { return !!GEMINI_KEY(); }
 
-module.exports = { proofreadKo, toEnglish, toEnglishObject, hasGemini, hasKorean, looksHtml };
+module.exports = { proofreadKo, toEnglish, toEnglishObject, toEnglishLong, hasGemini, hasKorean, looksHtml };

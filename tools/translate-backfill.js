@@ -29,6 +29,8 @@ const translate = require("../src/translate");
 const FORCE = process.argv.includes("--force");
 const onlyArg = (() => { const i = process.argv.indexOf("--only"); return i >= 0 ? (process.argv[i + 1] || "").split(",").map((s) => s.trim()).filter(Boolean) : null; })();
 
+// 긴 본문 필드(출력 토큰 한도에 걸리므로 쪼개 번역)
+const LONG_FIELDS = new Set(["content", "body"]);
 // 테이블별 (한글필드 → 영문필드) 매핑
 const JOBS = {
   posts:      { id: "id", map: { title: "title_en", content: "content_en" } },
@@ -68,17 +70,20 @@ async function run() {
     totalRows += targets.length;
 
     for (const r of targets) {
-      // 번역할 필드만 추림(한글 있고, force거나 영문 비어있음)
-      const toTranslate = {};
+      const sets = [], vals = [], shortT = {};
       for (const f of srcFields) {
         const enCol = job.map[f];
-        if (translate.hasKorean(r[f]) && (FORCE || !String(r[enCol] || "").trim())) toTranslate[f] = r[f];
+        if (!(translate.hasKorean(r[f]) && (FORCE || !String(r[enCol] || "").trim()))) continue;
+        if (LONG_FIELDS.has(f)) {
+          const en = await translate.toEnglishLong(r[f]); // 긴 본문은 쪼개 번역(토큰 한도 회피)
+          if (en && en !== r[f]) { sets.push(`${enCol} = ?`); vals.push(en); }
+        } else {
+          shortT[f] = r[f];
+        }
       }
-      if (!Object.keys(toTranslate).length) continue;
-      const en = await translate.toEnglishObject(toTranslate);
-      const sets = [], vals = [];
-      for (const f of Object.keys(toTranslate)) {
-        if (en[f] && en[f] !== r[f]) { sets.push(`${job.map[f]} = ?`); vals.push(en[f]); }
+      if (Object.keys(shortT).length) {
+        const en = await translate.toEnglishObject(shortT);
+        for (const f of Object.keys(shortT)) if (en[f] && en[f] !== r[f]) { sets.push(`${job.map[f]} = ?`); vals.push(en[f]); }
       }
       if (sets.length) {
         vals.push(r[job.id]);

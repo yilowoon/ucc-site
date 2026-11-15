@@ -13,6 +13,8 @@ const { db } = require("./db");
 const translate = require("./translate");
 
 // 테이블별 (한글필드 → 영문필드)
+// 긴 본문 필드(출력 토큰 한도에 걸리므로 쪼개 번역)
+const LONG_FIELDS = new Set(["content", "body"]);
 const JOBS = {
   posts:      { id: "id", map: { title: "title_en", content: "content_en" } },
   newsletter: { id: "id", map: { title: "title_en", summary: "summary_en", content: "content_en" } },
@@ -35,15 +37,22 @@ async function backfillMissing() {
       let rows;
       try { rows = db.prepare(`SELECT ${cols} FROM ${tbl}`).all(); } catch (e) { continue; }
       for (const r of rows) {
-        const toT = {};
+        const sets = [], vals = [], shortT = {};
         for (const f of srcFields) {
           const enCol = job.map[f];
-          if (translate.hasKorean(r[f]) && !String(r[enCol] || "").trim()) toT[f] = r[f];
+          if (!(translate.hasKorean(r[f]) && !String(r[enCol] || "").trim())) continue;
+          if (LONG_FIELDS.has(f)) {
+            // 긴 본문은 쪼개 번역(출력 토큰 한도 회피)
+            const en = await translate.toEnglishLong(r[f]);
+            if (en && en !== r[f]) { sets.push(`${enCol} = ?`); vals.push(en); }
+          } else {
+            shortT[f] = r[f];
+          }
         }
-        if (!Object.keys(toT).length) continue;
-        const en = await translate.toEnglishObject(toT);
-        const sets = [], vals = [];
-        for (const f of Object.keys(toT)) if (en[f] && en[f] !== r[f]) { sets.push(`${job.map[f]} = ?`); vals.push(en[f]); }
+        if (Object.keys(shortT).length) {
+          const en = await translate.toEnglishObject(shortT);
+          for (const f of Object.keys(shortT)) if (en[f] && en[f] !== r[f]) { sets.push(`${job.map[f]} = ?`); vals.push(en[f]); }
+        }
         if (sets.length) {
           vals.push(r[job.id]);
           try { db.prepare(`UPDATE ${tbl} SET ${sets.join(", ")} WHERE ${job.id} = ?`).run(...vals); total++; }
