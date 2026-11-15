@@ -172,16 +172,37 @@ try { GEN = require("./i18n-generated.json"); } catch (e) { GEN = {}; }
 // 수동 사전(EN)이 생성 사전보다 우선(정제된 번역 유지).
 const MERGED = Object.assign({}, GEN, EN);
 
-// 렌더된 HTML 전체에서 사전의 한글 UI 문자열을 영어로 일괄 치환(긴 키 우선 → 부분겹침 방지).
-// 영어 사이트(/en)의 콘텐츠는 이미 _en(영어)이라, 남은 한글은 대부분 템플릿 고정 라벨뿐이다.
-function escapeRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
-const PAIRS = Object.entries(MERGED)
-  .filter(([k, v]) => k !== v && k && /[가-힣]/.test(k))
-  .sort((a, b) => b[0].length - a[0].length)
-  .map(([k, v]) => [new RegExp(escapeRe(k), "g"), v]);
+// 렌더된 HTML에서 UI 라벨을 영어로 치환하되, '텍스트 노드/속성값 전체가 사전 키와 정확히
+// 일치할 때만' 바꾼다. ★부분 문자열 치환 금지★ — 그래야 한국어 폴백 본문(번역 전 _en 공백)의
+// 문장 속 단어(마을·지역·으로 등)를 건드려 깨뜨리는 일이 없다.
+const DECO_RE = /^([\s\S]*?)(\s*(?:→|←|»|«|›|‹|→|←)+)$/; // 끝의 화살표 장식 분리
+function lookup(key) {
+  if (!key || !/[가-힣]/.test(key)) return null;
+  let en = MERGED[key];
+  if (en != null && en !== key) return en;
+  const m = key.match(DECO_RE); // "교육 신청하기 →" 처럼 끝 장식이 붙은 라벨 대응
+  if (m) {
+    const base = m[1].trim();
+    const v = MERGED[base];
+    if (v != null && v !== base && /[가-힣]/.test(base)) return v + m[2];
+  }
+  return null;
+}
 function translateHtml(html) {
   let s = String(html);
-  for (const [re, v] of PAIRS) s = s.replace(re, v);
+  // 1) 텍스트 노드(>...<) — 노드 전체가 키와 일치할 때만
+  s = s.replace(/>([^<>]+)</g, (m, text) => {
+    const key = text.replace(/\s+/g, " ").trim();
+    const en = lookup(key);
+    if (en == null) return m;
+    const lead = text.match(/^\s*/)[0], trail = text.match(/\s*$/)[0];
+    return ">" + lead + en + trail + "<";
+  });
+  // 2) 번역 가능한 속성값(정확 일치)
+  s = s.replace(/\b(placeholder|alt|title|aria-label)="([^"]*)"/gi, (m, attr, val) => {
+    const en = lookup(val.replace(/\s+/g, " ").trim());
+    return en == null ? m : `${attr}="${en}"`;
+  });
   return s;
 }
 
