@@ -308,6 +308,15 @@ async function collectOnce() {
     await sleep(300);
   }
   console.log(`[newsletter] 수집 완료: 신규 ${inserted}건 (검토 ${scanned}건)`);
+  // 신규 건은 즉시 영문화(한국어 | ENGLISH 이원화). 수집 때마다 걸어야 08:00/18:00
+  // 신규 발행분이 재시작 없이도 영어사이트에 번역되어 올라간다. backfillMissing 은
+  // '_en 비어있는 행'만 번역하므로 사실상 이번 신규분만 처리(스로틀·쪼개번역 재사용).
+  if (inserted > 0) {
+    try {
+      const { backfillMissing } = require("./i18n-backfill");
+      backfillMissing().catch((e) => console.error("[newsletter] 자동 영문화 오류:", e.message));
+    } catch (e) { /* 번역 모듈/키 없음 → 한국어 폴백 유지 */ }
+  }
   return { inserted, scanned };
 }
 
