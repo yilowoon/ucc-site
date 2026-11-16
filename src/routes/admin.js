@@ -269,12 +269,13 @@ module.exports = function adminRoutes({ verifyCsrf }) {
         return next(err);
       }
       const now = new Date().toISOString();
+      const pinnedAt = pinned ? now : ""; // 공지 지정 시각 — 10일 후 자동 해제 기준
       const info = db
         .prepare(
-          `INSERT INTO posts (board, title, content, author, pinned, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`
+          `INSERT INTO posts (board, title, content, author, pinned, pinned_at, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
         )
-        .run(board, title, content, author, pinned, now, now);
+        .run(board, title, content, author, pinned, pinnedAt, now, now);
       const postId = info.lastInsertRowid;
       insertAttachments(postId, req.files);
       processPostI18n(postId); // 백그라운드: 한글 교정 + 영문 번역(_en)
@@ -324,9 +325,12 @@ module.exports = function adminRoutes({ verifyCsrf }) {
         return next(err);
       }
       const now = new Date().toISOString();
+      // 공지 지정 시각: 새로 공지로 체크하면 now(10일 재시작), 이미 공지면 기존 시각 유지
+      // (본문만 고치는 수정으로 10일이 늘어나지 않도록), 공지 해제 시 비움.
+      const pinnedAt = pinned ? ((post.pinned === 1 && post.pinned_at) ? post.pinned_at : now) : "";
       db.prepare(
-        `UPDATE posts SET board = ?, title = ?, content = ?, author = ?, pinned = ?, updated_at = ? WHERE id = ?`
-      ).run(board, title, content, author, pinned, now, id);
+        `UPDATE posts SET board = ?, title = ?, content = ?, author = ?, pinned = ?, pinned_at = ?, updated_at = ? WHERE id = ?`
+      ).run(board, title, content, author, pinned, pinnedAt, now, id);
 
       // 삭제 요청된 기존 첨부 제거
       let removeIds = req.body.remove_attachment;

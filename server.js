@@ -555,4 +555,6 @@ app.listen(PORT, () => {
   // 한국어 | ENGLISH: 미번역 _en 콘텐츠를 부팅 후 백그라운드로 자동 번역(배포 후 1회).
   // → 평소 배포(git pull + restart)만으로 영어 콘텐츠가 채워진다. 이미 번역된 행은 건너뜀.
   try { require("./src/i18n-backfill").startBackfill(); } catch (e) { console.error("[i18n] 자동 백필 시작 실패:", e.message); }
+  // 알림마당 공지 자동 만료 — 공지 지정 10일 경과분을 일반 게시물로 자동 해제(기동 즉시 + 매시간)
+  try { require("./src/notice-expiry").startNoticeSweeper(); } catch (e) { console.error("[notice] 공지 만료 스케줄러 시작 실패:", e.message); }
 });

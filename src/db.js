@@ -315,6 +315,13 @@ try { db.exec("ALTER TABLE newsletter ADD COLUMN content TEXT NOT NULL DEFAULT '
 // newsletter: 조회수
 try { db.exec("ALTER TABLE newsletter ADD COLUMN views INTEGER NOT NULL DEFAULT 0"); } catch (e) {}
 
+/* ── 공지 자동 만료: 공지(pinned=1) 지정 시각 기록 → 10일 후 자동 해제 ──────────────
+ * 알림마당 게시판의 '공지' 마킹은 posts.pinned=1. 지정 시각(pinned_at)을 남겨 두고
+ * src/notice-expiry.js 스윕이 10일 경과분을 일반 게시물(pinned=0)로 되돌린다.
+ * 기존 공지글은 작성시각(created_at)을 기준으로 소급 적용(이미 10일 지난 건은 즉시 해제). */
+try { db.exec("ALTER TABLE posts ADD COLUMN pinned_at TEXT NOT NULL DEFAULT ''"); } catch (e) {}
+try { db.exec("UPDATE posts SET pinned_at = created_at WHERE pinned = 1 AND (pinned_at IS NULL OR pinned_at = '')"); } catch (e) {}
+
 /* ── 한국어 | ENGLISH 이원화: 영어 번역본(_en) 컬럼 ───────────────────────────
  * 각 콘텐츠 테이블에 영문 컬럼을 멱등 ALTER 로 추가한다. 비어 있으면(''): 아직 미번역 →
  * 렌더 시 한국어로 폴백한다. Gemini 파이프라인(src/translate.js)이 작성/수집 시 채운다. */
