@@ -322,6 +322,14 @@ try { db.exec("ALTER TABLE newsletter ADD COLUMN views INTEGER NOT NULL DEFAULT 
 try { db.exec("ALTER TABLE posts ADD COLUMN pinned_at TEXT NOT NULL DEFAULT ''"); } catch (e) {}
 try { db.exec("UPDATE posts SET pinned_at = created_at WHERE pinned = 1 AND (pinned_at IS NULL OR pinned_at = '')"); } catch (e) {}
 
+/* ── 교육신청 처리: 상태·답변·거절 ─────────────────────────────────────────────
+ * status: 신규 → 답변완료 / 거절. 관리자가 답변하면 reply 에 저장하고 신청자 이메일로
+ * 자동 발송(src/mail-templates.js eduReplyMail). 스팸/광고성 신청은 거절(reject_reason). */
+try { db.exec("ALTER TABLE edu_applications ADD COLUMN status TEXT NOT NULL DEFAULT '신규'"); } catch (e) {}
+try { db.exec("ALTER TABLE edu_applications ADD COLUMN reply TEXT NOT NULL DEFAULT ''"); } catch (e) {}
+try { db.exec("ALTER TABLE edu_applications ADD COLUMN replied_at TEXT NOT NULL DEFAULT ''"); } catch (e) {}
+try { db.exec("ALTER TABLE edu_applications ADD COLUMN reject_reason TEXT NOT NULL DEFAULT ''"); } catch (e) {}
+
 /* ── 한국어 | ENGLISH 이원화: 영어 번역본(_en) 컬럼 ───────────────────────────
  * 각 콘텐츠 테이블에 영문 컬럼을 멱등 ALTER 로 추가한다. 비어 있으면(''): 아직 미번역 →
  * 렌더 시 한국어로 폴백한다. Gemini 파이프라인(src/translate.js)이 작성/수집 시 채운다. */

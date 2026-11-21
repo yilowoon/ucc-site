@@ -193,4 +193,61 @@ function contactPinMail(pin, name) {
   return { subject, text, html };
 }
 
-module.exports = { welcomeMemberMail, resetPasswordMail, associateReminderMail, contactPinMail, MEMBER_FEE, dateKo };
+// 공통 이메일 레이아웃(헤더·본문·푸터) — 제목/본문HTML 을 감싼다
+function wrap(heading, bodyHtml) {
+  return (
+    '<div style="font-family:\'Malgun Gothic\',AppleSDGothicNeo,sans-serif;background:#eef1ec;padding:28px 14px">' +
+    '<div style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #e4e2da;border-radius:14px;overflow:hidden">' +
+      '<div style="background:#123a2e;color:#fff;padding:22px 26px">' +
+        '<div style="font-size:13px;letter-spacing:1px;color:#d8b25f;font-weight:700;margin-bottom:4px">URBAN COMMUNITY CENTER</div>' +
+        `<div style="font-size:19px;font-weight:800">${esc(heading)}</div>` +
+      '</div>' +
+      `<div style="padding:26px">${bodyHtml}</div>` +
+      '<div style="background:#f4f5f1;border-top:1px solid #e4e2da;padding:16px 26px;color:#6b766f;font-size:12px;line-height:1.6">' +
+        '<b style="color:#16211c">사단법인 도시공동체본부</b> 사무처<br>' +
+        '대표전화 1670-9678 · <a href="https://ucc.or.kr" style="color:#123a2e;text-decoration:none">ucc.or.kr</a>' +
+      '</div>' +
+    '</div></div>'
+  );
+}
+const nl2brEsc = (s) => esc(s).replace(/\r?\n/g, "<br>");
+
+// 교육신청 답변 메일 — 관리자가 답변을 저장하면 신청자에게 자동 발송. { subject, text, html }
+function eduReplyMail(app, replyText) {
+  const who = (app && app.name) || "신청자";
+  const course = (app && app.course) || "";
+  const reply = String(replyText == null ? "" : replyText);
+  const subject = `[사단법인 도시공동체본부] 교육신청 답변 안내${course ? " — " + course : ""}`;
+  const text =
+    `${who}님, 신청해 주신 교육${course ? `(${course})` : ""} 문의에 대한 답변입니다.\n\n` +
+    `${reply}\n\n` +
+    `추가 문의는 본 메일에 회신하시거나 contact@ucc.or.kr 로 보내주세요.\n\n` +
+    `사단법인 도시공동체본부 사무처\n대표전화 1670-9678 · https://ucc.or.kr`;
+  const body =
+    `<p style="font-size:15px;color:#16211c;margin:0 0 6px"><b>${esc(who)}</b>님, 신청해 주셔서 감사합니다.</p>` +
+    `<p style="font-size:14px;color:#3a463f;line-height:1.7;margin:0 0 16px">신청하신 교육${course ? ` <b>${esc(course)}</b>` : ""} 문의에 대한 답변을 안내드립니다.</p>` +
+    `<div style="font-size:14.5px;color:#16211c;line-height:1.8;background:#f8f6f0;border:1px solid #eee7d6;border-radius:10px;padding:16px 18px;margin:0 0 18px">${nl2brEsc(reply)}</div>` +
+    '<p style="font-size:13px;color:#6b766f;margin:0;line-height:1.6">추가 문의는 본 메일에 회신하시거나 <a href="mailto:contact@ucc.or.kr" style="color:#123a2e">contact@ucc.or.kr</a> 로 보내주세요.</p>';
+  return { subject, text, html: wrap("교육신청 답변 안내", body) };
+}
+
+// 교육신청 거절 안내 메일(선택 발송) — 반려 사유 안내. { subject, text, html }
+function eduRejectMail(app, reason) {
+  const who = (app && app.name) || "신청자";
+  const course = (app && app.course) || "";
+  const why = String(reason == null ? "" : reason).trim();
+  const subject = `[사단법인 도시공동체본부] 교육신청 처리 안내${course ? " — " + course : ""}`;
+  const text =
+    `${who}님, 접수하신 교육신청${course ? `(${course})` : ""}은 아래 사유로 처리되지 못했습니다.\n\n` +
+    `사유: ${why || "신청 내용 확인 불가"}\n\n` +
+    `정상적인 교육 문의는 contact@ucc.or.kr 로 다시 보내주시면 안내드리겠습니다.\n\n` +
+    `사단법인 도시공동체본부 사무처\n대표전화 1670-9678 · https://ucc.or.kr`;
+  const body =
+    `<p style="font-size:15px;color:#16211c;margin:0 0 6px"><b>${esc(who)}</b>님께 안내드립니다.</p>` +
+    `<p style="font-size:14px;color:#3a463f;line-height:1.7;margin:0 0 16px">접수하신 교육신청${course ? ` <b>${esc(course)}</b>` : ""}은 아래 사유로 처리되지 못했습니다.</p>` +
+    `<div style="font-size:14px;color:#7a3b2e;line-height:1.7;background:#faecec;border:1px solid #e6cdcd;border-radius:10px;padding:14px 16px;margin:0 0 18px"><b>사유</b> · ${esc(why || "신청 내용 확인 불가")}</div>` +
+    '<p style="font-size:13px;color:#6b766f;margin:0;line-height:1.6">정상적인 교육 문의는 <a href="mailto:contact@ucc.or.kr" style="color:#123a2e">contact@ucc.or.kr</a> 로 다시 보내주시면 안내드리겠습니다.</p>';
+  return { subject, text, html: wrap("교육신청 처리 안내", body) };
+}
+
+module.exports = { welcomeMemberMail, resetPasswordMail, associateReminderMail, contactPinMail, eduReplyMail, eduRejectMail, MEMBER_FEE, dateKo };

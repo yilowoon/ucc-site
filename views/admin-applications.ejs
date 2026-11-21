@@ -1,9 +1,9 @@
 <%- include('partials/header') %>
 <style>
   .app-wrap{overflow-x:auto}
-  .app-table{width:100%;border-collapse:collapse;font-size:.94rem;min-width:720px}
-  .app-table th{text-align:left;padding:14px 22px;color:var(--muted);font-size:.78rem;font-weight:800;letter-spacing:.02em;border-bottom:2px solid var(--line);white-space:nowrap}
-  .app-table td{padding:16px 22px;border-bottom:1px solid var(--line);color:var(--ink-soft);vertical-align:middle}
+  .app-table{width:100%;border-collapse:collapse;font-size:.94rem;min-width:760px}
+  .app-table th{text-align:left;padding:14px 20px;color:var(--muted);font-size:.78rem;font-weight:800;letter-spacing:.02em;border-bottom:2px solid var(--line);white-space:nowrap}
+  .app-table td{padding:15px 20px;border-bottom:1px solid var(--line);color:var(--ink-soft);vertical-align:middle}
   .app-row{cursor:pointer;transition:background .12s}
   .app-row:hover,.app-row.is-open{background:var(--paper-warm)}
   .app-name{font-weight:700;color:var(--green-800)}
@@ -13,6 +13,10 @@
   .app-course{color:var(--ink)}
   .app-email{color:var(--green-700);font-weight:600;word-break:break-all}
   .app-date{display:inline-block;background:var(--paper-warm);border:1px solid var(--line);border-radius:7px;padding:4px 10px;font-weight:700;color:var(--ink-soft);font-size:.84rem;white-space:nowrap}
+  .st-badge{display:inline-block;font-size:11px;font-weight:800;border-radius:20px;padding:3px 10px;white-space:nowrap}
+  .st-new{background:#eaf3ee;color:#1d6b46}
+  .st-done{background:#e7eefb;color:#2b4e9b}
+  .st-reject{background:#faecec;color:#9b2b2b}
   .app-detail > td{background:var(--paper-warm);padding:0}
   .app-detail-inner{padding:20px 24px}
   .app-detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px 28px;margin-bottom:14px}
@@ -20,38 +24,68 @@
   .dl-k{font-size:.74rem;font-weight:800;color:var(--muted)}
   .dl-v{color:var(--ink);font-weight:600;word-break:break-all}
   .dl-v a{color:var(--ci-green-d)}
-  .app-msg{border-top:1px dashed var(--line);padding-top:14px}
+  .app-msg{border-top:1px dashed var(--line);padding-top:14px;margin-bottom:16px}
   .app-msg .dl-k{display:block;margin-bottom:4px}
   .app-msg p{margin:0;color:var(--ink-soft);line-height:1.65;white-space:pre-wrap}
+  /* 처리 영역 */
+  .app-handle{border-top:1px solid var(--line);padding-top:16px}
+  .app-reply-label{font-size:.78rem;font-weight:800;color:var(--muted);display:block;margin-bottom:6px}
+  .app-handle textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:inherit;font-size:13.5px;resize:vertical;min-height:70px;background:#fff}
+  .app-handle textarea:focus{outline:none;border-color:var(--green-600)}
+  .app-reply-actions{display:flex;align-items:center;gap:12px;margin-top:8px;flex-wrap:wrap}
+  .app-replied{font-size:12px;color:var(--muted)}
+  .app-sub-actions{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-top:18px;padding-top:14px;border-top:1px dashed var(--line)}
+  .app-reject-box{display:flex;flex-direction:column;gap:7px;flex:1;min-width:260px}
+  .app-reject-box input[type=text]{border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13px;font-family:inherit;background:#fff}
+  .app-reject-box input[type=text]:focus{outline:none;border-color:var(--green-600)}
+  .app-chk{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-soft)}
+  .app-prev-reply{background:#f8f6f0;border:1px solid #eee7d6;border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13.5px;color:#16211c;line-height:1.7;white-space:pre-wrap}
+  .app-prev-reject{background:#faecec;border:1px solid #e6cdcd;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#7a3b2e;line-height:1.6}
+  .app-flash{display:flex;align-items:center;gap:10px;margin:0 0 18px;padding:13px 18px;border-radius:12px;border:1px solid #cfe0d3;background:#edf6ef;color:#16241d;font-size:14px}
+  .app-flash.err{border-color:#e6cdcd;background:#faecec;color:#7a2b2b}
+  .app-counts{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px;font-size:13px;color:var(--ink-soft)}
+  .app-counts b{color:var(--green-800)}
+  .linkbtn-danger{color:#9b2b2b}
 </style>
 <div class="container admin-wrap">
   <div class="admin-head">
-    <div><h1>교육신청 내역</h1><p class="admin-sub">접수된 교육 신청 목록입니다. <span class="field-hint">행을 클릭하면 세부 내용을 볼 수 있습니다.</span></p></div>
+    <div><h1>교육신청 내역</h1><p class="admin-sub">접수된 교육 신청을 확인하고 답변·거절·삭제할 수 있습니다. <span class="field-hint">행을 클릭하면 세부 내용과 처리 메뉴가 열립니다.</span></p></div>
     <a class="btn btn-neutral btn-sm" href="/admin">대시보드</a>
   </div>
+
+  <% if (typeof flash !== 'undefined' && flash) { %>
+    <div class="app-flash <%= flash.error ? 'err' : '' %>"><span><%= flash.error || flash.ok %></span></div>
+  <% } %>
 
   <% if (!apps.length) { %>
     <p class="post-empty">접수된 신청이 없습니다.</p>
   <% } else { %>
+  <div class="app-counts">
+    <span>전체 <b><%= counts.all %></b></span>
+    <span>신규 <b><%= counts.신규 %></b></span>
+    <span>답변완료 <b><%= counts.답변완료 %></b></span>
+    <span>거절 <b><%= counts.거절 %></b></span>
+  </div>
   <div class="app-wrap">
     <table class="app-table">
       <colgroup>
-        <col style="width:13%"><col style="width:15%"><col style="width:19%"><col style="width:28%"><col style="width:25%">
+        <col style="width:12%"><col style="width:10%"><col style="width:14%"><col style="width:14%"><col style="width:26%"><col style="width:24%">
       </colgroup>
       <thead>
-        <tr><th>신청일</th><th>이름</th><th>연락처</th><th>과정</th><th>이메일</th></tr>
+        <tr><th>신청일</th><th>상태</th><th>이름</th><th>연락처</th><th>과정</th><th>이메일</th></tr>
       </thead>
       <tbody>
-        <% apps.forEach(function(a, i){ %>
+        <% apps.forEach(function(a, i){ var st = a.status || '신규'; var stc = st === '답변완료' ? 'st-done' : (st === '거절' ? 'st-reject' : 'st-new'); %>
           <tr class="app-row" data-d="appd<%= i %>">
             <td><span class="app-date"><%= fmtDate(a.created_at) %></span></td>
+            <td><span class="st-badge <%= stc %>"><%= st %></span></td>
             <td class="app-name"><%= esc(a.name) %><span class="app-caret">▸</span></td>
             <td class="app-phone"><%= a.phone ? esc(a.phone) : '-' %></td>
             <td class="app-course"><%= a.course ? esc(a.course) : '-' %></td>
             <td class="app-email"><%= esc(a.email) %></td>
           </tr>
           <tr class="app-detail" id="appd<%= i %>" hidden>
-            <td colspan="5">
+            <td colspan="6">
               <div class="app-detail-inner">
                 <div class="app-detail-grid">
                   <div><span class="dl-k">이름</span><span class="dl-v"><%= esc(a.name) %></span></div>
@@ -59,10 +93,48 @@
                   <div><span class="dl-k">이메일</span><span class="dl-v"><a href="mailto:<%= esc(a.email) %>"><%= esc(a.email) %></a></span></div>
                   <div><span class="dl-k">신청 과정</span><span class="dl-v"><%= a.course ? esc(a.course) : '-' %></span></div>
                   <div><span class="dl-k">신청일시</span><span class="dl-v"><%= fmtDateTime(a.created_at) %></span></div>
+                  <div><span class="dl-k">상태</span><span class="dl-v"><span class="st-badge <%= stc %>"><%= st %></span></span></div>
                 </div>
                 <div class="app-msg">
                   <span class="dl-k">문의 / 요청 사항</span>
                   <% if (a.message) { %><p><%- nl2br(a.message) %></p><% } else { %><p class="field-hint">(작성된 내용 없음)</p><% } %>
+                </div>
+
+                <% if (a.status === '거절' && a.reject_reason) { %>
+                  <div class="app-prev-reject"><b>거절 사유</b> · <%= esc(a.reject_reason) %><% if (a.replied_at) { %> <span style="color:#a98">(<%= fmtDateTime(a.replied_at) %>)</span><% } %></div>
+                <% } %>
+                <% if (a.reply) { %>
+                  <div class="app-reply-label">등록된 답변<% if (a.replied_at) { %> · <%= fmtDateTime(a.replied_at) %><% } %></div>
+                  <div class="app-prev-reply"><%= esc(a.reply) %></div>
+                <% } %>
+
+                <div class="app-handle">
+                  <!-- 답변: 저장 시 신청자 이메일로 자동 발송 -->
+                  <form method="post" action="/admin/applications/<%= a.id %>/reply">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                    <span class="app-reply-label">답변 작성 — 저장하면 <b><%= esc(a.email) %></b> 로 자동 발송됩니다</span>
+                    <textarea name="reply" rows="3" placeholder="신청자에게 보낼 답변을 작성하세요. 저장과 동시에 이메일로 발송됩니다."><%= esc(a.reply || '') %></textarea>
+                    <div class="app-reply-actions">
+                      <% if (a.replied_at && a.reply) { %><span class="app-replied">최근 답변 <%= fmtDateTime(a.replied_at) %></span><% } %>
+                      <button type="submit" class="btn btn-primary btn-sm" style="margin-left:auto">답변 저장·메일 발송</button>
+                    </div>
+                  </form>
+
+                  <div class="app-sub-actions">
+                    <!-- 거절: 스팸/부적절 신청 반려(선택적 메일 안내) -->
+                    <form method="post" action="/admin/applications/<%= a.id %>/reject" class="app-reject-box" onsubmit="return confirm('이 신청을 거절 처리하시겠습니까?');">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                      <span class="app-reply-label" style="margin:0">거절 처리</span>
+                      <input type="text" name="reason" placeholder="거절 사유 (비우면: 광고성·부적절한 신청 내용)" value="<%= esc(a.reject_reason || '') %>" />
+                      <label class="app-chk"><input type="checkbox" name="notify" value="1" /> 신청자에게 거절 안내 메일 발송</label>
+                      <button type="submit" class="btn btn-neutral btn-sm" style="align-self:flex-start">거절</button>
+                    </form>
+                    <!-- 삭제 -->
+                    <form method="post" action="/admin/applications/<%= a.id %>/delete" onsubmit="return confirm('이 신청 내역을 완전히 삭제하시겠습니까? 되돌릴 수 없습니다.');">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                      <button type="submit" class="linkbtn linkbtn-danger">삭제</button>
+                    </form>
+                  </div>
                 </div>
               </div>
             </td>
@@ -75,12 +147,16 @@
 </div>
 <script>
   document.querySelectorAll('.app-row').forEach(function(r){
-    r.addEventListener('click', function(){
+    r.addEventListener('click', function(e){
       var d = document.getElementById(r.dataset.d);
       if (!d) return;
       if (d.hasAttribute('hidden')) { d.removeAttribute('hidden'); r.classList.add('is-open'); }
       else { d.setAttribute('hidden',''); r.classList.remove('is-open'); }
     });
+  });
+  // 상세 패널 내부 클릭(폼 입력 등)이 행 토글로 전파되지 않도록
+  document.querySelectorAll('.app-detail').forEach(function(d){
+    d.addEventListener('click', function(e){ e.stopPropagation(); });
   });
 </script>
 <%- include('partials/footer') %>

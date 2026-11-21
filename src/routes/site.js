@@ -16,6 +16,7 @@ const chatkb = require("../chatkb"); // 소개 챗봇: 지식베이스 + Gemini 
 const mailer = require("../mailer"); // 이메일 인증 코드 발송
 const mailTpl = require("../mail-templates"); // 메일 본문(문의 PIN 재설정 등)
 const i18n = require("../i18n"); // 홈 피드 게시판명 한→영
+const spamFilter = require("../spam-filter"); // 교육신청 광고·스팸 문구 차단
 const IS_PROD = process.env.NODE_ENV === "production";
 const KOREA_SIDO = require("../korea-sido.json"); // 전국 시·도 경계 지오메트리
 
@@ -340,6 +341,12 @@ module.exports = function siteRoutes({ verifyCsrf }) {
     const fail = (m) => res.status(400).render("edu-apply", { ...res.locals, title: "교육신청하기", error: m, done: false, form });
     if (!name) return fail("이름을 입력해 주세요.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("유효한 이메일을 입력해 주세요.");
+    // 광고·성인물 등 스팸 문구가 포함된 신청은 등록을 거절한다(이름·과정·내용 전체 검사).
+    const spam = spamFilter.isSpam([name, course, message].join("\n"));
+    if (spam.spam) {
+      console.warn("[edu-apply] 스팸 신청 차단:", spam.reason, "·", email);
+      return fail("신청 내용에 광고성·부적절한 문구가 포함되어 있어 등록이 거절되었습니다. 정상적인 교육 문의는 contact@ucc.or.kr 로 보내주세요.");
+    }
     db.prepare("INSERT INTO edu_applications (name, email, phone, course, message, created_at) VALUES (?, ?, ?, ?, ?, ?)")
       .run(name, email, phone, course, message, new Date().toISOString());
     res.render("edu-apply", { ...res.locals, title: "교육신청하기", error: null, done: true, form: {} });

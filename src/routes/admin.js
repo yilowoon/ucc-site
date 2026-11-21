@@ -699,7 +699,65 @@ module.exports = function adminRoutes({ verifyCsrf }) {
   // ---------- 교육신청 내역 ----------
   router.get("/applications", requireAdmin, (req, res) => {
     const apps = db.prepare("SELECT * FROM edu_applications ORDER BY id DESC LIMIT 300").all();
-    res.render("admin-applications", { ...res.locals, title: "교육신청 내역", apps });
+    const counts = {
+      all: apps.length,
+      신규: apps.filter((a) => a.status === "신규" || !a.status).length,
+      답변완료: apps.filter((a) => a.status === "답변완료").length,
+      거절: apps.filter((a) => a.status === "거절").length,
+    };
+    const flash = req.session.appFlash || null;
+    if (flash) delete req.session.appFlash; // 1회용
+    res.render("admin-applications", { ...res.locals, title: "교육신청 내역", apps, counts, flash });
+  });
+
+  // 교육신청: 답변 저장 + 신청자 이메일 자동 발송(회원 메일 체계 재사용)
+  router.post("/applications/:id/reply", requireAdmin, verifyCsrf, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const app = db.prepare("SELECT * FROM edu_applications WHERE id = ?").get(id);
+      if (!app) { req.session.appFlash = { error: "대상 신청을 찾을 수 없습니다." }; return res.redirect("/admin/applications"); }
+      const reply = (req.body.reply || "").trim();
+      if (!reply) { req.session.appFlash = { error: "답변 내용을 입력해 주세요." }; return res.redirect("/admin/applications"); }
+      const now = new Date().toISOString();
+      let mailed = false, reason = "no-smtp";
+      if (mailer.hasSmtp()) {
+        const tpl = require("../mail-templates").eduReplyMail(app, reply);
+        try { const r = await mailer.sendMail(app.email, tpl.subject, tpl.text, tpl.html); mailed = !!(r && r.sent); reason = mailed ? "" : ((r && r.reason) || "fail"); }
+        catch (e) { reason = e.message; }
+      }
+      db.prepare("UPDATE edu_applications SET reply = ?, replied_at = ?, status = '답변완료' WHERE id = ?").run(reply, now, id);
+      req.session.appFlash = mailed
+        ? { ok: `${app.email} 님에게 답변 메일을 발송했습니다.` }
+        : { error: `답변은 저장했으나 이메일 발송에 실패했습니다(${reason}). SMTP 설정을 확인하거나 직접 안내해 주세요.` };
+      res.redirect("/admin/applications");
+    } catch (e) { next(e); }
+  });
+
+  // 교육신청: 거절(스팸/부적절) — 선택 시 신청자에게 거절 안내 메일 발송
+  router.post("/applications/:id/reject", requireAdmin, verifyCsrf, async (req, res, next) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const app = db.prepare("SELECT * FROM edu_applications WHERE id = ?").get(id);
+      if (!app) { req.session.appFlash = { error: "대상 신청을 찾을 수 없습니다." }; return res.redirect("/admin/applications"); }
+      const reason = (req.body.reason || "").trim() || "광고성·부적절한 신청 내용";
+      const notify = !!req.body.notify;
+      const now = new Date().toISOString();
+      let mailed = false;
+      if (notify && mailer.hasSmtp()) {
+        const tpl = require("../mail-templates").eduRejectMail(app, reason);
+        try { const r = await mailer.sendMail(app.email, tpl.subject, tpl.text, tpl.html); mailed = !!(r && r.sent); } catch (e) {}
+      }
+      db.prepare("UPDATE edu_applications SET status = '거절', reject_reason = ?, replied_at = ? WHERE id = ?").run(reason, now, id);
+      req.session.appFlash = { ok: `신청을 거절 처리했습니다${notify ? (mailed ? " · 안내 메일 발송 완료" : " · 메일 발송 실패") : ""}.` };
+      res.redirect("/admin/applications");
+    } catch (e) { next(e); }
+  });
+
+  // 교육신청: 삭제
+  router.post("/applications/:id/delete", requireAdmin, verifyCsrf, (req, res) => {
+    db.prepare("DELETE FROM edu_applications WHERE id = ?").run(parseInt(req.params.id, 10));
+    req.session.appFlash = { ok: "신청 내역을 삭제했습니다." };
+    res.redirect("/admin/applications");
   });
 
   // ---------- 문의 관리 ----------
